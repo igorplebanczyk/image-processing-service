@@ -3,14 +3,14 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"image-processing-service/internal/server"
-	"log"
+	"log/slog"
 	"net/http"
 )
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		slog.Error("Error loading .env file")
 	}
 
 	mux := http.NewServeMux()
@@ -23,6 +23,7 @@ func main() {
 
 	err = srv.ListenAndServe()
 	if err != nil {
-		log.Fatalf("Error starting server: %v", err)
+		slog.Error("Error starting server: %v", err)
 	}
+	slog.Info("Server starting", "port", srv.Addr)
 }
