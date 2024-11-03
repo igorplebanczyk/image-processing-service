@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-type Repository struct {
+type UserRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
-func (r *Repository) CreateUser(username, email, password string) (*auth.User, error) {
+func (r *UserRepository) CreateUser(username, email, password string) (*auth.User, error) {
 	id := uuid.New()
 
 	err := validate(r, username, email, password)
@@ -50,7 +50,7 @@ func (r *Repository) CreateUser(username, email, password string) (*auth.User, e
 	return user, nil
 }
 
-func (r *Repository) GetUserByValue(field, value string) (*auth.User, error) {
+func (r *UserRepository) GetUserByValue(field, value string) (*auth.User, error) {
 	var user auth.User
 
 	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)

@@ -20,10 +20,12 @@ type Config struct {
 
 func (cfg *Config) StartServer() error {
 	userCfg := user.Config{
-		Repo: user.NewRepository(cfg.DB),
+		Repo: user.NewUserRepository(cfg.DB),
 	}
 
-	authService := auth.NewService(userCfg.Repo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
+	refreshTokenRepo := user.NewRefreshTokenRepository(cfg.DB)
+
+	authService := auth.NewService(userCfg.Repo, refreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 
 	mux := http.NewServeMux()
 	srv := http.Server{

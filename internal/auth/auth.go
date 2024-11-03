@@ -17,12 +17,13 @@ type Service struct {
 	refreshExpiry    time.Duration
 }
 
-func NewService(repo UserRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
+func NewService(userRepo UserRepository, refreshTokenRepo RefreshTokenRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
 	return &Service{
-		userRepo:      repo,
-		jwtSecret:     secret,
-		accessExpiry:  accessExpiry,
-		refreshExpiry: refreshExpiry,
+		userRepo:         userRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		jwtSecret:        secret,
+		accessExpiry:     accessExpiry,
+		refreshExpiry:    refreshExpiry,
 	}
 }
 

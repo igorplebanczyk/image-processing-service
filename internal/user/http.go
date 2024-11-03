@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	Repo *Repository
+	Repo *UserRepository
 }
 
 func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
