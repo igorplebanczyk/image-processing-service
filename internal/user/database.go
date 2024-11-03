@@ -68,7 +68,7 @@ func (r *Repository) CreateUser(username, email, password string) (*auth.User, e
 func (r *Repository) GetUserByValue(field, value string) (*auth.User, error) {
 	var user auth.User
 
-	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $2`, field)
+	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)
 	row := r.db.QueryRow(query, value)
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
