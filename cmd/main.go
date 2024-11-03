@@ -2,20 +2,20 @@ package main
 
 import (
 	"github.com/joho/godotenv"
-	"image-processing-service/internal/database"
 	"image-processing-service/internal/server"
+	"image-processing-service/internal/user"
 	"log/slog"
 	"os"
 	"strconv"
 )
 
 func main() {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		slog.Error("Error loading .env file")
 	}
 
-	db, err := database.Connect(os.Getenv("DB_CONN"))
+	db, err := user.ConnectToDB(os.Getenv("DB_CONN"))
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
 	}

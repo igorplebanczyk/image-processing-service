@@ -1,14 +1,14 @@
-package server
+package util
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-func respondWithJSON(w http.ResponseWriter, code int, payload any) {
+func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 	response, err := json.Marshal(payload)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error marshalling response")
+		RespondWithError(w, http.StatusInternalServerError, "error marshalling response")
 		return
 	}
 
@@ -17,12 +17,12 @@ func respondWithJSON(w http.ResponseWriter, code int, payload any) {
 
 	_, err = w.Write(response)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error writing response")
+		RespondWithError(w, http.StatusInternalServerError, "error writing response")
 		return
 	}
 }
 
-func respondWithError(w http.ResponseWriter, code int, msg string) {
+func RespondWithError(w http.ResponseWriter, code int, msg string) {
 	type response struct {
 		Error string `json:"error"`
 	}

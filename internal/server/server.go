@@ -3,7 +3,7 @@ package server
 import (
 	"database/sql"
 	"fmt"
-	"image-processing-service/internal/database"
+	"image-processing-service/internal/user"
 	"log/slog"
 	"net/http"
 )
@@ -13,13 +13,9 @@ type Config struct {
 	DB   *sql.DB
 }
 
-type ApiConfig struct {
-	Repo *database.UserRepository
-}
-
 func (cfg *Config) StartServer() error {
-	apiCfg := ApiConfig{
-		Repo: database.NewUserRepository(cfg.DB),
+	userCfg := user.Config{
+		Repo: user.NewRepository(cfg.DB),
 	}
 
 	mux := http.NewServeMux()
@@ -28,8 +24,8 @@ func (cfg *Config) StartServer() error {
 		Handler: mux,
 	}
 
-	mux.HandleFunc("/health", healthHandler)
-	mux.HandleFunc("/register", apiCfg.RegisterUser)
+	mux.HandleFunc("/health", health)
+	mux.HandleFunc("/register", userCfg.RegisterUser)
 
 	err := srv.ListenAndServe()
 	if err != nil {

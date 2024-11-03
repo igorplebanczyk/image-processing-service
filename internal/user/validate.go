@@ -1,11 +1,11 @@
-package database
+package user
 
 import (
 	"fmt"
 	"regexp"
 )
 
-func validate(r *UserRepository, username, email, password string) error {
+func validate(r *Repository, username, email, password string) error {
 	if username == "" {
 		return fmt.Errorf("username cannot be empty")
 	}

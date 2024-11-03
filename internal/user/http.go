@@ -1,12 +1,17 @@
-package server
+package user
 
 import (
 	"encoding/json"
 	"fmt"
+	"image-processing-service/internal/server/util"
 	"net/http"
 )
 
-func (cfg *ApiConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
+type Config struct {
+	Repo *Repository
+}
+
+func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -25,18 +30,18 @@ func (cfg *ApiConfig) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var p parameters
 	err := decoder.Decode(&p)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, fmt.Sprintf("error decoding request: %v", err))
+		util.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("error decoding request: %v", err))
 		return
 	}
 
 	user, err := cfg.Repo.CreateUser(p.Username, p.Email, p.Password)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating user: %v", err))
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating user: %v", err))
 		return
 	}
 
 	fmt.Printf("fine")
-	respondWithJSON(w, http.StatusCreated, response{
+	util.RespondWithJSON(w, http.StatusCreated, response{
 		ID:        user.ID.String(),
 		Username:  user.Username,
 		Email:     user.Email,

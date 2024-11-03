@@ -1,23 +1,38 @@
-package database
+package user
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	"image-processing-service/internal/auth"
 	"time"
 )
 
-type UserRepository struct {
+func ConnectToDB(url string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", url)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to database: %w", err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("error pinging database: %w", err)
+	}
+
+	return db, nil
+}
+
+type Repository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *UserRepository) CreateUser(username, email, password string) (*auth.User, error) {
+func (r *Repository) CreateUser(username, email, password string) (*auth.User, error) {
 	id := uuid.New()
 
 	err := validate(r, username, email, password)
@@ -50,10 +65,10 @@ func (r *UserRepository) CreateUser(username, email, password string) (*auth.Use
 	return user, nil
 }
 
-func (r *UserRepository) GetUserByValue(field, value string) (*auth.User, error) {
+func (r *Repository) GetUserByValue(field, value string) (*auth.User, error) {
 	var user auth.User
 
-	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)
+	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $2`, field)
 	row := r.db.QueryRow(query, value)
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {

@@ -1,13 +1,16 @@
 package server
 
-import "net/http"
+import (
+	"image-processing-service/internal/server/util"
+	"net/http"
+)
 
-func healthHandler(w http.ResponseWriter, _ *http.Request) {
+func health(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
 	_, err := w.Write([]byte("OK"))
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "error writing response")
+		util.RespondWithError(w, http.StatusInternalServerError, "error writing response")
 	}
 }
