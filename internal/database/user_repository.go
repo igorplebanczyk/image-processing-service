@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/auth"
@@ -51,17 +52,18 @@ func (r *UserRepository) CreateUser(username, email, password string) (*auth.Use
 	return user, nil
 }
 
-func GetUserByID(id uuid.UUID) (*auth.User, error) {
+func (r *UserRepository) GetUserByValue(field, value string) (*auth.User, error) {
+	var user auth.User
 
-	return nil, nil
-}
+	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)
+	row := r.db.QueryRow(query, value)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("user with %s %s not found", field, value)
+		}
+		return nil, fmt.Errorf("error getting user by %s: %w", field, err)
+	}
 
-func GetUserByUsername(username string) (*auth.User, error) {
-
-	return nil, nil
-}
-
-func GetUserByEmail(email string) (*auth.User, error) {
-
-	return nil, nil
+	return &user, nil
 }
