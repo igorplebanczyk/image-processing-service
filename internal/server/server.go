@@ -20,12 +20,11 @@ type Config struct {
 
 func (cfg *Config) StartServer() error {
 	userCfg := user.Config{
-		Repo: user.NewUserRepository(cfg.DB),
+		UserRepo:         user.NewUserRepository(cfg.DB),
+		RefreshTokenRepo: user.NewRefreshTokenRepository(cfg.DB),
 	}
 
-	refreshTokenRepo := user.NewRefreshTokenRepository(cfg.DB)
-
-	authService := auth.NewService(userCfg.Repo, refreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
+	authService := auth.NewService(userCfg.UserRepo, userCfg.RefreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 
 	mux := http.NewServeMux()
 	srv := http.Server{
@@ -37,6 +36,7 @@ func (cfg *Config) StartServer() error {
 	mux.HandleFunc("POST /register", userCfg.RegisterUser)
 	mux.HandleFunc("POST /login", authService.Login)
 	mux.HandleFunc("POST /refresh", authService.Refresh)
+	mux.HandleFunc("DELETE /logout", authService.Middleware(userCfg.Logout))
 
 	err := srv.ListenAndServe()
 	if err != nil {

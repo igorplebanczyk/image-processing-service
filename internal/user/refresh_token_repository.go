@@ -52,3 +52,12 @@ func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*a
 
 	return &refreshToken, nil
 }
+
+func (r *RefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
+	_, err := r.db.Exec(`DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
+	if err != nil {
+		return fmt.Errorf("error revoking refresh token: %w", err)
+	}
+
+	return nil
+}
