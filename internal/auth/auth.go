@@ -99,5 +99,5 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	return response{AccessToken: accessToken}, nil
+	return response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
