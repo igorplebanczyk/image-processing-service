@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const passwordRegex = `(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,32}`
-
 type UserRepository struct {
 	db *sql.DB
 }

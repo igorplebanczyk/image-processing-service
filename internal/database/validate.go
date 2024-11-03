@@ -7,6 +7,8 @@ import (
 	"regexp"
 )
 
+const passwordRegex = `(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,32}`
+
 func validate(r *UserRepository, username, email, password string) error {
 	if username == "" {
 		return fmt.Errorf("username cannot be empty")
