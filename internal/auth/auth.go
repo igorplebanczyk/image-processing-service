@@ -6,50 +6,80 @@ import (
 	"time"
 )
 
+const issuer string = "image-processing-service"
+
 type Service struct {
-	repo      UserRepository
-	jwtSecret string
-	jwtExpiry time.Duration
+	repo          UserRepository
+	jwtSecret     string
+	accessExpiry  time.Duration
+	refreshExpiry time.Duration
 }
 
-func NewService(repo UserRepository, jwtSecret string, jwtExpiry time.Duration) *Service {
+func NewService(repo UserRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
 	return &Service{
-		repo:      repo,
-		jwtSecret: jwtSecret,
-		jwtExpiry: jwtExpiry,
+		repo:          repo,
+		jwtSecret:     secret,
+		accessExpiry:  accessExpiry,
+		refreshExpiry: refreshExpiry,
 	}
 }
 
-func (s *Service) GenerateJWT(user User) (string, error) {
+func (s *Service) GenerateAccessToken(user User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   user.ID.String(),
-		Issuer:    "image-processing-service",
+		Issuer:    issuer,
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.jwtExpiry)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessExpiry)),
 	})
 
 	signedToken, err := token.SignedString([]byte(s.jwtSecret))
 	if err != nil {
-		return "", fmt.Errorf("error signing token: %w", err)
+		return "", fmt.Errorf("error signing access token: %w", err)
 	}
 
 	return signedToken, nil
 }
 
-func (s *Service) Authenticate(username string, password string) (string, error) {
+func (s *Service) GenerateRefreshToken(user User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Subject:   user.ID.String(),
+		Issuer:    issuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshExpiry)),
+	})
+
+	signedToken, err := token.SignedString([]byte(s.jwtSecret))
+	if err != nil {
+		return "", fmt.Errorf("error signing refresh token: %w", err)
+	}
+
+	return signedToken, nil
+}
+
+type Response struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (s *Service) Authenticate(username string, password string) (Response, error) {
 	user, err := s.repo.GetUserByUsername(username)
 	if err != nil {
-		return "", fmt.Errorf("error getting user by username: %w", err)
+		return Response{}, fmt.Errorf("error getting user by username: %w", err)
 	}
 
 	if !CheckPasswordHash(password, user.Password) {
-		return "", fmt.Errorf("invalid password")
+		return Response{}, fmt.Errorf("invalid password")
 	}
 
-	token, err := s.GenerateJWT(*user)
+	accessToken, err := s.GenerateAccessToken(*user)
 	if err != nil {
-		return "", fmt.Errorf("error generating JWT: %w", err)
+		return Response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	return token, nil
+	refreshToken, err := s.GenerateRefreshToken(*user)
+	if err != nil {
+		return Response{}, fmt.Errorf("error generating refresh token: %w", err)
+	}
+
+	return Response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
