@@ -30,7 +30,7 @@ type response struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func (s *Service) Authenticate(username string, password string) (response, error) {
+func (s *Service) authenticate(username string, password string) (response, error) {
 	user, err := s.repo.GetUserByValue("username", username)
 	if err != nil {
 		return response{}, fmt.Errorf("error getting user by username: %w", err)
@@ -53,7 +53,7 @@ func (s *Service) Authenticate(username string, password string) (response, erro
 	return response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
-func (s *Service) Refresh(refreshToken string) (response, error) {
+func (s *Service) refresh(refreshToken string) (response, error) {
 	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

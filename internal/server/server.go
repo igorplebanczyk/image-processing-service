@@ -3,20 +3,27 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	"image-processing-service/internal/auth"
 	"image-processing-service/internal/user"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type Config struct {
-	Port int
-	DB   *sql.DB
+	Port               int
+	DB                 *sql.DB
+	JWTSecret          string
+	AccessTokenExpiry  time.Duration
+	RefreshTokenExpiry time.Duration
 }
 
 func (cfg *Config) StartServer() error {
 	userCfg := user.Config{
 		Repo: user.NewRepository(cfg.DB),
 	}
+
+	authService := auth.NewService(userCfg.Repo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
 
 	mux := http.NewServeMux()
 	srv := http.Server{
@@ -26,6 +33,8 @@ func (cfg *Config) StartServer() error {
 
 	mux.HandleFunc("/health", health)
 	mux.HandleFunc("/register", userCfg.RegisterUser)
+	mux.HandleFunc("/login", authService.Login)
+	mux.HandleFunc("/refresh", authService.Refresh)
 
 	err := srv.ListenAndServe()
 	if err != nil {

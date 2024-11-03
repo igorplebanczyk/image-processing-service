@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -25,9 +26,14 @@ func main() {
 		slog.Error("Error parsing port", "error", err)
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	cfg := server.Config{
-		Port: port,
-		DB:   db,
+		Port:               port,
+		DB:                 db,
+		JWTSecret:          jwtSecret,
+		AccessTokenExpiry:  15 * time.Minute,
+		RefreshTokenExpiry: 24 * time.Hour,
 	}
 	err = cfg.StartServer()
 	if err != nil {

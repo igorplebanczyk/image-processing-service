@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (s *Service) login(w http.ResponseWriter, r *http.Request) {
+func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -20,33 +20,16 @@ func (s *Service) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.repo.GetUserByValue("username", p.Username)
+	resp, err := s.authenticate(p.Username, p.Password)
 	if err != nil {
-		util.RespondWithError(w, http.StatusUnauthorized, "invalid credentials")
+		util.RespondWithError(w, http.StatusBadRequest, "error authenticating user")
 		return
 	}
 
-	if !VerifyPassword(p.Password, user.Password) {
-		util.RespondWithError(w, http.StatusUnauthorized, "invalid credentials")
-		return
-	}
-
-	accessToken, err := s.generateAccessToken(*user)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "error generating access token")
-		return
-	}
-
-	refreshToken, err := s.generateRefreshToken(*user)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "error generating refresh token")
-		return
-	}
-
-	util.RespondWithJSON(w, http.StatusOK, response{AccessToken: accessToken, RefreshToken: refreshToken})
+	util.RespondWithJSON(w, http.StatusOK, resp)
 }
 
-func (s *Service) refresh(w http.ResponseWriter, r *http.Request) {
+func (s *Service) Refresh(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		RefreshToken string `json:"refresh_token"`
 	}
@@ -59,7 +42,7 @@ func (s *Service) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := s.Refresh(p.RefreshToken)
+	resp, err := s.refresh(p.RefreshToken)
 	if err != nil {
 		util.RespondWithError(w, http.StatusBadRequest, "error refreshing token")
 		return
