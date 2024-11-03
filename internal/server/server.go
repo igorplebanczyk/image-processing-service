@@ -7,13 +7,13 @@ import (
 )
 
 type Config struct {
-	Addr string
+	Port int
 }
 
 func (cfg *Config) StartServer() error {
 	mux := http.NewServeMux()
 	srv := http.Server{
-		Addr:    fmt.Sprintf(":%s", cfg.Addr),
+		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: mux,
 	}
 

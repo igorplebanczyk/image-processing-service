@@ -4,6 +4,8 @@ import (
 	"github.com/joho/godotenv"
 	"image-processing-service/internal/server"
 	"log/slog"
+	"os"
+	"strconv"
 )
 
 func main() {
@@ -12,8 +14,13 @@ func main() {
 		slog.Error("Error loading .env file")
 	}
 
+	port, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		slog.Error("Error parsing port", "error", err)
+	}
+
 	cfg := server.Config{
-		Addr: "8080",
+		Port: port,
 	}
 	err = cfg.StartServer()
 	if err != nil {
