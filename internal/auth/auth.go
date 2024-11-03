@@ -25,38 +25,6 @@ func NewService(repo UserRepository, secret string, accessExpiry time.Duration, 
 	}
 }
 
-func (s *Service) GenerateAccessToken(user User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   user.ID.String(),
-		Issuer:    issuer,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.accessExpiry)),
-	})
-
-	signedToken, err := token.SignedString([]byte(s.jwtSecret))
-	if err != nil {
-		return "", fmt.Errorf("error signing access token: %w", err)
-	}
-
-	return signedToken, nil
-}
-
-func (s *Service) GenerateRefreshToken(user User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
-		Subject:   user.ID.String(),
-		Issuer:    issuer,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.refreshExpiry)),
-	})
-
-	signedToken, err := token.SignedString([]byte(s.jwtSecret))
-	if err != nil {
-		return "", fmt.Errorf("error signing refresh token: %w", err)
-	}
-
-	return signedToken, nil
-}
-
 type Response struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -72,12 +40,12 @@ func (s *Service) Authenticate(username string, password string) (Response, erro
 		return Response{}, fmt.Errorf("invalid password")
 	}
 
-	accessToken, err := s.GenerateAccessToken(*user)
+	accessToken, err := s.generateAccessToken(*user)
 	if err != nil {
 		return Response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	refreshToken, err := s.GenerateRefreshToken(*user)
+	refreshToken, err := s.generateRefreshToken(*user)
 	if err != nil {
 		return Response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
@@ -111,12 +79,12 @@ func (s *Service) Refresh(refreshToken string) (Response, error) {
 		return Response{}, fmt.Errorf("error fetching user: %w", err)
 	}
 
-	accessToken, err := s.GenerateAccessToken(*user)
+	accessToken, err := s.generateAccessToken(*user)
 	if err != nil {
 		return Response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	refreshToken, err = s.GenerateRefreshToken(*user)
+	refreshToken, err = s.generateRefreshToken(*user)
 	if err != nil {
 		return Response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
