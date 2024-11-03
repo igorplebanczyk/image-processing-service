@@ -15,7 +15,7 @@ func main() {
 		slog.Error("Error loading .env file")
 	}
 
-	_, err = database.Connect(os.Getenv("DB_CONN"))
+	db, err := database.Connect(os.Getenv("DB_CONN"))
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
 	}
@@ -27,6 +27,7 @@ func main() {
 
 	cfg := server.Config{
 		Port: port,
+		DB:   db,
 	}
 	err = cfg.StartServer()
 	if err != nil {

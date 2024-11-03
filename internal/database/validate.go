@@ -1,13 +1,9 @@
 package database
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"regexp"
 )
-
-const passwordRegex = `(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,32}`
 
 func validate(r *UserRepository, username, email, password string) error {
 	if username == "" {
@@ -22,28 +18,27 @@ func validate(r *UserRepository, username, email, password string) error {
 		return fmt.Errorf("password cannot be empty")
 	}
 
-	user, err := r.GetUserByValue("username", username)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("failed to check username: %w", err)
-	}
+	user, _ := r.GetUserByValue("username", username)
 	if user != nil {
 		return fmt.Errorf("user with username %s already exists", username)
 	}
 
-	user, err = r.GetUserByValue("email", email)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("failed to check email: %w", err)
-	}
+	user, _ = r.GetUserByValue("email", email)
 	if user != nil {
 		return fmt.Errorf("user with email %s already exists", email)
 	}
 
-	match, err := regexp.MatchString(passwordRegex, password)
-	if err != nil {
-		return fmt.Errorf("error validating password: %w", err)
+	if len(password) < 8 || len(password) > 32 {
+		return fmt.Errorf("password must be between 8 and 32 characters")
 	}
-	if !match {
-		return fmt.Errorf("password must contain at least one lowercase letter, one uppercase letter, one digit, one special character, and be between 8 and 32 characters long")
+
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString
+	hasDigit := regexp.MustCompile(`\d`).MatchString
+	hasSpecial := regexp.MustCompile(`[@$!%*?&]`).MatchString
+
+	if !(hasLower(password) && hasUpper(password) && hasDigit(password) && hasSpecial(password)) {
+		return fmt.Errorf("password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character")
 	}
 
 	return nil
