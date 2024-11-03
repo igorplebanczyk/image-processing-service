@@ -10,15 +10,16 @@ import (
 const issuer string = "image-processing-service"
 
 type Service struct {
-	repo          UserRepository
-	jwtSecret     string
-	accessExpiry  time.Duration
-	refreshExpiry time.Duration
+	userRepo         UserRepository
+	refreshTokenRepo RefreshTokenRepository
+	jwtSecret        string
+	accessExpiry     time.Duration
+	refreshExpiry    time.Duration
 }
 
 func NewService(repo UserRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
 	return &Service{
-		repo:          repo,
+		userRepo:      repo,
 		jwtSecret:     secret,
 		accessExpiry:  accessExpiry,
 		refreshExpiry: refreshExpiry,
@@ -31,7 +32,7 @@ type response struct {
 }
 
 func (s *Service) authenticate(username string, password string) (response, error) {
-	user, err := s.repo.GetUserByValue("username", username)
+	user, err := s.userRepo.GetUserByValue("username", username)
 	if err != nil {
 		return response{}, fmt.Errorf("error getting user by username: %w", err)
 	}
@@ -45,12 +46,16 @@ func (s *Service) authenticate(username string, password string) (response, erro
 		return response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	refreshToken, err := s.generateRefreshToken(*user)
+	rawRefreshToken, err := s.generateRefreshToken(*user)
+	if err != nil {
+		return response{}, fmt.Errorf("error generating refresh token: %w", err)
+	}
+	_, err = s.refreshTokenRepo.CreateRefreshToken(user.ID, rawRefreshToken, time.Now().Add(s.refreshExpiry))
 	if err != nil {
 		return response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
 
-	return response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return response{AccessToken: accessToken, RefreshToken: rawRefreshToken}, nil
 }
 
 func (s *Service) refresh(refreshToken string) (response, error) {
@@ -74,9 +79,18 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("invalid user id in refresh token: %w", err)
 	}
 
-	user, err := s.repo.GetUserByValue("id", id.String())
+	user, err := s.userRepo.GetUserByValue("id", id.String())
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching user: %w", err)
+	}
+
+	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByValue("user_id", id.String())
+	if err != nil {
+		return response{}, fmt.Errorf("error fetching refresh token: %w", err)
+	}
+
+	if storedRefreshToken.Token != refreshToken {
+		return response{}, fmt.Errorf("invalid refresh token")
 	}
 
 	accessToken, err := s.generateAccessToken(*user)
@@ -84,10 +98,5 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("error generating access token: %w", err)
 	}
 
-	refreshToken, err = s.generateRefreshToken(*user)
-	if err != nil {
-		return response{}, fmt.Errorf("error generating refresh token: %w", err)
-	}
-
-	return response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+	return response{AccessToken: accessToken}, nil
 }
