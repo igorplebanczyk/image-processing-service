@@ -32,9 +32,9 @@ func (cfg *Config) StartServer() error {
 	}
 
 	mux.HandleFunc("/health", health)
-	mux.HandleFunc("/register", userCfg.RegisterUser)
-	mux.HandleFunc("/login", authService.Login)
-	mux.HandleFunc("/refresh", authService.Refresh)
+	mux.HandleFunc("POST /register", userCfg.RegisterUser)
+	mux.HandleFunc("POST /login", authService.Login)
+	mux.HandleFunc("POST /refresh", authService.Refresh)
 
 	err := srv.ListenAndServe()
 	if err != nil {
