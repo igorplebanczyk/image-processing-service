@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"time"
 )
 
@@ -77,6 +78,45 @@ func (s *Service) Authenticate(username string, password string) (Response, erro
 	}
 
 	refreshToken, err := s.GenerateRefreshToken(*user)
+	if err != nil {
+		return Response{}, fmt.Errorf("error generating refresh token: %w", err)
+	}
+
+	return Response{AccessToken: accessToken, RefreshToken: refreshToken}, nil
+}
+
+func (s *Service) Refresh(refreshToken string) (Response, error) {
+	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.jwtSecret), nil
+	})
+	if err != nil {
+		return Response{}, fmt.Errorf("invalid refresh token: %w", err)
+	}
+
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	if !ok || !token.Valid || claims.Issuer != issuer {
+		return Response{}, fmt.Errorf("invalid or expired refresh token")
+	}
+
+	id, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return Response{}, fmt.Errorf("invalid user id in refresh token: %w", err)
+	}
+
+	user, err := s.repo.GetUserByID(id)
+	if err != nil {
+		return Response{}, fmt.Errorf("error fetching user: %w", err)
+	}
+
+	accessToken, err := s.GenerateAccessToken(*user)
+	if err != nil {
+		return Response{}, fmt.Errorf("error generating access token: %w", err)
+	}
+
+	refreshToken, err = s.GenerateRefreshToken(*user)
 	if err != nil {
 		return Response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
