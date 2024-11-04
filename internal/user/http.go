@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"image-processing-service/internal/auth"
 	"image-processing-service/internal/server/util"
+	"image-processing-service/internal/user/refresh_token"
 	"net/http"
 )
 
 type Config struct {
-	UserRepo         *UserRepository
-	RefreshTokenRepo *RefreshTokenRepository
+	UserRepo         *Repository
+	RefreshTokenRepo *refresh_token.Repository
 }
 
 func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {

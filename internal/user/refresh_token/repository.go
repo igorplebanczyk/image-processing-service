@@ -1,4 +1,4 @@
-package user
+package refresh_token
 
 import (
 	"database/sql"
@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-type RefreshTokenRepository struct {
+type Repository struct {
 	db *sql.DB
 }
 
-func NewRefreshTokenRepository(db *sql.DB) *RefreshTokenRepository {
-	return &RefreshTokenRepository{db: db}
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token string, expiresAt time.Time) (*auth.RefreshToken, error) {
+func (r *Repository) CreateRefreshToken(userID uuid.UUID, token string, expiresAt time.Time) (*auth.RefreshToken, error) {
 	id := uuid.New()
 	createdAt := time.Now()
 
@@ -38,7 +38,7 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token stri
 	return refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*auth.RefreshToken, error) {
+func (r *Repository) GetRefreshTokenByValue(field, value string) (*auth.RefreshToken, error) {
 	var refreshToken auth.RefreshToken
 
 	query := fmt.Sprintf(`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE %s = $1`, field)
@@ -53,7 +53,7 @@ func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*a
 	return &refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
+func (r *Repository) RevokeRefreshToken(userID uuid.UUID) error {
 	_, err := r.db.Exec(`DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
 	if err != nil {
 		return fmt.Errorf("error revoking refresh token: %w", err)

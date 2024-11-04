@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image-processing-service/internal/auth"
 	"image-processing-service/internal/user"
+	"image-processing-service/internal/user/refresh_token"
 	"log/slog"
 	"net/http"
 	"time"
@@ -20,8 +21,8 @@ type Config struct {
 
 func (cfg *Config) StartServer() error {
 	userCfg := user.Config{
-		UserRepo:         user.NewUserRepository(cfg.DB),
-		RefreshTokenRepo: user.NewRefreshTokenRepository(cfg.DB),
+		UserRepo:         user.NewRepository(cfg.DB),
+		RefreshTokenRepo: refresh_token.NewRepository(cfg.DB),
 	}
 
 	authService := auth.NewService(userCfg.UserRepo, userCfg.RefreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
