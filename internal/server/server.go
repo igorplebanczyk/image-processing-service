@@ -1,43 +1,42 @@
 package server
 
 import (
-	"database/sql"
 	"fmt"
 	"image-processing-service/internal/auth"
 	"image-processing-service/internal/database"
 	"image-processing-service/internal/users"
 	"log/slog"
 	"net/http"
-	"time"
 )
 
-type Config struct {
-	Port               int
-	DB                 *sql.DB
-	JWTSecret          string
-	AccessTokenExpiry  time.Duration
-	RefreshTokenExpiry time.Duration
+type Service struct {
+	port        int
+	dbService   *database.Service
+	authService *auth.Service
+	userCfg     *users.Config
 }
 
-func (cfg *Config) StartServer() error {
-	userCfg := users.Config{
-		UserRepo:         database.NewUserRepository(cfg.DB),
-		RefreshTokenRepo: database.NewRefreshTokenRepository(cfg.DB),
+func NewService(port int, dbService *database.Service, authService *auth.Service, userCfg *users.Config) *Service {
+	return &Service{
+		port:        port,
+		dbService:   dbService,
+		authService: authService,
+		userCfg:     userCfg,
 	}
+}
 
-	authService := auth.NewService(userCfg.UserRepo, userCfg.RefreshTokenRepo, cfg.JWTSecret, cfg.AccessTokenExpiry, cfg.RefreshTokenExpiry)
-
+func (s *Service) StartServer() error {
 	mux := http.NewServeMux()
 	srv := http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Port),
+		Addr:    fmt.Sprintf(":%d", s.port),
 		Handler: mux,
 	}
 
 	mux.HandleFunc("/health", health)
-	mux.HandleFunc("POST /register", userCfg.RegisterUser)
-	mux.HandleFunc("POST /login", authService.Login)
-	mux.HandleFunc("POST /refresh", authService.Refresh)
-	mux.HandleFunc("DELETE /logout", authService.Middleware(userCfg.Logout))
+	mux.HandleFunc("POST /register", s.userCfg.RegisterUser)
+	mux.HandleFunc("POST /login", s.authService.Login)
+	mux.HandleFunc("POST /refresh", s.authService.Refresh)
+	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.userCfg.Logout))
 
 	err := srv.ListenAndServe()
 	if err != nil {
