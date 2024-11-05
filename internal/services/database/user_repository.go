@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"image-processing-service/internal/auth"
+	auth2 "image-processing-service/internal/services/auth"
 	"time"
 )
 
@@ -17,17 +17,17 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) CreateUser(username, email, password string) (*auth.User, error) {
+func (r *UserRepository) CreateUser(username, email, password string) (*auth2.User, error) {
 	id := uuid.New()
 
-	hashedPassword, err := auth.HashPassword(password)
+	hashedPassword, err := auth2.HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}
 
 	createdAt := time.Now()
 
-	user := &auth.User{
+	user := &auth2.User{
 		ID:        id,
 		Username:  username,
 		Email:     email,
@@ -45,8 +45,8 @@ func (r *UserRepository) CreateUser(username, email, password string) (*auth.Use
 	return user, nil
 }
 
-func (r *UserRepository) GetUserByValue(field, value string) (*auth.User, error) {
-	var user auth.User
+func (r *UserRepository) GetUserByValue(field, value string) (*auth2.User, error) {
+	var user auth2.User
 
 	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)
 	row := r.db.QueryRow(query, value)

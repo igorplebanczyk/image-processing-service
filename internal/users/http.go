@@ -3,15 +3,15 @@ package users
 import (
 	"encoding/json"
 	"fmt"
-	"image-processing-service/internal/auth"
-	"image-processing-service/internal/database"
-	"image-processing-service/internal/server/util"
+	"image-processing-service/internal/services/auth"
+	database2 "image-processing-service/internal/services/database"
+	"image-processing-service/internal/services/server/util"
 	"net/http"
 )
 
 type Config struct {
-	UserRepo         *database.UserRepository
-	RefreshTokenRepo *database.RefreshTokenRepository
+	UserRepo         *database2.UserRepository
+	RefreshTokenRepo *database2.RefreshTokenRepository
 }
 
 func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {

@@ -2,7 +2,7 @@ package users
 
 import (
 	"fmt"
-	"image-processing-service/internal/database"
+	"image-processing-service/internal/services/database"
 	"regexp"
 )
 

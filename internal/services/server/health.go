@@ -1,7 +1,7 @@
 package server
 
 import (
-	"image-processing-service/internal/server/util"
+	"image-processing-service/internal/services/server/util"
 	"net/http"
 )
 

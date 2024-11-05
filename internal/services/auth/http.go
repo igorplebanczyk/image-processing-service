@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"image-processing-service/internal/server/util"
+	"image-processing-service/internal/services/server/util"
 	"net/http"
 	"strings"
 	"time"

@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"image-processing-service/internal/auth"
-	"image-processing-service/internal/database"
+	"image-processing-service/internal/services/auth"
+	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/users"
 	"log/slog"
 	"net/http"

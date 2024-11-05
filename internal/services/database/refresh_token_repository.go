@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"image-processing-service/internal/auth"
+	"image-processing-service/internal/services/auth"
 	"time"
 )
 
