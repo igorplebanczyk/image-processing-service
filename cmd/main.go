@@ -16,7 +16,8 @@ func main() {
 		slog.Error("Error loading .env file")
 	}
 
-	db, err := database.ConnectToDB(os.Getenv("DB_CONN"))
+	dbService := database.NewService()
+	err = dbService.Connect(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
 	}
@@ -30,7 +31,7 @@ func main() {
 
 	cfg := server.Config{
 		Port:               port,
-		DB:                 db,
+		DB:                 dbService.DB,
 		JWTSecret:          jwtSecret,
 		AccessTokenExpiry:  15 * time.Minute,
 		RefreshTokenExpiry: 24 * time.Hour,
