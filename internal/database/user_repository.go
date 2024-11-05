@@ -1,4 +1,4 @@
-package user
+package database
 
 import (
 	"database/sql"
@@ -9,21 +9,16 @@ import (
 	"time"
 )
 
-type Repository struct {
+type UserRepository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
-func (r *Repository) CreateUser(username, email, password string) (*auth.User, error) {
+func (r *UserRepository) CreateUser(username, email, password string) (*auth.User, error) {
 	id := uuid.New()
-
-	err := validate(r, username, email, password)
-	if err != nil {
-		return nil, fmt.Errorf("error validating user: %w", err)
-	}
 
 	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
@@ -44,13 +39,13 @@ func (r *Repository) CreateUser(username, email, password string) (*auth.User, e
 	_, err = r.db.Exec(`INSERT INTO users (id, username, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`,
 		user.ID, user.Username, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+		return nil, fmt.Errorf("error creating users: %w", err)
 	}
 
 	return user, nil
 }
 
-func (r *Repository) GetUserByValue(field, value string) (*auth.User, error) {
+func (r *UserRepository) GetUserByValue(field, value string) (*auth.User, error) {
 	var user auth.User
 
 	query := fmt.Sprintf(`SELECT id, username, email, password, created_at, updated_at FROM users WHERE %s = $1`, field)
@@ -58,9 +53,9 @@ func (r *Repository) GetUserByValue(field, value string) (*auth.User, error) {
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user with %s %s not found", field, value)
+			return nil, fmt.Errorf("users with %s %s not found", field, value)
 		}
-		return nil, fmt.Errorf("error getting user by %s: %w", field, err)
+		return nil, fmt.Errorf("error getting users by %s: %w", field, err)
 	}
 
 	return &user, nil

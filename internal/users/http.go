@@ -1,17 +1,17 @@
-package user
+package users
 
 import (
 	"encoding/json"
 	"fmt"
 	"image-processing-service/internal/auth"
+	"image-processing-service/internal/database"
 	"image-processing-service/internal/server/util"
-	"image-processing-service/internal/user/refresh_token"
 	"net/http"
 )
 
 type Config struct {
-	UserRepo         *Repository
-	RefreshTokenRepo *refresh_token.Repository
+	UserRepo         *database.UserRepository
+	RefreshTokenRepo *database.RefreshTokenRepository
 }
 
 func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -37,9 +37,15 @@ func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = validate(cfg.UserRepo, p.Username, p.Email, p.Password)
+	if err != nil {
+		util.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("error validating users: %v", err))
+		return
+	}
+
 	user, err := cfg.UserRepo.CreateUser(p.Username, p.Email, p.Password)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating user: %v", err))
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating users: %v", err))
 		return
 	}
 

@@ -43,7 +43,7 @@ func (s *Service) Middleware(handler func(*User, http.ResponseWriter, *http.Requ
 
 		user, err := s.userRepo.GetUserByValue("id", claims.Subject)
 		if err != nil {
-			util.RespondWithError(w, http.StatusInternalServerError, "error fetching user")
+			util.RespondWithError(w, http.StatusInternalServerError, "error fetching users")
 			return
 		}
 
@@ -67,7 +67,7 @@ func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := s.authenticate(p.Username, p.Password)
 	if err != nil {
-		util.RespondWithError(w, http.StatusBadRequest, "error authenticating user")
+		util.RespondWithError(w, http.StatusBadRequest, "error authenticating users")
 		return
 	}
 

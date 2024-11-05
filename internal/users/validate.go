@@ -1,11 +1,12 @@
-package user
+package users
 
 import (
 	"fmt"
+	"image-processing-service/internal/database"
 	"regexp"
 )
 
-func validate(r *Repository, username, email, password string) error {
+func validate(r *database.UserRepository, username, email, password string) error {
 	if username == "" {
 		return fmt.Errorf("username cannot be empty")
 	}
@@ -20,12 +21,12 @@ func validate(r *Repository, username, email, password string) error {
 
 	user, _ := r.GetUserByValue("username", username)
 	if user != nil {
-		return fmt.Errorf("user with username %s already exists", username)
+		return fmt.Errorf("users with username %s already exists", username)
 	}
 
 	user, _ = r.GetUserByValue("email", email)
 	if user != nil {
-		return fmt.Errorf("user with email %s already exists", email)
+		return fmt.Errorf("users with email %s already exists", email)
 	}
 
 	if len(password) < 8 || len(password) > 32 {
