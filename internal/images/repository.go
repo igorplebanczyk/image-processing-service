@@ -18,7 +18,7 @@ func NewRepository(db *sql.DB) *Repository {
 }
 
 func (r *Repository) CreateImage(ctx context.Context, userID uuid.UUID, name string, image []byte) error {
-	url, err := r.storage.UploadObject(ctx, userID.String(), name, image)
+	url, err := r.storage.UploadObject(ctx, userID.String(), image)
 	if err != nil {
 		return fmt.Errorf("error uploading image: %w", err)
 	}
@@ -33,4 +33,43 @@ func (r *Repository) CreateImage(ctx context.Context, userID uuid.UUID, name str
 	}
 
 	return nil
+}
+
+func (r *Repository) GetImagesByUserID(userID uuid.UUID) ([]Image, error) {
+	var images []Image
+
+	rows, err := r.db.Query(`SELECT id, name, url, created_at, updated_at FROM images WHERE user_id = $1`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting images by user id: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var image Image
+		err := rows.Scan(&image.ID, &image.Name, &image.URL, &image.CreatedAt, &image.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning image: %w", err)
+		}
+
+		images = append(images, image)
+	}
+
+	return images, nil
+}
+
+func (r *Repository) GetImageByID(ctx context.Context, id uuid.UUID) ([]byte, error) {
+	var image Image
+
+	row := r.db.QueryRow(`SELECT id, name, url, created_at, updated_at FROM images WHERE id = $1`, id)
+	err := row.Scan(&image.ID, &image.Name, &image.URL, &image.CreatedAt, &image.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error getting image by id: %w", err)
+	}
+
+	imageBytes, err := r.storage.DownloadObject(ctx, image.URL)
+	if err != nil {
+		return nil, fmt.Errorf("error downloading image: %w", err)
+	}
+
+	return imageBytes, nil
 }
