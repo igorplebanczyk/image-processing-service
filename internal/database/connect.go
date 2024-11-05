@@ -1,9 +1,8 @@
-package user
+package database
 
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 )
 
 func ConnectToDB(url string) (*sql.DB, error) {
