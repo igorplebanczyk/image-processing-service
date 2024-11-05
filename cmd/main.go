@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/joho/godotenv"
 	"image-processing-service/internal/services/auth"
-	database2 "image-processing-service/internal/services/database"
+	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/services/server"
 	"image-processing-service/internal/users"
 	"log/slog"
@@ -19,19 +19,22 @@ func main() {
 		return
 	}
 
-	dbService := database2.NewService()
+	dbService := database.NewService()
 	err = dbService.Connect(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
 		return
 	}
 
+	userRepo := database.NewUserRepository(dbService.DB)
+	refreshTokenRepo := database.NewRefreshTokenRepository(dbService.DB)
+
 	userCfg := &users.Config{
-		UserRepo:         database2.NewUserRepository(dbService.DB),
-		RefreshTokenRepo: database2.NewRefreshTokenRepository(dbService.DB),
+		UserRepo:         userRepo,
+		RefreshTokenRepo: refreshTokenRepo,
 	}
 
-	authService := auth.NewService(userCfg.UserRepo, userCfg.RefreshTokenRepo, os.Getenv("JWT_SECRET"), 15*time.Minute, 24*time.Hour)
+	authService := auth.NewService(userRepo, refreshTokenRepo, os.Getenv("JWT_SECRET"), 15*time.Minute, 15*time.Hour)
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
