@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"image-processing-service/internal/services/server/util"
+	"image-processing-service/internal/users"
 	"net/http"
 	"strings"
 	"time"
 )
 
-func (s *Service) Middleware(handler func(*User, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -94,4 +95,14 @@ func (s *Service) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.RespondWithJSON(w, http.StatusOK, resp)
+}
+
+func (s *Service) Logout(user *users.User, w http.ResponseWriter, _ *http.Request) {
+	err := s.refreshTokenRepo.RevokeRefreshToken(user.ID)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error revoking refresh token: %v", err))
+		return
+	}
+
+	util.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
 }

@@ -2,11 +2,10 @@ package users
 
 import (
 	"fmt"
-	"image-processing-service/internal/services/database"
 	"regexp"
 )
 
-func validate(r *database.UserRepository, username, email, password string) error {
+func validate(r UserRepository, username, email, password string) error {
 	if username == "" {
 		return fmt.Errorf("username cannot be empty")
 	}

@@ -3,15 +3,13 @@ package users
 import (
 	"encoding/json"
 	"fmt"
-	"image-processing-service/internal/services/auth"
-	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/services/server/util"
 	"net/http"
 )
 
 type Config struct {
-	UserRepo         *database.UserRepository
-	RefreshTokenRepo *database.RefreshTokenRepository
+	UserRepo         UserRepository
+	RefreshTokenRepo RefreshTokenRepository
 }
 
 func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -57,14 +55,4 @@ func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt.String(),
 		UpdatedAt: user.UpdatedAt.String(),
 	})
-}
-
-func (cfg *Config) Logout(user *auth.User, w http.ResponseWriter, _ *http.Request) {
-	err := cfg.RefreshTokenRepo.RevokeRefreshToken(user.ID)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error revoking refresh token: %v", err))
-		return
-	}
-
-	util.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
 }

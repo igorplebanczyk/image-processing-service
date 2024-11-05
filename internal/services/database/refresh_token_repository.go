@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"image-processing-service/internal/services/auth"
+	"image-processing-service/internal/users"
 	"time"
 )
 
@@ -17,11 +17,11 @@ func NewRefreshTokenRepository(db *sql.DB) *RefreshTokenRepository {
 	return &RefreshTokenRepository{db: db}
 }
 
-func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token string, expiresAt time.Time) (*auth.RefreshToken, error) {
+func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token string, expiresAt time.Time) (*users.RefreshToken, error) {
 	id := uuid.New()
 	createdAt := time.Now()
 
-	refreshToken := &auth.RefreshToken{
+	refreshToken := &users.RefreshToken{
 		ID:        id,
 		UserID:    userID,
 		Token:     token,
@@ -38,8 +38,8 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token stri
 	return refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*auth.RefreshToken, error) {
-	var refreshToken auth.RefreshToken
+func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*users.RefreshToken, error) {
+	var refreshToken users.RefreshToken
 
 	query := fmt.Sprintf(`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE %s = $1`, field)
 	row := r.db.QueryRow(query, value)

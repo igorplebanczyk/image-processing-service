@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"image-processing-service/internal/users"
 	"time"
 )
 
 const issuer string = "image-processing-service"
 
 type Service struct {
-	userRepo         UserRepository
-	refreshTokenRepo RefreshTokenRepository
+	userRepo         users.UserRepository
+	refreshTokenRepo users.RefreshTokenRepository
 	jwtSecret        string
 	accessExpiry     time.Duration
 	refreshExpiry    time.Duration
 }
 
-func NewService(userRepo UserRepository, refreshTokenRepo RefreshTokenRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
+func NewService(userRepo users.UserRepository, refreshTokenRepo users.RefreshTokenRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
 	return &Service{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,

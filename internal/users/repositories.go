@@ -1,4 +1,4 @@
-package auth
+package users
 
 import (
 	"github.com/google/uuid"
@@ -21,4 +21,5 @@ type RefreshTokenRepository interface {
 		token string,
 		expiresAt time.Time,
 	) (*RefreshToken, error)
+	RevokeRefreshToken(userID uuid.UUID) error
 }

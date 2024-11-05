@@ -3,10 +3,11 @@ package auth
 import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"image-processing-service/internal/users"
 	"time"
 )
 
-func (s *Service) generateAccessToken(user User) (string, error) {
+func (s *Service) generateAccessToken(user users.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   user.ID.String(),
 		Issuer:    issuer,
@@ -22,7 +23,7 @@ func (s *Service) generateAccessToken(user User) (string, error) {
 	return signedToken, nil
 }
 
-func (s *Service) generateRefreshToken(user User) (string, error) {
+func (s *Service) generateRefreshToken(user users.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Subject:   user.ID.String(),
 		Issuer:    issuer,
