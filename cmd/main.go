@@ -16,12 +16,14 @@ func main() {
 	err := godotenv.Load("../.env")
 	if err != nil {
 		slog.Error("Error loading .env file")
+		return
 	}
 
 	dbService := database.NewService()
 	err = dbService.Connect(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
+		return
 	}
 
 	userCfg := &users.Config{
@@ -34,11 +36,13 @@ func main() {
 	port, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		slog.Error("Error parsing port", "error", err)
+		return
 	}
 
 	serverService := server.NewService(port, dbService, authService, userCfg)
 	err = serverService.StartServer()
 	if err != nil {
 		slog.Error("Error starting server", "error", err)
+		return
 	}
 }
