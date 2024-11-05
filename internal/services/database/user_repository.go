@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	auth2 "image-processing-service/internal/services/auth"
+	"image-processing-service/internal/services/auth"
 	"image-processing-service/internal/users"
 	"time"
 )
@@ -21,7 +21,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 func (r *UserRepository) CreateUser(username, email, password string) (*users.User, error) {
 	id := uuid.New()
 
-	hashedPassword, err := auth2.HashPassword(password)
+	hashedPassword, err := auth.HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("error hashing password: %w", err)
 	}

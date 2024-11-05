@@ -36,7 +36,7 @@ func (s *Service) StartServer() error {
 	mux.HandleFunc("POST /register", s.userCfg.RegisterUser)
 	mux.HandleFunc("POST /login", s.authService.Login)
 	mux.HandleFunc("POST /refresh", s.authService.Refresh)
-	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.userCfg.Logout))
+	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.authService.Logout))
 
 	err := srv.ListenAndServe()
 	if err != nil {
