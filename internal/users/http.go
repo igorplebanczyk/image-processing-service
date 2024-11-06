@@ -16,7 +16,7 @@ func NewConfig(userRepo UserRepository, refreshTokenRepo RefreshTokenRepository)
 	return &Config{userRepo: userRepo, refreshTokenRepo: refreshTokenRepo}
 }
 
-func (cfg *Config) RegisterUser(w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
