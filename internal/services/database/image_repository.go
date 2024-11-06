@@ -36,16 +36,13 @@ func (r *ImageRepository) CreateImage(userID uuid.UUID, name string) (*images.Im
 	return image, nil
 }
 
-func (r *ImageRepository) GetImageByID(id uuid.UUID) (*images.Image, error) {
-	var image images.Image
-
-	row := r.db.QueryRow(`SELECT id, user_id, name, created_at, updated_at FROM images WHERE id = $1`, id)
-	err := row.Scan(&image.ID, &image.UserID, &image.Name, &image.CreatedAt, &image.UpdatedAt)
+func (r *ImageRepository) DeleteImage(userID uuid.UUID, name string) error {
+	_, err := r.db.Exec(`DELETE FROM images WHERE user_id = $1 AND name = $2`, userID, name)
 	if err != nil {
-		return nil, fmt.Errorf("error getting image by id: %w", err)
+		return fmt.Errorf("error deleting image: %w", err)
 	}
 
-	return &image, nil
+	return nil
 }
 
 func (r *ImageRepository) GetImagesByUserID(userID uuid.UUID) ([]*images.Image, error) {
