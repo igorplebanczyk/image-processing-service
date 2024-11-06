@@ -10,13 +10,17 @@ import (
 )
 
 type Config struct {
-	Repo    Repository
-	Storage StorageService
+	repo    Repository
+	storage StorageService
+}
+
+func NewConfig(repo Repository, storage StorageService) *Config {
+	return &Config{repo: repo, storage: storage}
 }
 
 func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
-	ok, err := validate(cfg.Repo, user.ID, name)
+	ok, err := validate(cfg.repo, user.ID, name)
 	if !ok {
 		util.RespondWithError(w, http.StatusBadRequest, "image with this name already exists")
 		return
@@ -45,14 +49,14 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_, err = cfg.Repo.CreateImage(user.ID, name)
+	_, err = cfg.repo.CreateImage(user.ID, name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to create image")
 		return
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, name)
-	err = cfg.Storage.UploadObject(r.Context(), blobName, imageBytes)
+	err = cfg.storage.UploadObject(r.Context(), blobName, imageBytes)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to upload image")
 		return
@@ -79,7 +83,7 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
-	imageBytes, err := cfg.Storage.DownloadObject(r.Context(), blobName)
+	imageBytes, err := cfg.storage.DownloadObject(r.Context(), blobName)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image")
 		return
@@ -101,14 +105,14 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = cfg.Repo.DeleteImage(user.ID, p.Name)
+	err = cfg.repo.DeleteImage(user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image")
 		return
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
-	err = cfg.Storage.DeleteObject(r.Context(), blobName)
+	err = cfg.storage.DeleteObject(r.Context(), blobName)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image")
 		return

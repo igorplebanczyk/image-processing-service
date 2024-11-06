@@ -29,11 +29,7 @@ func main() {
 	userRepo := database.NewUserRepository(dbService.DB)
 	refreshTokenRepo := database.NewRefreshTokenRepository(dbService.DB)
 
-	userCfg := &users.Config{
-		UserRepo:         userRepo,
-		RefreshTokenRepo: refreshTokenRepo,
-	}
-
+	userCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	authService := auth.NewService(userRepo, refreshTokenRepo, os.Getenv("JWT_SECRET"), 15*time.Minute, 15*time.Hour)
 
 	port, err := strconv.Atoi(os.Getenv("PORT"))
