@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"image-processing-service/internal/services/auth/util"
 	"image-processing-service/internal/users"
 	"time"
 )
@@ -39,7 +40,7 @@ func (s *Service) authenticate(username string, password string) (response, erro
 		return response{}, fmt.Errorf("error getting users by username: %w", err)
 	}
 
-	if !VerifyPassword(password, user.Password) {
+	if !util.VerifyPassword(password, user.Password) {
 		return response{}, fmt.Errorf("invalid password")
 	}
 
