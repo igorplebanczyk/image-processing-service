@@ -27,8 +27,8 @@ func (r *ImageRepository) CreateImage(userID uuid.UUID, name string) (*images.Im
 		UpdatedAt: time.Now(),
 	}
 
-	_, err := r.db.Exec(`INSERT INTO images (id, user_id, name, url, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`,
-		image.ID, image.UserID, image.Name, "", image.CreatedAt, image.UpdatedAt)
+	_, err := r.db.Exec(`INSERT INTO images (id, user_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`,
+		image.ID, image.UserID, image.Name, image.CreatedAt, image.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error creating image: %w", err)
 	}
@@ -39,8 +39,8 @@ func (r *ImageRepository) CreateImage(userID uuid.UUID, name string) (*images.Im
 func (r *ImageRepository) GetImageByID(id uuid.UUID) (*images.Image, error) {
 	var image images.Image
 
-	row := r.db.QueryRow(`SELECT id, user_id, name, url, created_at, updated_at FROM images WHERE id = $1`, id)
-	err := row.Scan(&image.ID, &image.UserID, &image.Name, &image.URL, &image.CreatedAt, &image.UpdatedAt)
+	row := r.db.QueryRow(`SELECT id, user_id, name, created_at, updated_at FROM images WHERE id = $1`, id)
+	err := row.Scan(&image.ID, &image.UserID, &image.Name, &image.CreatedAt, &image.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error getting image by id: %w", err)
 	}
