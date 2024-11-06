@@ -14,16 +14,17 @@ type Service struct {
 	port        int
 	dbService   *database.Service
 	authService *auth.Service
-	userCfg     *users.Config
+	usersCfg    *users.Config
 	imagesCfg   *images.Config
 }
 
-func NewService(port int, dbService *database.Service, authService *auth.Service, userCfg *users.Config) *Service {
+func NewService(port int, dbService *database.Service, authService *auth.Service, usersCfg *users.Config, imagesCfg *images.Config) *Service {
 	return &Service{
 		port:        port,
 		dbService:   dbService,
 		authService: authService,
-		userCfg:     userCfg,
+		usersCfg:    usersCfg,
+		imagesCfg:   imagesCfg,
 	}
 }
 
@@ -36,7 +37,7 @@ func (s *Service) StartServer() error {
 
 	mux.HandleFunc("/health", health)
 
-	mux.HandleFunc("POST /users", s.userCfg.Register)
+	mux.HandleFunc("POST /users", s.usersCfg.Register)
 
 	mux.HandleFunc("POST /login", s.authService.Login)
 	mux.HandleFunc("POST /refresh", s.authService.Refresh)
