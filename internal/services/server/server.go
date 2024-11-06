@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"image-processing-service/internal/images"
 	"image-processing-service/internal/services/auth"
 	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/users"
@@ -14,6 +15,7 @@ type Service struct {
 	dbService   *database.Service
 	authService *auth.Service
 	userCfg     *users.Config
+	imagesCfg   *images.Config
 }
 
 func NewService(port int, dbService *database.Service, authService *auth.Service, userCfg *users.Config) *Service {
@@ -37,6 +39,9 @@ func (s *Service) StartServer() error {
 	mux.HandleFunc("POST /login", s.authService.Login)
 	mux.HandleFunc("POST /refresh", s.authService.Refresh)
 	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.authService.Logout))
+	mux.HandleFunc("POST /images", s.authService.Middleware(s.imagesCfg.Upload))
+	mux.HandleFunc("GET /images", s.authService.Middleware(s.imagesCfg.Download))
+	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))
 
 	err := srv.ListenAndServe()
 	if err != nil {
