@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"image-processing-service/internal/images"
 	"image-processing-service/internal/services/auth"
@@ -17,14 +18,33 @@ import (
 const envPath string = "../.env"
 
 func main() {
-	err := godotenv.Load(envPath)
+	dbService, serverService, err := configure()
 	if err != nil {
-		slog.Error("Error loading .env file")
+		slog.Error("Error configuring services", "error", err)
 		return
 	}
 
-	port := os.Getenv("PORT")
 	dbURL := os.Getenv("DATABASE_URL")
+	err = dbService.Connect(dbURL)
+	if err != nil {
+		slog.Error("Error connecting to database", "error", err)
+		return
+	}
+
+	err = serverService.StartServer()
+	if err != nil {
+		slog.Error("Error starting server", "error", err)
+		return
+	}
+}
+
+func configure() (*database.Service, *server.Service, error) {
+	err := godotenv.Load(envPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error loading .env file: %w", err)
+	}
+
+	port := os.Getenv("PORT")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	azureStorageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
@@ -45,8 +65,7 @@ func main() {
 		azureStorageContainerName,
 	)
 	if err != nil {
-		slog.Error("Error creating storage service", "error", err)
-		return
+		return nil, nil, fmt.Errorf("error creating storage service: %w", err)
 	}
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
@@ -54,21 +73,10 @@ func main() {
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		slog.Error("Error parsing port", "error", err)
-		return
+		return nil, nil, fmt.Errorf("error converting port to integer: %w", err)
 	}
 
 	serverService := server.NewService(portInt, dbService, authService, usersCfg, imagesCfg)
 
-	err = dbService.Connect(dbURL)
-	if err != nil {
-		slog.Error("Error connecting to database", "error", err)
-		return
-	}
-
-	err = serverService.StartServer()
-	if err != nil {
-		slog.Error("Error starting server", "error", err)
-		return
-	}
+	return dbService, serverService, nil
 }
