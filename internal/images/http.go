@@ -153,9 +153,9 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 
 func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name           string        `json:"name"`
-		Transformation string        `json:"transformation"`
-		Options        struct{ any } `json:"options"`
+		Name           string         `json:"name"`
+		Transformation string         `json:"transformation"`
+		Options        map[string]any `json:"options"`
 	}
 
 	var p parameters

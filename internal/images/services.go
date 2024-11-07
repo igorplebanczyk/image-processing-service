@@ -18,5 +18,5 @@ type CacheService interface {
 }
 
 type TransformationService interface {
-	Transform(data []byte, transformation string, options struct{ any }) ([]byte, error)
+	Transform(imageBytes []byte, transformation string, options map[string]any) ([]byte, error)
 }
