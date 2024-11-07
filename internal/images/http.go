@@ -70,10 +70,6 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 		Name string `json:"name"`
 	}
 
-	type response struct {
-		Image []byte `json:"image"`
-	}
-
 	var p parameters
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
@@ -85,11 +81,20 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
 	imageBytes, err := cfg.storage.DownloadObject(r.Context(), blobName)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image: "+err.Error())
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image")
 		return
 	}
 
-	util.RespondWithJSON(w, http.StatusOK, response{Image: imageBytes})
+	contentType := http.DetectContentType(imageBytes)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", p.Name))
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(imageBytes)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to send image")
+		return
+	}
 }
 
 func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Request) {
