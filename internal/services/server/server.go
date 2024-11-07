@@ -7,6 +7,7 @@ import (
 	"image-processing-service/internal/users"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type Service struct {
@@ -42,8 +43,10 @@ func (s *Service) Start() error {
 func (s *Service) init() {
 	s.mux = http.NewServeMux()
 	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.port),
-		Handler: s.mux,
+		Addr:              fmt.Sprintf(":%d", s.port),
+		Handler:           s.mux,
+		ReadTimeout:       time.Minute,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	s.mux.HandleFunc("/health", health)
