@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const envPath string = "../.env"
+const envPath string = ".env"
 
 func main() {
 	dbService, serverService, err := configure()
@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
+	dbURL := os.Getenv("DB_CONN")
 	err = dbService.Connect(dbURL)
 	if err != nil {
 		slog.Error("Error connecting to database", "error", err)
