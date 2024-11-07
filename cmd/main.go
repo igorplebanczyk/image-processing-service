@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"image-processing-service/internal/images"
 	"image-processing-service/internal/services/auth"
+	"image-processing-service/internal/services/cache"
 	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/services/server"
 	"image-processing-service/internal/services/storage"
@@ -44,6 +45,8 @@ func configure() (*server.Service, error) {
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+	redisURL := os.Getenv("REDIS_URL")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 
 	dbService := database.NewService()
 
@@ -66,9 +69,13 @@ func configure() (*server.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating storage service: %w", err)
 	}
+	cacheService, err := cache.NewService(redisURL, redisPassword)
+	if err != nil {
+		return nil, fmt.Errorf("error creating cache service: %w", err)
+	}
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
-	imagesCfg := images.NewConfig(imageRepo, storageService)
+	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService)
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
