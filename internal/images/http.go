@@ -152,10 +152,14 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 }
 
 func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Request) {
+	type transformations struct {
+		Type    string         `json:"type"`
+		Options map[string]any `json:"options"`
+	}
+
 	type parameters struct {
-		Name           string         `json:"name"`
-		Transformation string         `json:"transformation"`
-		Options        map[string]any `json:"options"`
+		Name            string            `json:"name"`
+		Transformations []transformations `json:"transformations"`
 	}
 
 	var p parameters
@@ -173,6 +177,7 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image from cache: %v", err))
 		return
 	}
+
 	if imageBytes != nil {
 		w.Header().Set("X-Cache", "HIT")
 	} else {
@@ -184,23 +189,26 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	transformedImageBytes, err := cfg.transformation.Transform(imageBytes, p.Transformation, p.Options)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to transform image: %v", err))
-		return
+	// Apply each transformation with its options
+	for _, transformation := range p.Transformations {
+		imageBytes, err = cfg.transformation.Transform(imageBytes, transformation.Type, transformation.Options)
+		if err != nil {
+			util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to apply transformation %s: %v", transformation.Type, err))
+			return
+		}
 	}
 
-	err = cfg.storage.Upload(r.Context(), objectName, transformedImageBytes)
+	err = cfg.storage.Upload(r.Context(), objectName, imageBytes)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to upload transformed image: %v", err))
 		return
 	}
 
-	err = cfg.cache.Set(objectName, transformedImageBytes, 30*time.Minute)
+	err = cfg.cache.Set(objectName, imageBytes, 30*time.Minute)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to cache image: %v", err))
 		return
 	}
 
-	util.RespondWithImage(w, http.StatusOK, transformedImageBytes, p.Name)
+	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
