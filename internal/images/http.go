@@ -24,17 +24,17 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 	name := r.FormValue("name")
 	ok, err := validate(cfg.repo, user.ID, name)
 	if !ok {
-		util.RespondWithError(w, http.StatusBadRequest, "image with this name already exists")
+		util.RespondWithError(w, http.StatusBadRequest, "invalid image name")
 		return
 	}
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to validate image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error validating image: %v", err))
 		return
 	}
 
 	err = r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
-		util.RespondWithError(w, http.StatusBadRequest, "file too large")
+		util.RespondWithError(w, http.StatusBadRequest, "image too large")
 		return
 	}
 
@@ -47,30 +47,30 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 
 	imageBytes, err := io.ReadAll(imageFile)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to read image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error reading image: %v", err))
 		return
 	}
 
 	_, err = cfg.repo.CreateImage(user.ID, name)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to create image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating image: %v", err))
 		return
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, name)
 	err = cfg.storage.UploadObject(r.Context(), blobName, imageBytes)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to upload image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error uploading image: %v", err))
 		return
 	}
 
 	err = cfg.cache.Set(blobName, imageBytes, 30*time.Minute)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to cache image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error caching image: %v", err))
 		return
 	}
 
-	util.RespondWithText(w, http.StatusOK, "image uploaded successfully")
+	util.RespondWithoutContent(w, http.StatusCreated)
 }
 
 func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Request) {
@@ -90,7 +90,7 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 
 	imageBytes, err := cfg.cache.Get(blobName)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to retrieve image from cache")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image from cache: %v", err))
 		return
 	}
 	if imageBytes != nil {
@@ -101,13 +101,13 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 
 	imageBytes, err = cfg.storage.DownloadObject(r.Context(), blobName)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to download image: %v", err))
 		return
 	}
 
 	err = cfg.cache.Set(blobName, imageBytes, 30*time.Minute)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to cache image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to cache image: %v", err))
 		return
 	}
 
@@ -130,22 +130,22 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 
 	err = cfg.repo.DeleteImage(user.ID, p.Name)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from db: %v", err))
 		return
 	}
 
 	err = cfg.cache.Delete(fmt.Sprintf("%s-%s", user.ID, p.Name))
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image from cache")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from cache: %v", err))
 		return
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
 	err = cfg.storage.DeleteObject(r.Context(), blobName)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image")
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from storage: %v", err))
 		return
 	}
 
-	util.RespondWithText(w, http.StatusOK, "image deleted successfully")
+	util.RespondWithoutContent(w, http.StatusNoContent)
 }

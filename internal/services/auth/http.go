@@ -44,7 +44,7 @@ func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *htt
 
 		user, err := s.userRepo.GetUserByValue("id", claims.Subject)
 		if err != nil {
-			util.RespondWithError(w, http.StatusInternalServerError, "error fetching users")
+			util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching user: %v", err))
 			return
 		}
 
@@ -58,8 +58,8 @@ func (s *Service) Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	decoder := json.NewDecoder(r.Body)
 	var p parameters
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
 		util.RespondWithError(w, http.StatusBadRequest, "error decoding request")
@@ -80,8 +80,8 @@ func (s *Service) Refresh(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 
-	decoder := json.NewDecoder(r.Body)
 	var p parameters
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
 		util.RespondWithError(w, http.StatusBadRequest, "error decoding request")
@@ -104,5 +104,5 @@ func (s *Service) Logout(user *users.User, w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	util.RespondWithText(w, http.StatusOK, "logged out successfully")
+	util.RespondWithoutContent(w, http.StatusNoContent)
 }

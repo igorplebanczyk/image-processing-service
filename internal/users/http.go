@@ -46,17 +46,17 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt string `json:"updated_at"`
 	}
 
-	decoder := json.NewDecoder(r.Body)
 	var p parameters
+	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		util.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("error decoding request: %v", err))
+		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
 
 	err = validate(cfg.userRepo, p.Username, p.Email, p.Password)
 	if err != nil {
-		util.RespondWithError(w, http.StatusBadRequest, fmt.Sprintf("error validating users: %v", err))
+		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
 
@@ -81,5 +81,5 @@ func (cfg *Config) Delete(user *User, w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	util.RespondWithText(w, http.StatusOK, "user deleted successfully")
+	util.RespondWithoutContent(w, http.StatusNoContent)
 }
