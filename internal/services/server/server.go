@@ -49,9 +49,9 @@ func (s *Service) setup() {
 	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.authService.Logout))
 
 	mux.HandleFunc("POST /images", s.authService.Middleware(s.imagesCfg.Upload))
-	mux.HandleFunc("PUT /images", s.authService.Middleware(s.imagesCfg.Transform))
 	mux.HandleFunc("GET /images", s.authService.Middleware(s.imagesCfg.Download))
 	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))
+	mux.HandleFunc("PUT /images", s.authService.Middleware(s.imagesCfg.Transform))
 }
 
 func (s *Service) Start() error {
