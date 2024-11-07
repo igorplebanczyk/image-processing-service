@@ -90,7 +90,7 @@ func configure() (*server.Service, error) {
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService)
 
-	serverService := server.NewService(portInt, authService, usersCfg, imagesCfg)
+	serverService := server.New(portInt, authService, usersCfg, imagesCfg)
 
 	return serverService, nil
 }
