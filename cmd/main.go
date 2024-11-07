@@ -24,7 +24,7 @@ func main() {
 		return
 	}
 
-	err = serverService.StartServer()
+	err = serverService.Start()
 	if err != nil {
 		slog.Error("Error starting server", "error", err)
 		return
@@ -75,7 +75,7 @@ func configure() (*server.Service, error) {
 		return nil, fmt.Errorf("error converting port to integer: %w", err)
 	}
 
-	serverService := server.NewService(portInt, dbService, authService, usersCfg, imagesCfg)
+	serverService := server.NewService(portInt, authService, usersCfg, imagesCfg)
 
 	return serverService, nil
 }
