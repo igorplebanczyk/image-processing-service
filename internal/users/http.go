@@ -24,7 +24,6 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		ID        string `json:"id"`
 		Username  string `json:"username"`
 		Email     string `json:"email"`
 		CreatedAt string `json:"created_at"`
@@ -52,7 +51,6 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	util.RespondWithJSON(w, http.StatusCreated, response{
-		ID:        user.ID.String(),
 		Username:  user.Username,
 		Email:     user.Email,
 		CreatedAt: user.CreatedAt.String(),
