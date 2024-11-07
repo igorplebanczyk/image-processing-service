@@ -13,7 +13,7 @@ type Service struct {
 	ctx    context.Context
 }
 
-func NewService(addr string, password string, db int) (*Service, error) {
+func New(addr string, password string, db int) (*Service, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,

@@ -11,7 +11,7 @@ type Service struct {
 	containerName string
 }
 
-func NewService(accountName, accountKey, serviceURL, containerName string) (*Service, error) {
+func New(accountName, accountKey, serviceURL, containerName string) (*Service, error) {
 	key, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
 		return nil, fmt.Errorf("error creating shared key credential: %w", err)

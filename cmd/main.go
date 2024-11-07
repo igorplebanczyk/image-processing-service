@@ -61,7 +61,7 @@ func configure() (*server.Service, error) {
 		return nil, fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
-	dbService := database.NewService()
+	dbService := database.New()
 
 	err = dbService.Connect(postgresURL)
 	if err != nil {
@@ -72,8 +72,8 @@ func configure() (*server.Service, error) {
 	refreshTokenRepo := database.NewRefreshTokenRepository(dbService.DB)
 	imageRepo := database.NewImageRepository(dbService.DB)
 
-	authService := auth.NewService(userRepo, refreshTokenRepo, jwtSecret, 15*time.Minute, 15*time.Hour)
-	storageService, err := storage.NewService(
+	authService := auth.New(userRepo, refreshTokenRepo, jwtSecret, 15*time.Minute, 15*time.Hour)
+	storageService, err := storage.New(
 		azureStorageAccountName,
 		azureStorageAccountKey,
 		azureStorageAccountURL,
@@ -82,7 +82,7 @@ func configure() (*server.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating storage service: %w", err)
 	}
-	cacheService, err := cache.NewService(redisAddr, redisPassword, redisDBInt)
+	cacheService, err := cache.New(redisAddr, redisPassword, redisDBInt)
 	if err != nil {
 		return nil, fmt.Errorf("error creating cache service: %w", err)
 	}

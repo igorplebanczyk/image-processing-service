@@ -19,7 +19,7 @@ type Service struct {
 	refreshExpiry    time.Duration
 }
 
-func NewService(userRepo users.UserRepository, refreshTokenRepo users.RefreshTokenRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
+func New(userRepo users.UserRepository, refreshTokenRepo users.RefreshTokenRepository, secret string, accessExpiry time.Duration, refreshExpiry time.Duration) *Service {
 	return &Service{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,

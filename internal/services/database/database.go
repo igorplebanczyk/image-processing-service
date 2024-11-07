@@ -10,7 +10,7 @@ type Service struct {
 	DB *sql.DB
 }
 
-func NewService() *Service {
+func New() *Service {
 	return &Service{}
 }
 
