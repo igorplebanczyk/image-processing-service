@@ -37,6 +37,7 @@ func (s *Service) StartServer() error {
 
 	mux.HandleFunc("/health", health)
 
+	mux.HandleFunc("GET /users", s.authService.Middleware(s.usersCfg.Info))
 	mux.HandleFunc("POST /users", s.usersCfg.Register)
 	mux.HandleFunc("DELETE /users", s.authService.Middleware(s.usersCfg.Delete))
 

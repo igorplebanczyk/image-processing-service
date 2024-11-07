@@ -69,3 +69,19 @@ func (cfg *Config) Delete(user *User, w http.ResponseWriter, _ *http.Request) {
 
 	util.RespondWithText(w, http.StatusOK, "user deleted successfully")
 }
+
+func (cfg *Config) Info(user *User, w http.ResponseWriter, _ *http.Request) {
+	type response struct {
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	util.RespondWithJSON(w, http.StatusOK, response{
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt.String(),
+		UpdatedAt: user.UpdatedAt.String(),
+	})
+}
