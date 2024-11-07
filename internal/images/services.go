@@ -6,9 +6,9 @@ import (
 )
 
 type StorageService interface {
-	UploadObject(ctx context.Context, blobName string, data []byte) error
-	DownloadObject(ctx context.Context, blobName string) ([]byte, error)
-	DeleteObject(ctx context.Context, blobName string) error
+	Upload(ctx context.Context, objectName string, data []byte) error
+	Download(ctx context.Context, objectName string) ([]byte, error)
+	Delete(ctx context.Context, objectName string) error
 }
 
 type CacheService interface {

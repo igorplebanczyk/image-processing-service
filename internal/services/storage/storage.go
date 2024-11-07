@@ -28,7 +28,7 @@ func New(accountName, accountKey, serviceURL, containerName string) (*Service, e
 	}, nil
 }
 
-func (s *Service) UploadObject(ctx context.Context, blobName string, data []byte) error {
+func (s *Service) Upload(ctx context.Context, blobName string, data []byte) error {
 	_, err := s.client.UploadBuffer(ctx, s.containerName, blobName, data, nil)
 	if err != nil {
 		return fmt.Errorf("error uploading file: %w", err)
@@ -37,7 +37,7 @@ func (s *Service) UploadObject(ctx context.Context, blobName string, data []byte
 	return nil
 }
 
-func (s *Service) DownloadObject(ctx context.Context, blobName string) ([]byte, error) {
+func (s *Service) Download(ctx context.Context, blobName string) ([]byte, error) {
 	var data = make([]byte, 10*1024*1024) // 10 MB
 	_, err := s.client.DownloadBuffer(ctx, s.containerName, blobName, data, nil)
 	if err != nil {
@@ -47,7 +47,7 @@ func (s *Service) DownloadObject(ctx context.Context, blobName string) ([]byte, 
 	return data, nil
 }
 
-func (s *Service) DeleteObject(ctx context.Context, blobName string) error {
+func (s *Service) Delete(ctx context.Context, blobName string) error {
 	_, err := s.client.DeleteBlob(ctx, s.containerName, blobName, nil)
 	if err != nil {
 		return fmt.Errorf("error deleting file: %w", err)
