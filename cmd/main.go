@@ -18,16 +18,9 @@ import (
 const envPath string = ".env"
 
 func main() {
-	dbService, serverService, err := configure()
+	serverService, err := configure()
 	if err != nil {
 		slog.Error("Error configuring services", "error", err)
-		return
-	}
-
-	dbURL := os.Getenv("DB_CONN")
-	err = dbService.Connect(dbURL)
-	if err != nil {
-		slog.Error("Error connecting to database", "error", err)
 		return
 	}
 
@@ -38,13 +31,14 @@ func main() {
 	}
 }
 
-func configure() (*database.Service, *server.Service, error) {
+func configure() (*server.Service, error) {
 	err := godotenv.Load(envPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error loading .env file: %w", err)
+		return nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
 	port := os.Getenv("PORT")
+	dbURL := os.Getenv("DB_CONN")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	azureStorageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
@@ -52,6 +46,11 @@ func configure() (*database.Service, *server.Service, error) {
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
 
 	dbService := database.NewService()
+
+	err = dbService.Connect(dbURL)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to database: %w", err)
+	}
 
 	userRepo := database.NewUserRepository(dbService.DB)
 	refreshTokenRepo := database.NewRefreshTokenRepository(dbService.DB)
@@ -65,7 +64,7 @@ func configure() (*database.Service, *server.Service, error) {
 		azureStorageContainerName,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating storage service: %w", err)
+		return nil, fmt.Errorf("error creating storage service: %w", err)
 	}
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
@@ -73,10 +72,10 @@ func configure() (*database.Service, *server.Service, error) {
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error converting port to integer: %w", err)
+		return nil, fmt.Errorf("error converting port to integer: %w", err)
 	}
 
 	serverService := server.NewService(portInt, dbService, authService, usersCfg, imagesCfg)
 
-	return dbService, serverService, nil
+	return serverService, nil
 }

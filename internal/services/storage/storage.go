@@ -38,7 +38,7 @@ func (s *Service) UploadObject(ctx context.Context, blobName string, data []byte
 }
 
 func (s *Service) DownloadObject(ctx context.Context, blobName string) ([]byte, error) {
-	var data []byte
+	var data = make([]byte, 10*1024*1024) // 10 MB
 	_, err := s.client.DownloadBuffer(ctx, s.containerName, blobName, data, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error downloading file: %w", err)

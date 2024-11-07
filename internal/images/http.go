@@ -85,7 +85,7 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
 	imageBytes, err := cfg.storage.DownloadObject(r.Context(), blobName)
 	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image")
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image: "+err.Error())
 		return
 	}
 
