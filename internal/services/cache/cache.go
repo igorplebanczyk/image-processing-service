@@ -30,7 +30,7 @@ func NewService(addr string, password string) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Set(key string, value any, expiration time.Duration) error {
+func (s *Service) Set(key string, value []byte, expiration time.Duration) error {
 	err := s.client.Set(s.ctx, key, value, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set key: %w", err)
@@ -39,16 +39,16 @@ func (s *Service) Set(key string, value any, expiration time.Duration) error {
 	return nil
 }
 
-func (s *Service) Get(key string) (any, error) {
+func (s *Service) Get(key string) ([]byte, error) {
 	val, err := s.client.Get(s.ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return "", nil
+			return nil, nil
 		}
-		return "", fmt.Errorf("failed to get value of key: %w", err)
+		return nil, fmt.Errorf("failed to get value of key: %w", err)
 	}
 
-	return val, nil
+	return []byte(val), nil
 }
 
 func (s *Service) Delete(key string) error {

@@ -7,15 +7,17 @@ import (
 	"image-processing-service/internal/users"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Config struct {
 	repo    Repository
 	storage StorageService
+	cache   CacheService
 }
 
-func NewConfig(repo Repository, storage StorageService) *Config {
-	return &Config{repo: repo, storage: storage}
+func NewConfig(repo Repository, storage StorageService, cache CacheService) *Config {
+	return &Config{repo: repo, storage: storage, cache: cache}
 }
 
 func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Request) {
@@ -62,6 +64,12 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	err = cfg.cache.Set(blobName, imageBytes, 30*time.Minute)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to cache image")
+		return
+	}
+
 	util.RespondWithText(w, http.StatusOK, "image uploaded successfully")
 }
 
@@ -79,12 +87,31 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	}
 
 	blobName := fmt.Sprintf("%s-%s", user.ID, p.Name)
-	imageBytes, err := cfg.storage.DownloadObject(r.Context(), blobName)
+
+	imageBytes, err := cfg.cache.Get(blobName)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to retrieve image from cache")
+		return
+	}
+	if imageBytes != nil {
+		w.Header().Set("X-Cache", "HIT")
+		util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
+		return
+	}
+
+	imageBytes, err = cfg.storage.DownloadObject(r.Context(), blobName)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to download image")
 		return
 	}
 
+	err = cfg.cache.Set(blobName, imageBytes, 30*time.Minute)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to cache image")
+		return
+	}
+
+	w.Header().Set("X-Cache", "MISS")
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
@@ -104,6 +131,12 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 	err = cfg.repo.DeleteImage(user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image")
+		return
+	}
+
+	err = cfg.cache.Delete(fmt.Sprintf("%s-%s", user.ID, p.Name))
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, "failed to delete image from cache")
 		return
 	}
 
