@@ -17,8 +17,8 @@ type Config struct {
 	transformation TransformationService
 }
 
-func NewConfig(repo Repository, storage StorageService, cache CacheService) *Config {
-	return &Config{repo: repo, storage: storage, cache: cache}
+func NewConfig(repo Repository, storage StorageService, cache CacheService, transformation TransformationService) *Config {
+	return &Config{repo: repo, storage: storage, cache: cache, transformation: transformation}
 }
 
 func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Request) {

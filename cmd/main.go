@@ -9,6 +9,7 @@ import (
 	"image-processing-service/internal/services/database"
 	"image-processing-service/internal/services/server"
 	"image-processing-service/internal/services/storage"
+	"image-processing-service/internal/services/transformation"
 	"image-processing-service/internal/users"
 	"log/slog"
 	"os"
@@ -86,9 +87,10 @@ func configure() (*server.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating cache service: %w", err)
 	}
+	transformationService := transformation.New()
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
-	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService)
+	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService, transformationService)
 
 	serverService := server.New(portInt, authService, usersCfg, imagesCfg)
 
