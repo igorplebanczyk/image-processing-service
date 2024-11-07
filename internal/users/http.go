@@ -51,7 +51,6 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("fine")
 	util.RespondWithJSON(w, http.StatusCreated, response{
 		ID:        user.ID.String(),
 		Username:  user.Username,

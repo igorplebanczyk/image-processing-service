@@ -104,5 +104,5 @@ func (s *Service) Logout(user *users.User, w http.ResponseWriter, _ *http.Reques
 		return
 	}
 
-	util.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "logged out"})
+	util.RespondWithText(w, http.StatusOK, "logged out successfully")
 }

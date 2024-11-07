@@ -62,7 +62,7 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	util.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "image uploaded successfully"})
+	util.RespondWithText(w, http.StatusOK, "image uploaded successfully")
 }
 
 func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Request) {
@@ -85,16 +85,7 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	contentType := http.DetectContentType(imageBytes)
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", p.Name))
-
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(imageBytes)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, "failed to send image")
-		return
-	}
+	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
 func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Request) {
@@ -123,5 +114,5 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	util.RespondWithJSON(w, http.StatusOK, map[string]string{"message": "image deleted successfully"})
+	util.RespondWithText(w, http.StatusOK, "image deleted successfully")
 }
