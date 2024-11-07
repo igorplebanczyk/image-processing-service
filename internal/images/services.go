@@ -16,3 +16,7 @@ type CacheService interface {
 	Get(key string) ([]byte, error)
 	Delete(key string) error
 }
+
+type TransformationService interface {
+	Transform(data []byte, transformation string, options struct{ any }) ([]byte, error)
+}
