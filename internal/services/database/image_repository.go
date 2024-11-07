@@ -45,6 +45,15 @@ func (r *ImageRepository) DeleteImage(userID uuid.UUID, name string) error {
 	return nil
 }
 
+func (r *ImageRepository) UpdateImage(userID uuid.UUID) error {
+	_, err := r.db.Exec(`UPDATE images SET updated_at = $1 WHERE user_id = $2`, time.Now(), userID)
+	if err != nil {
+		return fmt.Errorf("error updating image: %w", err)
+	}
+
+	return nil
+}
+
 func (r *ImageRepository) GetImagesByUserID(userID uuid.UUID) ([]*images.Image, error) {
 	var imagesList []*images.Image
 

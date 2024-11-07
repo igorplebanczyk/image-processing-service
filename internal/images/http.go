@@ -189,7 +189,6 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	// Apply each transformation with its options
 	for _, transformation := range p.Transformations {
 		imageBytes, err = cfg.transformation.Transform(imageBytes, transformation.Type, transformation.Options)
 		if err != nil {
@@ -201,6 +200,12 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 	err = cfg.storage.Upload(r.Context(), objectName, imageBytes)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to upload transformed image: %v", err))
+		return
+	}
+
+	err = cfg.repo.UpdateImage(user.ID)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to update image: %v", err))
 		return
 	}
 
