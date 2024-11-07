@@ -12,6 +12,7 @@ type UserRepository interface {
 		email string,
 		password string,
 	) (*User, error)
+	DeleteUser(id uuid.UUID) error
 }
 
 type RefreshTokenRepository interface {

@@ -59,3 +59,13 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: user.UpdatedAt.String(),
 	})
 }
+
+func (cfg *Config) Delete(user *User, w http.ResponseWriter, _ *http.Request) {
+	err := cfg.userRepo.DeleteUser(user.ID)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error deleting users: %v", err))
+		return
+	}
+
+	util.RespondWithText(w, http.StatusOK, "user deleted successfully")
+}

@@ -61,3 +61,12 @@ func (r *UserRepository) GetUserByValue(field, value string) (*users.User, error
 
 	return &user, nil
 }
+
+func (r *UserRepository) DeleteUser(id uuid.UUID) error {
+	_, err := r.db.Exec(`DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("error deleting users: %w", err)
+	}
+
+	return nil
+}
