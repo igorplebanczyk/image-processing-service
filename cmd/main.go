@@ -39,12 +39,14 @@ func configure() (*server.Service, error) {
 	}
 
 	port := os.Getenv("PORT")
-	dbURL := os.Getenv("DB_CONN")
 	jwtSecret := os.Getenv("JWT_SECRET")
+	postgresURL := os.Getenv("POSTGRES_URL")
+
 	azureStorageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 	redisDB := os.Getenv("REDIS_DB")
@@ -61,7 +63,7 @@ func configure() (*server.Service, error) {
 
 	dbService := database.NewService()
 
-	err = dbService.Connect(dbURL)
+	err = dbService.Connect(postgresURL)
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
