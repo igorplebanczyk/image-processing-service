@@ -13,11 +13,11 @@ type Service struct {
 	ctx    context.Context
 }
 
-func NewService(addr string, password string) (*Service, error) {
+func NewService(addr string, password string, db int) (*Service, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,
-		DB:       0,
+		DB:       db,
 	})
 
 	if err := client.Ping(context.Background()).Err(); err != nil {

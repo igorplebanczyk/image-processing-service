@@ -45,8 +45,19 @@ func configure() (*server.Service, error) {
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-	redisURL := os.Getenv("REDIS_URL")
+	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := os.Getenv("REDIS_DB")
+
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return nil, fmt.Errorf("error converting port to integer: %w", err)
+	}
+
+	redisDBInt, err := strconv.Atoi(redisDB)
+	if err != nil {
+		return nil, fmt.Errorf("error converting redis db to integer: %w", err)
+	}
 
 	dbService := database.NewService()
 
@@ -69,18 +80,13 @@ func configure() (*server.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating storage service: %w", err)
 	}
-	cacheService, err := cache.NewService(redisURL, redisPassword)
+	cacheService, err := cache.NewService(redisAddr, redisPassword, redisDBInt)
 	if err != nil {
 		return nil, fmt.Errorf("error creating cache service: %w", err)
 	}
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService)
-
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		return nil, fmt.Errorf("error converting port to integer: %w", err)
-	}
 
 	serverService := server.NewService(portInt, authService, usersCfg, imagesCfg)
 
