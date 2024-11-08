@@ -70,3 +70,12 @@ func (r *UserRepository) DeleteUser(id uuid.UUID) error {
 
 	return nil
 }
+
+func (r *UserRepository) UpdateUser(id uuid.UUID, username, email string) error {
+	_, err := r.db.Exec(`UPDATE users SET username = $1, email = $2, updated_at = $3 WHERE id = $4`, username, email, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("error updating users: %w", err)
+	}
+
+	return nil
+}

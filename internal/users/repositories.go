@@ -9,6 +9,7 @@ type UserRepository interface {
 	GetUserByValue(field, value string) (*User, error)
 	CreateUser(username, email, password string) (*User, error)
 	DeleteUser(id uuid.UUID) error
+	UpdateUser(id uuid.UUID, username, email string) error
 }
 
 type RefreshTokenRepository interface {

@@ -2,20 +2,13 @@ package users
 
 import (
 	"fmt"
+	"net/mail"
 	"regexp"
 )
 
-func validate(r UserRepository, username, email, password string) error {
+func validateUsername(r UserRepository, username string) error {
 	if username == "" {
 		return fmt.Errorf("username cannot be empty")
-	}
-
-	if email == "" {
-		return fmt.Errorf("email cannot be empty")
-	}
-
-	if password == "" {
-		return fmt.Errorf("password cannot be empty")
 	}
 
 	user, _ := r.GetUserByValue("username", username)
@@ -23,9 +16,30 @@ func validate(r UserRepository, username, email, password string) error {
 		return fmt.Errorf("users with username %s already exists", username)
 	}
 
-	user, _ = r.GetUserByValue("email", email)
+	return nil
+}
+
+func validateEmail(r UserRepository, email string) error {
+	if email == "" {
+		return fmt.Errorf("email cannot be empty")
+	}
+
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return fmt.Errorf("invalid email address")
+	}
+
+	user, _ := r.GetUserByValue("email", email)
 	if user != nil {
 		return fmt.Errorf("users with email %s already exists", email)
+	}
+
+	return nil
+}
+
+func validatePassword(r UserRepository, password string) error {
+	if password == "" {
+		return fmt.Errorf("password cannot be empty")
 	}
 
 	if len(password) < 8 || len(password) > 32 {
