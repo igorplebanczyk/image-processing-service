@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"image-processing-service/internal/images"
 	"image-processing-service/internal/services/auth"
@@ -63,4 +64,12 @@ func (s *Service) Start() error {
 
 	slog.Info("Server starting", "port", s.server.Addr)
 	return nil
+}
+
+func (s *Service) Stop() {
+	err := s.server.Shutdown(context.Background())
+	if err != nil {
+		slog.Error("Error shutting down server", "error", err)
+	}
+	slog.Info("Server stopped")
 }

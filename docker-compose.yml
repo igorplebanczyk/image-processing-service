@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+        - "80:80"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - cache
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: igorp
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: app_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  cache:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - cache_data:/data
+
+volumes:
+  db_data:
+  cache_data:

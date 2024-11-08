@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/joho/godotenv"
 	"image-processing-service/internal/images"
 	"image-processing-service/internal/services/auth"
 	"image-processing-service/internal/services/cache"
@@ -14,7 +14,9 @@ import (
 	"image-processing-service/internal/users"
 	"log/slog"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -27,21 +29,26 @@ func main() {
 		return
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	go workerService.Start()
 
-	err = serverService.Start()
-	if err != nil {
-		slog.Error("Error starting server", "error", err)
-		return
-	}
+	go func() {
+		err = serverService.Start()
+		if err != nil {
+			slog.Error("Error starting server", "error", err)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("Shutting down...")
+	serverService.Stop()
+	workerService.Stop()
 }
 
 func configure() (*server.Service, *worker.Service, error) {
-	err := godotenv.Load(envPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-
 	port := os.Getenv("PORT")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	postgresURL := os.Getenv("POSTGRES_URL")
