@@ -35,7 +35,7 @@ type response struct {
 }
 
 func (s *Service) authenticate(username string, password string) (response, error) {
-	user, err := s.userRepo.GetUserByValue("username", username)
+	user, err := s.userRepo.GetUserByUsername(username)
 	if err != nil {
 		return response{}, fmt.Errorf("error getting users by username: %w", err)
 	}
@@ -82,12 +82,12 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("invalid users id in refresh token: %w", err)
 	}
 
-	user, err := s.userRepo.GetUserByValue("id", id.String())
+	user, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching users: %w", err)
 	}
 
-	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByValue("user_id", id.String())
+	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByUserID(user.ID)
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching refresh token: %w", err)
 	}

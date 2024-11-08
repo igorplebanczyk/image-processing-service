@@ -6,18 +6,20 @@ import (
 )
 
 type UserRepository interface {
-	GetUserByValue(field, value string) (*User, error)
 	CreateUser(username, email, password string) (*User, error)
-	DeleteUser(id uuid.UUID) error
+	GetUserByID(id uuid.UUID) (*User, error)
+	GetUserByUsername(username string) (*User, error)
+	GetUserByEmail(email string) (*User, error)
 	UpdateUser(id uuid.UUID, username, email string) error
+	DeleteUser(id uuid.UUID) error
 }
 
 type RefreshTokenRepository interface {
-	GetRefreshTokenByValue(field, value string) (*RefreshToken, error)
 	CreateRefreshToken(
 		userID uuid.UUID,
 		token string,
 		expiresAt time.Time,
 	) (*RefreshToken, error)
+	GetRefreshTokenByUserID(userID uuid.UUID) (*RefreshToken, error)
 	RevokeRefreshToken(userID uuid.UUID) error
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"image-processing-service/internal/services/server/util"
 	"image-processing-service/internal/users"
 	"net/http"
@@ -42,7 +43,13 @@ func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *htt
 			return
 		}
 
-		user, err := s.userRepo.GetUserByValue("id", claims.Subject)
+		id, err := uuid.Parse(claims.Subject)
+		if err != nil {
+			util.RespondWithError(w, http.StatusUnauthorized, "invalid token subject")
+			return
+		}
+
+		user, err := s.userRepo.GetUserByID(id)
 		if err != nil {
 			util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching user: %v", err))
 			return

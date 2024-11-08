@@ -66,7 +66,7 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = validatePassword(cfg.userRepo, p.Password)
+	err = validatePassword(p.Password)
 	if err != nil {
 		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
