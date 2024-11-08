@@ -10,8 +10,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-      - cache
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
 
   db:
     image: postgres:15
@@ -21,6 +23,15 @@ services:
       POSTGRES_DB: app_db
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./sql/schema/001_users.sql:/docker-entrypoint-initdb.d/001_users.sql
+      - ./sql/schema/002_refresh_tokens.sql:/docker-entrypoint-initdb.d/002_refresh_tokens.sql
+      - ./sql/schema/003_images.sql:/docker-entrypoint-initdb.d/003_images.sql
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "igorp", "-d", "app_db" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   cache:
     image: redis:latest
@@ -28,6 +39,12 @@ services:
       - "6379:6379"
     volumes:
       - cache_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
 volumes:
   db_data:

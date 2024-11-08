@@ -1,7 +1,7 @@
-.PHONY: build-run run stop
+.PHONY: build run stop
 
-build-run:
-	docker-compose up --build
+build:
+	docker-compose build
 
 run:
 	docker-compose up
