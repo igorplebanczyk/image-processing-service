@@ -16,6 +16,7 @@ const (
 	crop        = "crop"
 	rotate      = "rotate"
 	applyFilter = "apply_filter"
+	adjust      = "adjust"
 )
 
 func (s *Service) Transform(imageBytes []byte, transformation string, options map[string]any) ([]byte, error) {
@@ -35,6 +36,8 @@ func (s *Service) Transform(imageBytes []byte, transformation string, options ma
 		transformed, err = s.rotate(img, options)
 	case applyFilter:
 		transformed, err = s.applyFilter(img, options)
+	case adjust:
+		transformed, err = s.adjust(img, options)
 	default:
 		return nil, fmt.Errorf("unknown transformation: %s", transformation)
 	}

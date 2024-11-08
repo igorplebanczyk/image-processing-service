@@ -53,16 +53,14 @@ func (s *Service) applyFilter(img image.Image, options map[string]any) (image.Im
 
 	switch filterType {
 	case "grayscale":
-		return grayscale(img), nil
+		return imaging.Grayscale(img), nil
 	case "sepia":
 		return sepia(img), nil
+	case "invert":
+		return imaging.Invert(img), nil
 	default:
 		return nil, fmt.Errorf("unknown filter type: %s", filterType)
 	}
-}
-
-func grayscale(img image.Image) image.Image {
-	return imaging.Grayscale(img)
 }
 
 func sepia(img image.Image) image.Image {
@@ -77,4 +75,31 @@ func sepia(img image.Image) image.Image {
 			A: c.A,
 		}
 	})
+}
+
+func (s *Service) adjust(img image.Image, options map[string]any) (image.Image, error) {
+	adjustType, ok := options["adjust"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'adjust' in options")
+	}
+
+	factor, ok := options["factor"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid 'factor' in options")
+	}
+
+	switch adjustType {
+	case "brightness":
+		return imaging.AdjustBrightness(img, factor), nil
+	case "contrast":
+		return imaging.AdjustContrast(img, factor), nil
+	case "saturation":
+		return imaging.AdjustSaturation(img, factor), nil
+	case "blur":
+		return imaging.Blur(img, factor), nil
+	case "sharpen":
+		return imaging.Sharpen(img, factor), nil
+	default:
+		return nil, fmt.Errorf("unknown adjust type: %s", adjustType)
+	}
 }
