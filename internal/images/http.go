@@ -116,41 +116,6 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
-func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Name string `json:"name"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
-	if err != nil {
-		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
-		return
-	}
-
-	err = cfg.repo.DeleteImage(user.ID, p.Name)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from db: %v", err))
-		return
-	}
-
-	err = cfg.cache.Delete(fmt.Sprintf("%s-%s", user.ID, p.Name))
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from cache: %v", err))
-		return
-	}
-
-	objectName := fmt.Sprintf("%s-%s", user.ID, p.Name)
-	err = cfg.storage.Delete(r.Context(), objectName)
-	if err != nil {
-		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from storage: %v", err))
-		return
-	}
-
-	util.RespondWithoutContent(w, http.StatusNoContent)
-}
-
 func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Request) {
 	type transformations struct {
 		Type    string         `json:"type"`
@@ -216,4 +181,39 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 	}
 
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
+}
+
+func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Name string `json:"name"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	err = cfg.repo.DeleteImage(user.ID, p.Name)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from db: %v", err))
+		return
+	}
+
+	err = cfg.cache.Delete(fmt.Sprintf("%s-%s", user.ID, p.Name))
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from cache: %v", err))
+		return
+	}
+
+	objectName := fmt.Sprintf("%s-%s", user.ID, p.Name)
+	err = cfg.storage.Delete(r.Context(), objectName)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from storage: %v", err))
+		return
+	}
+
+	util.RespondWithoutContent(w, http.StatusNoContent)
 }

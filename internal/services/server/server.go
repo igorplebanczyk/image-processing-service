@@ -42,8 +42,8 @@ func (s *Service) setup() {
 
 	mux.HandleFunc("POST /users", s.usersCfg.Register)
 	mux.HandleFunc("GET /users", s.authService.Middleware(s.usersCfg.Info))
-	mux.HandleFunc("DELETE /users", s.authService.Middleware(s.usersCfg.Delete))
 	mux.HandleFunc("PUT /users", s.authService.Middleware(s.usersCfg.Update))
+	mux.HandleFunc("DELETE /users", s.authService.Middleware(s.usersCfg.Delete))
 
 	mux.HandleFunc("POST /login", s.authService.Login)
 	mux.HandleFunc("POST /refresh", s.authService.Refresh)
@@ -51,8 +51,8 @@ func (s *Service) setup() {
 
 	mux.HandleFunc("POST /images", s.authService.Middleware(s.imagesCfg.Upload))
 	mux.HandleFunc("GET /images", s.authService.Middleware(s.imagesCfg.Download))
-	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))
 	mux.HandleFunc("PUT /images", s.authService.Middleware(s.imagesCfg.Transform))
+	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))
 }
 
 func (s *Service) Start() error {
