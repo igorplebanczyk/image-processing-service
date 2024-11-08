@@ -52,18 +52,6 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 	}
 }
 
-func RespondWithText(w http.ResponseWriter, code int, text string) {
-	applySecurityHeaders(w)
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-
-	_, err := w.Write([]byte(text))
-	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, "error writing response")
-		return
-	}
-}
-
 func RespondWithImage(w http.ResponseWriter, code int, imageBytes []byte, imageName string) {
 	contentType := http.DetectContentType(imageBytes)
 
@@ -80,7 +68,7 @@ func RespondWithImage(w http.ResponseWriter, code int, imageBytes []byte, imageN
 }
 
 func applySecurityHeaders(w http.ResponseWriter) {
-    w.Header().Set("X-Content-Type-Options", "nosniff")
-    w.Header().Set("X-Frame-Options", "deny")
-    w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "deny")
+	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';")
 }
