@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -17,15 +15,11 @@ services:
 
   db:
     image: postgres:15
-    environment:
-      POSTGRES_USER: igorp
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: app_db
+    env_file:
+      - .env
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./sql/schema/001_users.sql:/docker-entrypoint-initdb.d/001_users.sql
-      - ./sql/schema/002_refresh_tokens.sql:/docker-entrypoint-initdb.d/002_refresh_tokens.sql
-      - ./sql/schema/003_images.sql:/docker-entrypoint-initdb.d/003_images.sql
+      - ./sql/schema:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD", "pg_isready", "-U", "igorp", "-d", "app_db" ]
       interval: 10s
