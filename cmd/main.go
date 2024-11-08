@@ -10,6 +10,7 @@ import (
 	"image-processing-service/internal/services/server"
 	"image-processing-service/internal/services/storage"
 	"image-processing-service/internal/services/transformation"
+	"image-processing-service/internal/services/worker"
 	"image-processing-service/internal/users"
 	"log/slog"
 	"os"
@@ -20,11 +21,13 @@ import (
 const envPath string = ".env"
 
 func main() {
-	serverService, err := configure()
+	serverService, workerService, err := configure()
 	if err != nil {
 		slog.Error("Error configuring services", "error", err)
 		return
 	}
+
+	go workerService.Start()
 
 	err = serverService.Start()
 	if err != nil {
@@ -33,10 +36,10 @@ func main() {
 	}
 }
 
-func configure() (*server.Service, error) {
+func configure() (*server.Service, *worker.Service, error) {
 	err := godotenv.Load(envPath)
 	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
+		return nil, nil, fmt.Errorf("error loading .env file: %w", err)
 	}
 
 	port := os.Getenv("PORT")
@@ -54,19 +57,19 @@ func configure() (*server.Service, error) {
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, fmt.Errorf("error converting port to integer: %w", err)
+		return nil, nil, fmt.Errorf("error converting port to integer: %w", err)
 	}
 
 	redisDBInt, err := strconv.Atoi(redisDB)
 	if err != nil {
-		return nil, fmt.Errorf("error converting redis db to integer: %w", err)
+		return nil, nil, fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
 	dbService := database.New()
 
 	err = dbService.Connect(postgresURL)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to database: %w", err)
+		return nil, nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	userRepo := database.NewUserRepository(dbService.DB)
@@ -81,18 +84,19 @@ func configure() (*server.Service, error) {
 		azureStorageContainerName,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("error creating storage service: %w", err)
+		return nil, nil, fmt.Errorf("error creating storage service: %w", err)
 	}
 	cacheService, err := cache.New(redisAddr, redisPassword, redisDBInt)
 	if err != nil {
-		return nil, fmt.Errorf("error creating cache service: %w", err)
+		return nil, nil, fmt.Errorf("error creating cache service: %w", err)
 	}
 	transformationService := transformation.New()
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService, transformationService)
 
+	workerService := worker.New(refreshTokenRepo, time.Hour)
 	serverService := server.New(portInt, authService, usersCfg, imagesCfg)
 
-	return serverService, nil
+	return serverService, workerService, nil
 }

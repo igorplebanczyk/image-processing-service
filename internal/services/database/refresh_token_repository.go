@@ -64,3 +64,12 @@ func (r *RefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
 
 	return nil
 }
+
+func (r *RefreshTokenRepository) DeleteExpiredRefreshTokens() error {
+	_, err := r.db.Exec(`DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now())
+	if err != nil {
+		return fmt.Errorf("error deleting expired refresh tokens: %w", err)
+	}
+
+	return nil
+}
