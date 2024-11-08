@@ -18,6 +18,7 @@ func RespondWithError(w http.ResponseWriter, code int, msg string) {
 		return
 	}
 
+	applySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -29,6 +30,7 @@ func RespondWithError(w http.ResponseWriter, code int, msg string) {
 }
 
 func RespondWithoutContent(w http.ResponseWriter, code int) {
+	applySecurityHeaders(w)
 	w.WriteHeader(code)
 }
 
@@ -39,6 +41,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 		return
 	}
 
+	applySecurityHeaders(w)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -50,6 +53,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 }
 
 func RespondWithText(w http.ResponseWriter, code int, text string) {
+	applySecurityHeaders(w)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(code)
 
@@ -62,6 +66,8 @@ func RespondWithText(w http.ResponseWriter, code int, text string) {
 
 func RespondWithImage(w http.ResponseWriter, code int, imageBytes []byte, imageName string) {
 	contentType := http.DetectContentType(imageBytes)
+
+	applySecurityHeaders(w)
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", imageName))
 	w.WriteHeader(code)
@@ -71,4 +77,10 @@ func RespondWithImage(w http.ResponseWriter, code int, imageBytes []byte, imageN
 		RespondWithError(w, http.StatusInternalServerError, "failed to send image")
 		return
 	}
+}
+
+func applySecurityHeaders(w http.ResponseWriter) {
+    w.Header().Set("X-Content-Type-Options", "nosniff")
+    w.Header().Set("X-Frame-Options", "deny")
+    w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';")
 }
