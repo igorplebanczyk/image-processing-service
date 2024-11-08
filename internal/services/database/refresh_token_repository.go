@@ -38,16 +38,19 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token stri
 	return refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) GetRefreshTokenByValue(field, value string) (*users.RefreshToken, error) {
+func (r *RefreshTokenRepository) GetRefreshTokenByUserID(userID uuid.UUID) (*users.RefreshToken, error) {
 	var refreshToken users.RefreshToken
 
-	query := fmt.Sprintf(`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE %s = $1`, field)
-	row := r.db.QueryRow(query, value)
-	err := row.Scan(&refreshToken.ID, &refreshToken.UserID, &refreshToken.Token, &refreshToken.ExpiresAt, &refreshToken.CreatedAt)
+	err := r.db.QueryRow(
+		`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE user_id = $1`,
+		userID,
+	).Scan(&refreshToken.ID, &refreshToken.UserID, &refreshToken.Token, &refreshToken.ExpiresAt, &refreshToken.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
+
+		return nil, fmt.Errorf("error getting refresh token by user id: %w", err)
 	}
 
 	return &refreshToken, nil
