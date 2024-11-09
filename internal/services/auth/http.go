@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
@@ -12,7 +13,7 @@ import (
 	"time"
 )
 
-func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (s *Service) Middleware(handler func(context.Context, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
@@ -55,7 +56,9 @@ func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *htt
 			return
 		}
 
-		handler(user, w, r)
+		ctx := context.WithValue(context.Background(), "user", user)
+
+		handler(ctx, w, r)
 	}
 }
 
@@ -104,7 +107,9 @@ func (s *Service) Refresh(w http.ResponseWriter, r *http.Request) {
 	util.RespondWithJSON(w, http.StatusOK, resp)
 }
 
-func (s *Service) Logout(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (s *Service) Logout(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	user := ctx.Value("user").(*users.User)
+
 	err := s.refreshTokenRepo.RevokeRefreshToken(r.Context(), user.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error revoking refresh token: %v", err))

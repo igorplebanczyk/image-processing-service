@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"image-processing-service/internal/images"
-	"image-processing-service/internal/services/auth"
 	"image-processing-service/internal/users"
 	"log/slog"
 	"net/http"
@@ -14,12 +13,12 @@ import (
 type Service struct {
 	port        int
 	server      *http.Server
-	authService *auth.Service
+	authService AuthService
 	usersCfg    *users.Config
 	imagesCfg   *images.Config
 }
 
-func New(port int, authService *auth.Service, usersCfg *users.Config, imagesCfg *images.Config) *Service {
+func New(port int, authService AuthService, usersCfg *users.Config, imagesCfg *images.Config) *Service {
 	service := &Service{
 		port:        port,
 		authService: authService,

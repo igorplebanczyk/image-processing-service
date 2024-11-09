@@ -1,6 +1,7 @@
 package images
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"image-processing-service/internal/services/server/util"
@@ -21,7 +22,9 @@ func NewConfig(repo Repository, storage StorageService, cache CacheService, tran
 	return &Config{repo: repo, storage: storage, cache: cache, transformation: transformation}
 }
 
-func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Upload(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	user := ctx.Value("user").(*users.User)
+
 	name := r.FormValue("name")
 	ok, err := validate(cfg.repo, user.ID, name)
 	if !ok {
@@ -74,7 +77,7 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 	util.RespondWithoutContent(w, http.StatusCreated)
 }
 
-func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Download(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -86,6 +89,8 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
+
+	user := ctx.Value("user").(*users.User)
 
 	objectName := fmt.Sprintf("%s-%s", user.ID, p.Name)
 
@@ -116,7 +121,7 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
-func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Info(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -135,6 +140,8 @@ func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	user := ctx.Value("user").(*users.User)
+
 	img, err := cfg.repo.GetImageByUserIDandName(r.Context(), user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
@@ -148,7 +155,7 @@ func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (cfg *Config) List(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) List(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -158,6 +165,8 @@ func (cfg *Config) List(user *users.User, w http.ResponseWriter, r *http.Request
 	type response struct {
 		Images []responseItem `json:"images"`
 	}
+
+	user := ctx.Value("user").(*users.User)
 
 	images, err := cfg.repo.GetImagesByUserID(r.Context(), user.ID)
 	if err != nil {
@@ -177,7 +186,7 @@ func (cfg *Config) List(user *users.User, w http.ResponseWriter, r *http.Request
 	util.RespondWithJSON(w, http.StatusOK, resp)
 }
 
-func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Transform(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	type transformations struct {
 		Type    string         `json:"type"`
 		Options map[string]any `json:"options"`
@@ -195,6 +204,8 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
+
+	user := ctx.Value("user").(*users.User)
 
 	objectName := fmt.Sprintf("%s-%s", user.ID, p.Name)
 
@@ -250,7 +261,7 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
-func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Request) {
+func (cfg *Config) Delete(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -262,6 +273,8 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
 		return
 	}
+
+	user := ctx.Value("user").(*users.User)
 
 	img, err := cfg.repo.GetImageByUserIDandName(r.Context(), user.ID, p.Name)
 	if err != nil {
