@@ -51,7 +51,8 @@ func (s *Service) setup() {
 	mux.HandleFunc("DELETE /logout", s.authService.Middleware(s.authService.Logout))
 
 	mux.HandleFunc("POST /images", s.authService.Middleware(s.imagesCfg.Upload))
-	mux.HandleFunc("GET /images", s.authService.Middleware(s.imagesCfg.Download))
+	mux.HandleFunc("GET /images/file", s.authService.Middleware(s.imagesCfg.Download))
+	mux.HandleFunc("GET /images/info", s.authService.Middleware(s.imagesCfg.Info))
 	mux.HandleFunc("GET /images/list", s.authService.Middleware(s.imagesCfg.List))
 	mux.HandleFunc("PUT /images", s.authService.Middleware(s.imagesCfg.Transform))
 	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))

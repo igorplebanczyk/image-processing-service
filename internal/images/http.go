@@ -116,6 +116,38 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
+func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Name string `json:"name"`
+	}
+
+	type response struct {
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		util.RespondWithError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
+		return
+	}
+
+	util.RespondWithJSON(w, http.StatusOK, response{
+		Name:      img.Name,
+		CreatedAt: img.CreatedAt,
+		UpdatedAt: img.UpdatedAt,
+	})
+}
+
 func (cfg *Config) List(user *users.User, w http.ResponseWriter, _ *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
