@@ -50,18 +50,24 @@ type Config struct {
 }
 
 func (cfg *Config) configure() error {
-	port := os.Getenv("PORT")
-	jwtSecret := os.Getenv("JWT_SECRET")
-	postgresURL := os.Getenv("POSTGRES_URL")
+	port := os.Getenv("APP_PORT")
+	jwtSecret := os.Getenv("APP_JWT_SECRET")
+
+	postgresUser := os.Getenv("POSTGRES_USER")
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	postgresHost := os.Getenv("POSTGRES_HOST")
+	postgresPort := os.Getenv("POSTGRES_PORT")
+	postgresDB := os.Getenv("POSTGRES_DB")
+
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := os.Getenv("REDIS_DB")
 
 	azureStorageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-
-	redisAddr := os.Getenv("REDIS_ADDR")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-	redisDB := os.Getenv("REDIS_DB")
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
@@ -75,7 +81,7 @@ func (cfg *Config) configure() error {
 
 	dbService := database.New()
 
-	err = dbService.Connect(postgresURL)
+	err = dbService.Connect(postgresUser, postgresPassword, postgresHost, postgresPort, postgresDB)
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
@@ -94,7 +100,7 @@ func (cfg *Config) configure() error {
 	if err != nil {
 		return fmt.Errorf("error creating storage service: %w", err)
 	}
-	cacheService, err := cache.New(redisAddr, redisPassword, redisDBInt)
+	cacheService, err := cache.New(redisHost, redisPort, redisPassword, redisDBInt)
 	if err != nil {
 		return fmt.Errorf("error creating cache service: %w", err)
 	}

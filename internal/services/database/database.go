@@ -14,7 +14,9 @@ func New() *Service {
 	return &Service{}
 }
 
-func (s *Service) Connect(url string) error {
+func (s *Service) Connect(user, password, host, port, dbName string) error {
+	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbName)
+
 	db, err := sql.Open("postgres", url)
 	if err != nil {
 		return fmt.Errorf("error connecting to database: %w", err)

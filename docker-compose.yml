@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-        - "80:80"
+        - "${APP_PORT}:${APP_PORT}"
     env_file:
       - .env
     depends_on:
@@ -17,11 +17,13 @@ services:
     image: postgres:15
     env_file:
       - .env
+    ports:
+        - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./sql/schema:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "igorp", "-d", "app_db" ]
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -29,8 +31,10 @@ services:
 
   cache:
     image: redis:latest
+    env_file:
+      - .env
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - cache_data:/data
     healthcheck:

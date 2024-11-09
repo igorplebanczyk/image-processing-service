@@ -13,7 +13,8 @@ type Service struct {
 	ctx    context.Context
 }
 
-func New(addr string, password string, db int) (*Service, error) {
+func New(host, port, password string, db int) (*Service, error) {
+	addr := fmt.Sprintf("%s:%s", host, port)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,
