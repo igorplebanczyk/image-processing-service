@@ -8,7 +8,7 @@ import (
 	"math"
 )
 
-func (s *Service) resize(img image.Image, options map[string]any) (image.Image, error) {
+func resize(img image.Image, options map[string]any) (image.Image, error) {
 	width, ok := options["width"].(float64)
 	if !ok {
 		return nil, fmt.Errorf("resize option 'width' is required and must be a number")
@@ -22,7 +22,7 @@ func (s *Service) resize(img image.Image, options map[string]any) (image.Image, 
 	return imaging.Resize(img, int(width), int(height), imaging.Lanczos), nil
 }
 
-func (s *Service) crop(img image.Image, options map[string]any) (image.Image, error) {
+func crop(img image.Image, options map[string]any) (image.Image, error) {
 	width, ok := options["width"].(float64)
 	if !ok {
 		return nil, fmt.Errorf("crop option 'width' is required and must be a number")
@@ -36,7 +36,7 @@ func (s *Service) crop(img image.Image, options map[string]any) (image.Image, er
 	return imaging.CropCenter(img, int(width), int(height)), nil
 }
 
-func (s *Service) rotate(img image.Image, options map[string]any) (image.Image, error) {
+func rotate(img image.Image, options map[string]any) (image.Image, error) {
 	angle, ok := options["angle"].(float64)
 	if !ok {
 		return nil, fmt.Errorf("rotate option 'angle' is required and must be a number")
@@ -45,7 +45,7 @@ func (s *Service) rotate(img image.Image, options map[string]any) (image.Image, 
 	return imaging.Rotate(img, angle, color.Transparent), nil
 }
 
-func (s *Service) applyFilter(img image.Image, options map[string]any) (image.Image, error) {
+func applyFilter(img image.Image, options map[string]any) (image.Image, error) {
 	filterType, ok := options["filter"].(string)
 	if !ok {
 		return nil, fmt.Errorf("missing or invalid 'filter' in options")
@@ -77,7 +77,7 @@ func sepia(img image.Image) image.Image {
 	})
 }
 
-func (s *Service) adjust(img image.Image, options map[string]any) (image.Image, error) {
+func adjust(img image.Image, options map[string]any) (image.Image, error) {
 	adjustType, ok := options["adjust"].(string)
 	if !ok {
 		return nil, fmt.Errorf("missing or invalid 'adjust' in options")

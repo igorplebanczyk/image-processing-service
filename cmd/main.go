@@ -21,7 +21,10 @@ import (
 )
 
 func main() {
-	serverService, workerService, err := configure()
+	slog.Info("Starting application...")
+
+	cfg := &Config{}
+	err := cfg.configure()
 	if err != nil {
 		slog.Error("Error configuring services", "error", err)
 		return
@@ -30,16 +33,23 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go workerService.Start()
-	go serverService.Start()
+	go cfg.workerService.Start()
+	go cfg.serverService.Start()
 
 	<-ctx.Done()
 	slog.Info("Shutting down...")
-	serverService.Stop()
-	workerService.Stop()
+	cfg.transformationService.Close()
+	cfg.serverService.Stop()
+	cfg.workerService.Stop()
 }
 
-func configure() (*server.Service, *worker.Service, error) {
+type Config struct {
+	serverService         *server.Service
+	workerService         *worker.Service
+	transformationService *transformation.Service
+}
+
+func (cfg *Config) configure() error {
 	port := os.Getenv("PORT")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	postgresURL := os.Getenv("POSTGRES_URL")
@@ -55,19 +65,19 @@ func configure() (*server.Service, *worker.Service, error) {
 
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error converting port to integer: %w", err)
+		return fmt.Errorf("error converting port to integer: %w", err)
 	}
 
 	redisDBInt, err := strconv.Atoi(redisDB)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error converting redis db to integer: %w", err)
+		return fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
 	dbService := database.New()
 
 	err = dbService.Connect(postgresURL)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error connecting to database: %w", err)
+		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	userRepo := database.NewUserRepository(dbService.DB)
@@ -82,19 +92,20 @@ func configure() (*server.Service, *worker.Service, error) {
 		azureStorageContainerName,
 	)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating storage service: %w", err)
+		return fmt.Errorf("error creating storage service: %w", err)
 	}
 	cacheService, err := cache.New(redisAddr, redisPassword, redisDBInt)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating cache service: %w", err)
+		return fmt.Errorf("error creating cache service: %w", err)
 	}
-	transformationService := transformation.New()
+	transformationService := transformation.New(10, 100)
 
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService, transformationService)
 
-	workerService := worker.New(refreshTokenRepo, time.Hour)
-	serverService := server.New(portInt, authService, usersCfg, imagesCfg)
+	cfg.transformationService = transformationService
+	cfg.workerService = worker.New(refreshTokenRepo, time.Hour)
+	cfg.serverService = server.New(portInt, authService, usersCfg, imagesCfg)
 
-	return serverService, workerService, nil
+	return nil
 }
