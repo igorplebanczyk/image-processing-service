@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -35,7 +36,10 @@ type response struct {
 }
 
 func (s *Service) authenticate(username string, password string) (response, error) {
-	user, err := s.userRepo.GetUserByUsername(username)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return response{}, fmt.Errorf("error getting users by username: %w", err)
 	}
@@ -53,7 +57,7 @@ func (s *Service) authenticate(username string, password string) (response, erro
 	if err != nil {
 		return response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
-	_, err = s.refreshTokenRepo.CreateRefreshToken(user.ID, rawRefreshToken, time.Now().Add(s.refreshExpiry))
+	_, err = s.refreshTokenRepo.CreateRefreshToken(ctx, user.ID, rawRefreshToken, time.Now().Add(s.refreshExpiry))
 	if err != nil {
 		return response{}, fmt.Errorf("error generating refresh token: %w", err)
 	}
@@ -62,6 +66,9 @@ func (s *Service) authenticate(username string, password string) (response, erro
 }
 
 func (s *Service) refresh(refreshToken string) (response, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -82,12 +89,12 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("invalid users id in refresh token: %w", err)
 	}
 
-	user, err := s.userRepo.GetUserByID(id)
+	user, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching users: %w", err)
 	}
 
-	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByUserID(user.ID)
+	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByUserID(ctx, user.ID)
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching refresh token: %w", err)
 	}
