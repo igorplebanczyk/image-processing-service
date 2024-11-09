@@ -86,7 +86,7 @@ func (cfg *Config) configure() error {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	userRepo := database.NewUserRepository(dbService.DB)
+	userRepo := database.NewUserRepository(dbService)
 	refreshTokenRepo := database.NewRefreshTokenRepository(dbService)
 	imageRepo := database.NewImageRepository(dbService)
 
