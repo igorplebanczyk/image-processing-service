@@ -11,11 +11,11 @@ import (
 )
 
 type RefreshTokenRepository struct {
-	db *sql.DB
+	service *Service
 }
 
-func NewRefreshTokenRepository(db *sql.DB) *RefreshTokenRepository {
-	return &RefreshTokenRepository{db: db}
+func NewRefreshTokenRepository(service *Service) *RefreshTokenRepository {
+	return &RefreshTokenRepository{service: service}
 }
 
 func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) (*users.RefreshToken, error) {
@@ -30,8 +30,15 @@ func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 		CreatedAt: createdAt,
 	}
 
-	_, err := r.db.ExecContext(ctx, `INSERT INTO refresh_tokens(id, user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
-		refreshToken.ID, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.CreatedAt)
+	err := r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `INSERT INTO refresh_tokens(id, user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
+			refreshToken.ID, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.CreatedAt)
+		if err != nil {
+			return fmt.Errorf("error creating refresh token: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating refresh token: %w", err)
 	}
@@ -42,7 +49,7 @@ func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 func (r *RefreshTokenRepository) GetRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) (*users.RefreshToken, error) {
 	var refreshToken users.RefreshToken
 
-	err := r.db.QueryRowContext(
+	err := r.service.DB.QueryRowContext(
 		ctx,
 		`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE user_id = $1`,
 		userID,
@@ -59,19 +66,23 @@ func (r *RefreshTokenRepository) GetRefreshTokenByUserID(ctx context.Context, us
 }
 
 func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
-	if err != nil {
-		return fmt.Errorf("error revoking refresh token: %w", err)
-	}
+	return r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
+		if err != nil {
+			return fmt.Errorf("error revoking refresh token: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (r *RefreshTokenRepository) DeleteExpiredRefreshTokens(ctx context.Context) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now())
-	if err != nil {
-		return fmt.Errorf("error deleting expired refresh tokens: %w", err)
-	}
+	return r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now())
+		if err != nil {
+			return fmt.Errorf("error deleting expired refresh tokens: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }
