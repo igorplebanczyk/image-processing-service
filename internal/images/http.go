@@ -116,6 +116,35 @@ func (cfg *Config) Download(user *users.User, w http.ResponseWriter, r *http.Req
 	util.RespondWithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
+func (cfg *Config) List(user *users.User, w http.ResponseWriter, _ *http.Request) {
+	type responseItem struct {
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	type response struct {
+		Images []responseItem `json:"images"`
+	}
+
+	images, err := cfg.repo.GetImagesByUserID(user.ID)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get images: %v", err))
+		return
+	}
+
+	var resp response
+	for _, img := range images {
+		resp.Images = append(resp.Images, responseItem{
+			Name:      img.Name,
+			CreatedAt: img.CreatedAt,
+			UpdatedAt: img.UpdatedAt,
+		})
+	}
+
+	util.RespondWithJSON(w, http.StatusOK, resp)
+}
+
 func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Request) {
 	type transformations struct {
 		Type    string         `json:"type"`
