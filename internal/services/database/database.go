@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
+	"log/slog"
 )
 
 type Service struct {
@@ -31,6 +32,13 @@ func (s *Service) Connect(user, password, host, port, dbName string) error {
 
 	s.DB = db
 	return nil
+}
+
+func (s *Service) Close() {
+	err := s.DB.Close()
+	if err != nil {
+		slog.Error("Error closing database", "error", err)
+	}
 }
 
 func (s *Service) withTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error {

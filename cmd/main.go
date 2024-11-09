@@ -39,14 +39,16 @@ func main() {
 	<-ctx.Done()
 	slog.Info("Shutting down...")
 	cfg.transformationService.Close()
-	cfg.serverService.Stop()
 	cfg.workerService.Stop()
+	cfg.dbService.Close()
+	cfg.serverService.Stop()
 }
 
 type Config struct {
+	transformationService *transformation.Service
+	dbService             *database.Service
 	serverService         *server.Service
 	workerService         *worker.Service
-	transformationService *transformation.Service
 }
 
 func (cfg *Config) configure() error {
@@ -109,6 +111,7 @@ func (cfg *Config) configure() error {
 	usersCfg := users.NewConfig(userRepo, refreshTokenRepo)
 	imagesCfg := images.NewConfig(imageRepo, storageService, cacheService, transformationService)
 
+	cfg.dbService = dbService
 	cfg.transformationService = transformationService
 	cfg.workerService = worker.New(refreshTokenRepo, time.Hour)
 	cfg.serverService = server.New(portInt, authService, usersCfg, imagesCfg)
