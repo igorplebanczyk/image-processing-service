@@ -10,16 +10,15 @@ import (
 )
 
 type ImageRepository struct {
-	db *sql.DB
+	service *Service
 }
 
-func NewImageRepository(db *sql.DB) *ImageRepository {
-	return &ImageRepository{db: db}
+func NewImageRepository(service *Service) *ImageRepository {
+	return &ImageRepository{service: service}
 }
 
 func (r *ImageRepository) CreateImage(ctx context.Context, userID uuid.UUID, name string) (*images.Image, error) {
 	id := uuid.New()
-
 	image := &images.Image{
 		ID:        id,
 		UserID:    userID,
@@ -28,8 +27,15 @@ func (r *ImageRepository) CreateImage(ctx context.Context, userID uuid.UUID, nam
 		UpdatedAt: time.Now(),
 	}
 
-	_, err := r.db.ExecContext(ctx, `INSERT INTO images (id, user_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`,
-		image.ID, image.UserID, image.Name, image.CreatedAt, image.UpdatedAt)
+	err := r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `INSERT INTO images (id, user_id, name, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)`,
+			image.ID, image.UserID, image.Name, image.CreatedAt, image.UpdatedAt)
+		if err != nil {
+			return fmt.Errorf("error creating image: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating image: %w", err)
 	}
@@ -44,14 +50,14 @@ func (r *ImageRepository) GetImagesByUserID(ctx context.Context, userID uuid.UUI
 	// If page and limit are provided, apply pagination; otherwise, fetch all results
 	if page != nil && limit != nil {
 		offset := (*page - 1) * (*limit)
-		rows, err = r.db.QueryContext(ctx, `
+		rows, err = r.service.DB.QueryContext(ctx, `
 			SELECT id, user_id, name, created_at, updated_at 
 			FROM images 
 			WHERE user_id = $1 
 			ORDER BY created_at DESC 
 			LIMIT $2 OFFSET $3`, userID, *limit, offset)
 	} else {
-		rows, err = r.db.QueryContext(ctx, `
+		rows, err = r.service.DB.QueryContext(ctx, `
 			SELECT id, user_id, name, created_at, updated_at 
 			FROM images 
 			WHERE user_id = $1 
@@ -73,7 +79,7 @@ func (r *ImageRepository) GetImagesByUserID(ctx context.Context, userID uuid.UUI
 	}
 
 	var totalCount int
-	err = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM images WHERE user_id = $1`, userID).Scan(&totalCount)
+	err = r.service.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM images WHERE user_id = $1`, userID).Scan(&totalCount)
 	if err != nil {
 		return nil, -1, fmt.Errorf("error getting total image count: %w", err)
 	}
@@ -84,7 +90,7 @@ func (r *ImageRepository) GetImagesByUserID(ctx context.Context, userID uuid.UUI
 func (r *ImageRepository) GetImageByUserIDandName(ctx context.Context, userID uuid.UUID, name string) (*images.Image, error) {
 	var img images.Image
 
-	row := r.db.QueryRowContext(ctx, `SELECT id, user_id, name, created_at, updated_at FROM images WHERE user_id = $1 AND name = $2`, userID, name)
+	row := r.service.DB.QueryRowContext(ctx, `SELECT id, user_id, name, created_at, updated_at FROM images WHERE user_id = $1 AND name = $2`, userID, name)
 	err := row.Scan(&img.ID, &img.UserID, &img.Name, &img.CreatedAt, &img.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error scanning image: %w", err)
@@ -94,19 +100,23 @@ func (r *ImageRepository) GetImageByUserIDandName(ctx context.Context, userID uu
 }
 
 func (r *ImageRepository) UpdateImage(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE images SET updated_at = $1 WHERE id = $2`, time.Now(), id)
-	if err != nil {
-		return fmt.Errorf("error updating image: %w", err)
-	}
+	return r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `UPDATE images SET updated_at = $1 WHERE id = $2`, time.Now(), id)
+		if err != nil {
+			return fmt.Errorf("error updating image: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }
 
 func (r *ImageRepository) DeleteImage(ctx context.Context, id uuid.UUID) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM images WHERE id = $1`, id)
-	if err != nil {
-		return fmt.Errorf("error deleting image: %w", err)
-	}
+	return r.service.withTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `DELETE FROM images WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("error deleting image: %w", err)
+		}
 
-	return nil
+		return nil
+	})
 }

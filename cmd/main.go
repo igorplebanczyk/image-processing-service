@@ -88,7 +88,7 @@ func (cfg *Config) configure() error {
 
 	userRepo := database.NewUserRepository(dbService.DB)
 	refreshTokenRepo := database.NewRefreshTokenRepository(dbService.DB)
-	imageRepo := database.NewImageRepository(dbService.DB)
+	imageRepo := database.NewImageRepository(dbService)
 
 	authService := auth.New(userRepo, refreshTokenRepo, jwtSecret, 15*time.Minute, 15*time.Hour)
 	storageService, err := storage.New(
