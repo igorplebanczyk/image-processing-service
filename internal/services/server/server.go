@@ -56,14 +56,13 @@ func (s *Service) setup() {
 	mux.HandleFunc("DELETE /images", s.authService.Middleware(s.imagesCfg.Delete))
 }
 
-func (s *Service) Start() error {
+func (s *Service) Start() {
+	slog.Info("Server starting", "port", s.port)
 	err := s.server.ListenAndServe()
 	if err != nil {
-		return fmt.Errorf("error starting server: %w", err)
+		slog.Error("Error starting server", "error", err)
+		return
 	}
-
-	slog.Info("Server starting", "port", s.server.Addr)
-	return nil
 }
 
 func (s *Service) Stop() {

@@ -20,8 +20,6 @@ import (
 	"time"
 )
 
-const envPath string = ".env"
-
 func main() {
 	serverService, workerService, err := configure()
 	if err != nil {
@@ -33,14 +31,7 @@ func main() {
 	defer stop()
 
 	go workerService.Start()
-
-	go func() {
-		err = serverService.Start()
-		if err != nil {
-			slog.Error("Error starting server", "error", err)
-			stop()
-		}
-	}()
+	go serverService.Start()
 
 	<-ctx.Done()
 	slog.Info("Shutting down...")

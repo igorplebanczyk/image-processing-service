@@ -20,6 +20,7 @@ func New(repo RefreshTokenRepository, interval time.Duration) *Service {
 }
 
 func (s *Service) Start() {
+	slog.Info("Worker starting")
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
@@ -33,7 +34,7 @@ func (s *Service) Start() {
 				slog.Info("expired refresh tokens deleted")
 			}
 		case <-s.stop:
-			slog.Info("cleanup worker stopped")
+			slog.Info("Worker stopped")
 			return
 		}
 	}
