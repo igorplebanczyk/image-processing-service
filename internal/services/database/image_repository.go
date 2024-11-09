@@ -57,8 +57,21 @@ func (r *ImageRepository) GetImagesByUserID(userID uuid.UUID) ([]*images.Image, 
 	return imagesList, nil
 }
 
-func (r *ImageRepository) UpdateImage(userID uuid.UUID) error {
-	_, err := r.db.Exec(`UPDATE images SET updated_at = $1 WHERE user_id = $2`, time.Now(), userID)
+func (r *ImageRepository) GetImageByUserIDandName(userID uuid.UUID, name string) (*images.Image, error) {
+	var img images.Image
+
+	row := r.db.QueryRow(`SELECT id, user_id, name, created_at, updated_at FROM images WHERE user_id = $1 AND name = $2`, userID, name)
+
+	err := row.Scan(&img.ID, &img.UserID, &img.Name, &img.CreatedAt, &img.UpdatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("error scanning image: %w", err)
+	}
+
+	return &img, nil
+}
+
+func (r *ImageRepository) UpdateImage(id uuid.UUID) error {
+	_, err := r.db.Exec(`UPDATE images SET updated_at = $1 WHERE id = $2`, time.Now(), id)
 	if err != nil {
 		return fmt.Errorf("error updating image: %w", err)
 	}
@@ -66,8 +79,8 @@ func (r *ImageRepository) UpdateImage(userID uuid.UUID) error {
 	return nil
 }
 
-func (r *ImageRepository) DeleteImage(userID uuid.UUID, name string) error {
-	_, err := r.db.Exec(`DELETE FROM images WHERE user_id = $1 AND name = $2`, userID, name)
+func (r *ImageRepository) DeleteImage(id uuid.UUID) error {
+	_, err := r.db.Exec(`DELETE FROM images WHERE id = $1`, id)
 	if err != nil {
 		return fmt.Errorf("error deleting image: %w", err)
 	}

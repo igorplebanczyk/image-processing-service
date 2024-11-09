@@ -168,7 +168,13 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = cfg.repo.UpdateImage(user.ID)
+	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
+		return
+	}
+
+	err = cfg.repo.UpdateImage(img.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to update image: %v", err))
 		return
@@ -196,7 +202,13 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = cfg.repo.DeleteImage(user.ID, p.Name)
+	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	if err != nil {
+		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
+		return
+	}
+
+	err = cfg.repo.DeleteImage(img.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from db: %v", err))
 		return
