@@ -94,12 +94,19 @@ func (s *Service) refresh(refreshToken string) (response, error) {
 		return response{}, fmt.Errorf("error fetching users: %w", err)
 	}
 
-	storedRefreshToken, err := s.refreshTokenRepo.GetRefreshTokenByUserID(ctx, user.ID)
+	storedRefreshTokens, err := s.refreshTokenRepo.GetRefreshTokensByUserID(ctx, user.ID)
 	if err != nil {
 		return response{}, fmt.Errorf("error fetching refresh token: %w", err)
 	}
 
-	if storedRefreshToken.Token != refreshToken {
+	valid := false
+	for _, storedRefreshToken := range storedRefreshTokens {
+		if storedRefreshToken.Token == refreshToken {
+			valid = true
+			break
+		}
+	}
+	if !valid {
 		return response{}, fmt.Errorf("invalid refresh token")
 	}
 

@@ -32,6 +32,6 @@ type RefreshTokenRepository interface {
 		token string,
 		expiresAt time.Time,
 	) (*RefreshToken, error)
-	GetRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) (*RefreshToken, error)
+	GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error
 }

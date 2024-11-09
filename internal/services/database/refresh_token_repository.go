@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/users"
@@ -46,23 +45,30 @@ func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 	return refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) GetRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) (*users.RefreshToken, error) {
-	var refreshToken users.RefreshToken
+func (r *RefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*users.RefreshToken, error) {
+	var refreshTokens []*users.RefreshToken
 
-	err := r.service.DB.QueryRowContext(
+	rows, err := r.service.DB.QueryContext(
 		ctx,
 		`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE user_id = $1`,
 		userID,
-	).Scan(&refreshToken.ID, &refreshToken.UserID, &refreshToken.Token, &refreshToken.ExpiresAt, &refreshToken.CreatedAt)
+	)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+		return nil, fmt.Errorf("error getting refresh tokens by user ID: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var refreshToken users.RefreshToken
+		err := rows.Scan(&refreshToken.ID, &refreshToken.UserID, &refreshToken.Token, &refreshToken.ExpiresAt, &refreshToken.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning refresh token: %w", err)
 		}
 
-		return nil, fmt.Errorf("error getting refresh token by user id: %w", err)
+		refreshTokens = append(refreshTokens, &refreshToken)
 	}
 
-	return &refreshToken, nil
+	return refreshTokens, nil
 }
 
 func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {

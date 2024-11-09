@@ -1,4 +1,3 @@
-* Fix refreshing the token
 * Add OAPI specifications
 * Use proper PostgreSQL configuration
 * Use proper Redis configuration
