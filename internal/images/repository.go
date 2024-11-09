@@ -1,11 +1,22 @@
 package images
 
-import "github.com/google/uuid"
+import (
+	"context"
+	"github.com/google/uuid"
+)
 
 type Repository interface {
-	CreateImage(userID uuid.UUID, name string) (*Image, error)
-	GetImagesByUserID(userID uuid.UUID) ([]*Image, error)
-	GetImageByUserIDandName(userID uuid.UUID, name string) (*Image, error)
-	UpdateImage(id uuid.UUID) error
-	DeleteImage(id uuid.UUID) error
+	CreateImage(
+		ctx context.Context,
+		userID uuid.UUID,
+		name string,
+	) (*Image, error)
+	GetImageByUserIDandName(
+		ctx context.Context,
+		userID uuid.UUID,
+		name string,
+	) (*Image, error)
+	GetImagesByUserID(ctx context.Context, userID uuid.UUID) ([]*Image, error)
+	UpdateImage(ctx context.Context, id uuid.UUID) error
+	DeleteImage(ctx context.Context, id uuid.UUID) error
 }

@@ -52,7 +52,7 @@ func (cfg *Config) Upload(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_, err = cfg.repo.CreateImage(user.ID, name)
+	_, err = cfg.repo.CreateImage(r.Context(), user.ID, name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating image: %v", err))
 		return
@@ -135,7 +135,7 @@ func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	img, err := cfg.repo.GetImageByUserIDandName(r.Context(), user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
 		return
@@ -148,7 +148,7 @@ func (cfg *Config) Info(user *users.User, w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (cfg *Config) List(user *users.User, w http.ResponseWriter, _ *http.Request) {
+func (cfg *Config) List(user *users.User, w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -159,7 +159,7 @@ func (cfg *Config) List(user *users.User, w http.ResponseWriter, _ *http.Request
 		Images []responseItem `json:"images"`
 	}
 
-	images, err := cfg.repo.GetImagesByUserID(user.ID)
+	images, err := cfg.repo.GetImagesByUserID(r.Context(), user.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get images: %v", err))
 		return
@@ -229,13 +229,13 @@ func (cfg *Config) Transform(user *users.User, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	img, err := cfg.repo.GetImageByUserIDandName(r.Context(), user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
 		return
 	}
 
-	err = cfg.repo.UpdateImage(img.ID)
+	err = cfg.repo.UpdateImage(r.Context(), img.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to update image: %v", err))
 		return
@@ -263,13 +263,13 @@ func (cfg *Config) Delete(user *users.User, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	img, err := cfg.repo.GetImageByUserIDandName(user.ID, p.Name)
+	img, err := cfg.repo.GetImageByUserIDandName(r.Context(), user.ID, p.Name)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
 		return
 	}
 
-	err = cfg.repo.DeleteImage(img.ID)
+	err = cfg.repo.DeleteImage(r.Context(), img.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image from db: %v", err))
 		return
