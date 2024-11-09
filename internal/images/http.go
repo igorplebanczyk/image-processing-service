@@ -8,6 +8,7 @@ import (
 	"image-processing-service/internal/users"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -163,12 +164,24 @@ func (cfg *Config) List(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	type response struct {
-		Images []responseItem `json:"images"`
+		Images     []responseItem `json:"images"`
+		Page       int            `json:"page"`
+		Limit      int            `json:"limit"`
+		TotalCount int            `json:"total_count"`
+	}
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 10
 	}
 
 	user := ctx.Value("user").(*users.User)
 
-	images, err := cfg.repo.GetImagesByUserID(r.Context(), user.ID)
+	images, totalCount, err := cfg.repo.GetImagesByUserID(r.Context(), user.ID, &page, &limit)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get images: %v", err))
 		return
@@ -182,6 +195,9 @@ func (cfg *Config) List(ctx context.Context, w http.ResponseWriter, r *http.Requ
 			UpdatedAt: img.UpdatedAt,
 		})
 	}
+	resp.Page = page
+	resp.Limit = limit
+	resp.TotalCount = totalCount
 
 	util.RespondWithJSON(w, http.StatusOK, resp)
 }

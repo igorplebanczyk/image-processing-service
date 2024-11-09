@@ -11,7 +11,7 @@ func validate(r Repository, userID uuid.UUID, imageName string) (bool, error) {
 		return false, nil
 	}
 
-	userImages, err := r.GetImagesByUserID(context.Background(), userID)
+	userImages, _, err := r.GetImagesByUserID(context.Background(), userID, nil, nil)
 	if err != nil {
 		return false, fmt.Errorf("error getting images by user id: %w", err)
 	}

@@ -37,25 +37,48 @@ func (r *ImageRepository) CreateImage(ctx context.Context, userID uuid.UUID, nam
 	return image, nil
 }
 
-func (r *ImageRepository) GetImagesByUserID(ctx context.Context, userID uuid.UUID) ([]*images.Image, error) {
-	var imagesList []*images.Image
+func (r *ImageRepository) GetImagesByUserID(ctx context.Context, userID uuid.UUID, page, limit *int) ([]*images.Image, int, error) {
+	var rows *sql.Rows
+	var err error
 
-	rows, err := r.db.QueryContext(ctx, `SELECT id, user_id, name, created_at, updated_at FROM images WHERE user_id = $1`, userID)
+	// If page and limit are provided, apply pagination; otherwise, fetch all results
+	if page != nil && limit != nil {
+		offset := (*page - 1) * (*limit)
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT id, user_id, name, created_at, updated_at 
+			FROM images 
+			WHERE user_id = $1 
+			ORDER BY created_at DESC 
+			LIMIT $2 OFFSET $3`, userID, *limit, offset)
+	} else {
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT id, user_id, name, created_at, updated_at 
+			FROM images 
+			WHERE user_id = $1 
+			ORDER BY created_at DESC`, userID)
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("error getting images by user id: %w", err)
+		return nil, -1, fmt.Errorf("error getting images by user id: %w", err)
 	}
 	defer rows.Close()
 
+	var imagesList []*images.Image
 	for rows.Next() {
 		var image images.Image
-		err := rows.Scan(&image.ID, &image.UserID, &image.Name, &image.CreatedAt, &image.UpdatedAt)
-		if err != nil {
-			return nil, fmt.Errorf("error scanning image: %w", err)
+		if err := rows.Scan(&image.ID, &image.UserID, &image.Name, &image.CreatedAt, &image.UpdatedAt); err != nil {
+			return nil, -1, fmt.Errorf("error scanning image: %w", err)
 		}
 		imagesList = append(imagesList, &image)
 	}
 
-	return imagesList, nil
+	var totalCount int
+	err = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM images WHERE user_id = $1`, userID).Scan(&totalCount)
+	if err != nil {
+		return nil, -1, fmt.Errorf("error getting total image count: %w", err)
+	}
+
+	return imagesList, totalCount, nil
 }
 
 func (r *ImageRepository) GetImageByUserIDandName(ctx context.Context, userID uuid.UUID, name string) (*images.Image, error) {

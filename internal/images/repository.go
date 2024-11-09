@@ -16,7 +16,12 @@ type Repository interface {
 		userID uuid.UUID,
 		name string,
 	) (*Image, error)
-	GetImagesByUserID(ctx context.Context, userID uuid.UUID) ([]*Image, error)
+	GetImagesByUserID(
+		ctx context.Context,
+		userID uuid.UUID,
+		page,
+		limit *int,
+	) ([]*Image, int, error)
 	UpdateImage(ctx context.Context, id uuid.UUID) error
 	DeleteImage(ctx context.Context, id uuid.UUID) error
 }
