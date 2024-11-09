@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"fmt"
 	"net/mail"
 	"regexp"
@@ -11,7 +12,7 @@ func validateUsername(r UserRepository, username string) error {
 		return fmt.Errorf("username cannot be empty")
 	}
 
-	user, _ := r.GetUserByUsername(username)
+	user, _ := r.GetUserByUsername(context.Background(), username)
 	if user != nil {
 		return fmt.Errorf("users with username %s already exists", username)
 	}
@@ -29,7 +30,7 @@ func validateEmail(r UserRepository, email string) error {
 		return fmt.Errorf("invalid email address")
 	}
 
-	user, _ := r.GetUserByEmail(email)
+	user, _ := r.GetUserByEmail(context.Background(), email)
 	if user != nil {
 		return fmt.Errorf("users with email %s already exists", email)
 	}

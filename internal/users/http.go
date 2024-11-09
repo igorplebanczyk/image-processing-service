@@ -72,7 +72,7 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := cfg.userRepo.CreateUser(p.Username, p.Email, p.Password)
+	user, err := cfg.userRepo.CreateUser(r.Context(), p.Username, p.Email, p.Password)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error creating users: %v", err))
 		return
@@ -86,8 +86,8 @@ func (cfg *Config) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (cfg *Config) Delete(user *User, w http.ResponseWriter, _ *http.Request) {
-	err := cfg.userRepo.DeleteUser(user.ID)
+func (cfg *Config) Delete(user *User, w http.ResponseWriter, r *http.Request) {
+	err := cfg.userRepo.DeleteUser(r.Context(), user.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error deleting users: %v", err))
 		return
@@ -136,7 +136,7 @@ func (cfg *Config) Update(user *User, w http.ResponseWriter, r *http.Request) {
 		p.Email = user.Email
 	}
 
-	err = cfg.userRepo.UpdateUser(user.ID, p.Username, p.Email)
+	err = cfg.userRepo.UpdateUser(r.Context(), user.ID, p.Username, p.Email)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error updating users: %v", err))
 		return

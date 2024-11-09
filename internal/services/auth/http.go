@@ -49,7 +49,7 @@ func (s *Service) Middleware(handler func(*users.User, http.ResponseWriter, *htt
 			return
 		}
 
-		user, err := s.userRepo.GetUserByID(id)
+		user, err := s.userRepo.GetUserByID(r.Context(), id)
 		if err != nil {
 			util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching user: %v", err))
 			return
@@ -104,8 +104,8 @@ func (s *Service) Refresh(w http.ResponseWriter, r *http.Request) {
 	util.RespondWithJSON(w, http.StatusOK, resp)
 }
 
-func (s *Service) Logout(user *users.User, w http.ResponseWriter, _ *http.Request) {
-	err := s.refreshTokenRepo.RevokeRefreshToken(user.ID)
+func (s *Service) Logout(user *users.User, w http.ResponseWriter, r *http.Request) {
+	err := s.refreshTokenRepo.RevokeRefreshToken(r.Context(), user.ID)
 	if err != nil {
 		util.RespondWithError(w, http.StatusInternalServerError, fmt.Sprintf("error revoking refresh token: %v", err))
 		return

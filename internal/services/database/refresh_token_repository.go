@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -17,7 +18,7 @@ func NewRefreshTokenRepository(db *sql.DB) *RefreshTokenRepository {
 	return &RefreshTokenRepository{db: db}
 }
 
-func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token string, expiresAt time.Time) (*users.RefreshToken, error) {
+func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) (*users.RefreshToken, error) {
 	id := uuid.New()
 	createdAt := time.Now()
 
@@ -29,7 +30,7 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token stri
 		CreatedAt: createdAt,
 	}
 
-	_, err := r.db.Exec(`INSERT INTO refresh_tokens(id, user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
+	_, err := r.db.ExecContext(ctx, `INSERT INTO refresh_tokens(id, user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
 		refreshToken.ID, refreshToken.UserID, refreshToken.Token, refreshToken.ExpiresAt, refreshToken.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error creating refresh token: %w", err)
@@ -38,10 +39,11 @@ func (r *RefreshTokenRepository) CreateRefreshToken(userID uuid.UUID, token stri
 	return refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) GetRefreshTokenByUserID(userID uuid.UUID) (*users.RefreshToken, error) {
+func (r *RefreshTokenRepository) GetRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) (*users.RefreshToken, error) {
 	var refreshToken users.RefreshToken
 
-	err := r.db.QueryRow(
+	err := r.db.QueryRowContext(
+		ctx,
 		`SELECT id, user_id, token, expires_at, created_at FROM refresh_tokens WHERE user_id = $1`,
 		userID,
 	).Scan(&refreshToken.ID, &refreshToken.UserID, &refreshToken.Token, &refreshToken.ExpiresAt, &refreshToken.CreatedAt)
@@ -56,8 +58,8 @@ func (r *RefreshTokenRepository) GetRefreshTokenByUserID(userID uuid.UUID) (*use
 	return &refreshToken, nil
 }
 
-func (r *RefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
-	_, err := r.db.Exec(`DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
+func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
 	if err != nil {
 		return fmt.Errorf("error revoking refresh token: %w", err)
 	}
@@ -65,8 +67,8 @@ func (r *RefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
 	return nil
 }
 
-func (r *RefreshTokenRepository) DeleteExpiredRefreshTokens() error {
-	_, err := r.db.Exec(`DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now())
+func (r *RefreshTokenRepository) DeleteExpiredRefreshTokens(ctx context.Context) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE expires_at < $1`, time.Now())
 	if err != nil {
 		return fmt.Errorf("error deleting expired refresh tokens: %w", err)
 	}

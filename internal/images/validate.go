@@ -1,6 +1,7 @@
 package images
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -10,7 +11,7 @@ func validate(r Repository, userID uuid.UUID, imageName string) (bool, error) {
 		return false, nil
 	}
 
-	userImages, err := r.GetImagesByUserID(userID)
+	userImages, err := r.GetImagesByUserID(context.Background(), userID)
 	if err != nil {
 		return false, fmt.Errorf("error getting images by user id: %w", err)
 	}
