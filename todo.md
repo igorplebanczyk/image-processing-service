@@ -1,3 +1,7 @@
+* Restructure project
+* Add more logging
+* Add tests
+* Add IaC
 * Add OAPI specifications
 * Use proper PostgreSQL configuration
 * Use proper Redis configuration
