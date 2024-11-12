@@ -9,11 +9,3 @@ type User struct {
 	Username string
 	Password string
 }
-
-func NewUser(iD uuid.UUID, username, password string) *User {
-	return &User{
-		ID:       iD,
-		Username: username,
-		Password: password,
-	}
-}
