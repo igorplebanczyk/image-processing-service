@@ -27,13 +27,13 @@ type ImageRepository interface {
 	DeleteImage(ctx context.Context, id uuid.UUID) error
 }
 
-type ImageStorageRepository interface {
+type StorageService interface {
 	Upload(ctx context.Context, objectName string, data []byte) error
 	Download(ctx context.Context, objectName string) ([]byte, error)
 	Delete(ctx context.Context, objectName string) error
 }
 
-type ImageCacheRepository interface {
+type CacheService interface {
 	Set(key string, value []byte, expiration time.Duration) error
 	Get(key string) ([]byte, error)
 	Delete(key string) error

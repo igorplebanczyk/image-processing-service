@@ -13,15 +13,15 @@ import (
 
 type ImageService struct {
 	repo                  domain.ImageRepository
-	storage               domain.ImageStorageRepository
-	cache                 domain.ImageCacheRepository
+	storage               domain.StorageService
+	cache                 domain.CacheService
 	transformationService *transformations.Service
 }
 
 func NewService(
 	repo domain.ImageRepository,
-	storage domain.ImageStorageRepository,
-	cache domain.ImageCacheRepository,
+	storage domain.StorageService,
+	cache domain.CacheService,
 	transformationWorkerCount int,
 	transformationQueueSize int,
 ) *ImageService {
