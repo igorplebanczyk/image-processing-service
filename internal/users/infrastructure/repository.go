@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/internal/common/database/transactions"
 	"image-processing-service/internal/users/domain"
+	"time"
 )
 
 type UserRepository struct {
@@ -52,7 +53,8 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain
 
 func (r *UserRepository) UpdateUser(ctx context.Context, id uuid.UUID, username, email string) error {
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, `UPDATE users SET username = $1, email = $2 WHERE id = $3`, username, email, id)
+		_, err := tx.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, updated_at = $3 WHERE id = $4`,
+			username, email, time.Now(), id)
 		if err != nil {
 			return fmt.Errorf("error updating user: %w", err)
 		}

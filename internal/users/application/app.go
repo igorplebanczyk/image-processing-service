@@ -61,7 +61,27 @@ func (s *UserService) GetUser(userID uuid.UUID) (*domain.User, error) {
 }
 
 func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error {
-	err := domain.ValidateUsername(username)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("error getting user: %w", err)
+	}
+
+	if username == "" && email == "" {
+		return fmt.Errorf("no data to update")
+	}
+
+	if username == "" {
+		username = user.Username
+	}
+
+	if email == "" {
+		email = user.Email
+	}
+
+	err = domain.ValidateUsername(username)
 	if err != nil {
 		return fmt.Errorf("invalid username: %w", err)
 	}
@@ -70,9 +90,6 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 	if err != nil {
 		return fmt.Errorf("invalid email: %w", err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	err = s.repo.UpdateUser(ctx, userID, username, email)
 	if err != nil {
