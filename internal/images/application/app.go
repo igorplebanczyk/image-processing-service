@@ -92,8 +92,6 @@ func (s *ImageService) GetImageData(userID uuid.UUID, imageName string) (*domain
 }
 
 func (s *ImageService) DownloadImage(userID uuid.UUID, imageName string) ([]byte, error) {
-	slog.Info("userID at downloadImage: %v", userID)
-	slog.Info("imageName at downloadImage: %v", imageName)
 	objectName := domain.CreateObjectName(userID, imageName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
