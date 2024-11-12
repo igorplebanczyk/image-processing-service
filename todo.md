@@ -1,4 +1,5 @@
 * Restructure project
+* Add unique constraints to the database
 * Add more logging
 * Add tests
 * Add IaC
