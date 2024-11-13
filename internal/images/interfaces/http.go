@@ -50,8 +50,6 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	slog.Info(fmt.Sprintf("format at upload: %v", http.DetectContentType(imageBytes)))
-
 	image, err := s.ImagesService.UploadImage(userID, name, imageBytes)
 	if err != nil {
 		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("error uploading image: %v", err))
@@ -161,8 +159,6 @@ func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.
 		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to download image: %v", err))
 		return
 	}
-
-	slog.Info(fmt.Sprintf("format at download: %v", http.DetectContentType(imageBytes)))
 
 	respond.WithImage(w, http.StatusOK, imageBytes, p.Name)
 }

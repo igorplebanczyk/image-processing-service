@@ -6,8 +6,6 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/internal/images/application/transformations"
 	"image-processing-service/internal/images/domain"
-	"log/slog"
-	"net/http"
 	"time"
 )
 
@@ -104,7 +102,6 @@ func (s *ImageService) DownloadImage(userID uuid.UUID, imageName string) ([]byte
 			return nil, fmt.Errorf("error downloading image: %w", err)
 		}
 	}
-	slog.Info(fmt.Sprintf("format at downloadImage: %v", http.DetectContentType(imageBytes)))
 
 	return imageBytes, nil
 }

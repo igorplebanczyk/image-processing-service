@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"time"
@@ -43,9 +42,6 @@ func (s *Service) Set(key string, value []byte, expiration time.Duration) error 
 func (s *Service) Get(key string) ([]byte, error) {
 	val, err := s.client.Get(s.ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("failed to get value of key: %w", err)
 	}
 
