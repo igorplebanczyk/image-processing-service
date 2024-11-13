@@ -1,4 +1,4 @@
-.PHONY: build run stop
+.PHONY: build run stop test
 
 build:
 	docker-compose build
@@ -8,3 +8,6 @@ run:
 
 stop:
 	docker-compose down
+
+test:
+	go test -v ./...
