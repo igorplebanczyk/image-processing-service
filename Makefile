@@ -1,4 +1,4 @@
-.PHONY: build run stop test
+.PHONY: build run stop test coverage
 
 build:
 	docker-compose build
@@ -11,3 +11,6 @@ stop:
 
 test:
 	go test -v ./...
+
+coverage:
+	go test -cover ./...
