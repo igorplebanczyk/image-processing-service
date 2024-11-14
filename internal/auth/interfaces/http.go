@@ -2,8 +2,10 @@ package interfaces
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"image-processing-service/internal/auth/application"
+	"image-processing-service/internal/auth/domain"
 	"image-processing-service/internal/common/server/respond"
 	"net/http"
 	"strings"
@@ -30,7 +32,7 @@ func (s *AuthServer) Middleware(handler func(uuid.UUID, http.ResponseWriter, *ht
 
 		userID, err := s.service.Authenticate(bearerToken)
 		if err != nil {
-			respond.WithError(w, http.StatusUnauthorized, "token expired or invalid")
+			respond.WithError(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
 
@@ -59,6 +61,10 @@ func (s *AuthServer) Login(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, refreshToken, err := s.service.Login(p.Username, p.Password)
 	if err != nil {
+		if errors.Is(err, domain.ErrInternal) {
+			respond.WithError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
 		respond.WithError(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -88,7 +94,11 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, err := s.service.Refresh(p.RefreshToken)
 	if err != nil {
-		respond.WithError(w, http.StatusUnauthorized, "invalid refresh token")
+		if errors.Is(err, domain.ErrInternal) {
+			respond.WithError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		respond.WithError(w, http.StatusUnauthorized, "invalid token")
 		return
 	}
 
@@ -97,10 +107,10 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.Logout(userID)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, "error logging out")
+		respond.WithError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 

@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"image-processing-service/internal/auth/domain"
@@ -42,23 +42,23 @@ func (s *AuthService) Login(username, password string) (string, string, error) {
 
 	user, err := s.userRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return "", "", fmt.Errorf("invalid username")
+		return "", "", domain.ErrInvalidCredentials
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", "", fmt.Errorf("invalid password")
+		return "", "", domain.ErrInvalidCredentials
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, user.ID.String(), s.accessExpiry)
 	refreshToken, err := generateRefreshToken(s.secret, s.issuer, user.ID.String(), s.refreshExpiry)
 	if err != nil {
-		return "", "", fmt.Errorf("error generating token: %w", err)
+		return "", "", errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.refreshTokenRepo.CreateRefreshToken(ctx, user.ID, refreshToken, time.Now().Add(s.refreshExpiry))
 	if err != nil {
-		return "", "", fmt.Errorf("error adding refresh token to database: %w", err)
+		return "", "", errors.Join(domain.ErrInternal, err)
 	}
 
 	return accessToken, refreshToken, nil
@@ -67,7 +67,7 @@ func (s *AuthService) Login(username, password string) (string, string, error) {
 func (s *AuthService) Refresh(rawRefreshToken string) (string, error) {
 	id, err := verifyAndParseToken(s.secret, s.issuer, rawRefreshToken)
 	if err != nil {
-		return "", fmt.Errorf("invalid token")
+		return "", err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -75,7 +75,7 @@ func (s *AuthService) Refresh(rawRefreshToken string) (string, error) {
 
 	storedTokens, err := s.refreshTokenRepo.GetRefreshTokensByUserID(ctx, id)
 	if err != nil {
-		return "", fmt.Errorf("error getting refresh tokens: %w", err)
+		return "", errors.Join(domain.ErrInternal, err)
 	}
 
 	found := false
@@ -86,12 +86,12 @@ func (s *AuthService) Refresh(rawRefreshToken string) (string, error) {
 		}
 	}
 	if !found {
-		return "", fmt.Errorf("invalid token")
+		return "", domain.ErrInvalidToken
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, id.String(), s.accessExpiry)
 	if err != nil {
-		return "", fmt.Errorf("error generating token: %w", err)
+		return "", errors.Join(domain.ErrInternal, err)
 	}
 
 	return accessToken, nil
@@ -100,7 +100,7 @@ func (s *AuthService) Refresh(rawRefreshToken string) (string, error) {
 func (s *AuthService) Authenticate(accessToken string) (uuid.UUID, error) {
 	id, err := verifyAndParseToken(s.secret, s.issuer, accessToken)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("invalid token")
+		return uuid.Nil, domain.ErrInvalidToken
 	}
 
 	return id, nil
@@ -112,7 +112,7 @@ func (s *AuthService) Logout(userID uuid.UUID) error {
 
 	err := s.refreshTokenRepo.RevokeRefreshToken(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("error deleting refresh tokens: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	return nil
