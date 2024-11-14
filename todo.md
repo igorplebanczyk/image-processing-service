@@ -4,7 +4,6 @@
   - [ ] Interfaces layer tests
   - [ ] Infrastructure layer tests
   - [ ] Common services tests
-  - [ ] Main package tests 
   - [ ] Integration tests
   - [ ] Transformation layer tests
 - [ ] Improve error handling
@@ -18,5 +17,5 @@
 - [ ] Add a mail service
 - [ ] Add a forgotten password system
 - [ ] Add a CI/CD pipeline
-- [ ] Add an reverse proxy
+- [ ] Add a reverse proxy
 - [ ] Add a README and LICENSE
