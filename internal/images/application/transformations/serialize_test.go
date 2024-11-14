@@ -7,7 +7,6 @@ import (
 )
 
 func TestSerialize(t *testing.T) {
-	// Create a simple image (a 2x2 red image)
 	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	img.Set(0, 0, color.RGBA{R: 255, A: 255})
 	img.Set(1, 0, color.RGBA{G: 255, A: 255})
@@ -20,7 +19,7 @@ func TestSerialize(t *testing.T) {
 	}{
 		{"jpeg", false},
 		{"png", false},
-		{"bmp", true}, // unsupported format
+		{"bmp", true},
 	}
 
 	for _, tt := range tests {
@@ -34,14 +33,12 @@ func TestSerialize(t *testing.T) {
 }
 
 func TestDeserialize(t *testing.T) {
-	// Create a simple image (a 2x2 red image)
 	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	img.Set(0, 0, color.RGBA{R: 255, A: 255})
 	img.Set(1, 0, color.RGBA{G: 255, A: 255})
 	img.Set(0, 1, color.RGBA{B: 255, A: 255})
 	img.Set(1, 1, color.RGBA{R: 255, G: 255, A: 255})
 
-	// Serialize the image into PNG format
 	data, err := serialize(img, "png")
 	if err != nil {
 		t.Fatalf("serialize() failed: %v", err)
@@ -51,8 +48,8 @@ func TestDeserialize(t *testing.T) {
 		data    []byte
 		wantErr bool
 	}{
-		{data, false},                  // valid PNG data
-		{[]byte("invalid data"), true}, // invalid data
+		{data, false},
+		{[]byte("invalid data"), true},
 	}
 
 	for _, tt := range tests {
