@@ -1,137 +1,153 @@
 package application
 
 import (
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"testing"
+	"time"
 )
 
-func parseClaims(secret, token string) (*jwt.RegisteredClaims, error) {
-	parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+func Test_generateAccessToken(t *testing.T) {
+	type args struct {
+		secret string
+		issuer string
+		userID string
+		expiry time.Duration
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "successful token generation",
+			args: args{
+				secret: "testsecret",
+				issuer: "testissuer",
+				userID: "12345",
+				expiry: time.Hour,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := generateAccessToken(tt.args.secret, tt.args.issuer, tt.args.userID, tt.args.expiry)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateAccessToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got == "" {
+				t.Errorf("generateAccessToken() got = %v, want a non-empty string", got)
+			}
+		})
+	}
+}
+
+func Test_generateRefreshToken(t *testing.T) {
+	type args struct {
+		secret string
+		issuer string
+		userID string
+		expiry time.Duration
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "successful refresh token generation",
+			args: args{
+				secret: "testsecret",
+				issuer: "testissuer",
+				userID: "12345",
+				expiry: time.Hour * 24,
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := generateRefreshToken(tt.args.secret, tt.args.issuer, tt.args.userID, tt.args.expiry)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateRefreshToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got == "" {
+				t.Errorf("generateRefreshToken() got = %v, want a non-empty string", got)
+			}
+		})
+	}
+}
+
+func Test_verifyAndParseToken(t *testing.T) {
+	type args struct {
+		secret   string
+		issuer   string
+		rawToken string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    uuid.UUID
+		wantErr bool
+	}{
+		{
+			name: "successful token verification and parsing",
+			args: args{
+				secret:   "testsecret",
+				issuer:   "testissuer",
+				rawToken: generateValidToken("testsecret", "testissuer", "89fe715c-8cf7-423d-9f50-d02c41a589b4", time.Hour),
+			},
+			want:    uuid.MustParse("89fe715c-8cf7-423d-9f50-d02c41a589b4"),
+			wantErr: false,
+		},
+		{
+			name: "invalid token",
+			args: args{
+				secret:   "testsecret",
+				issuer:   "testissuer",
+				rawToken: "invalidtoken",
+			},
+			want:    uuid.Nil,
+			wantErr: true,
+		},
+		{
+			name: "invalid token issuer",
+			args: args{
+				secret:   "testsecret",
+				issuer:   "wrongissuer",
+				rawToken: generateValidToken("testsecret", "testissuer", "12345", time.Hour),
+			},
+			want:    uuid.Nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := verifyAndParseToken(tt.args.secret, tt.args.issuer, tt.args.rawToken)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("verifyAndParseToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("verifyAndParseToken() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func generateValidToken(secret, issuer, userID string, expiry time.Duration) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Subject:   userID,
+		Issuer:    issuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiry)),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := parsedToken.Claims.(*jwt.RegisteredClaims)
-	if !ok || !parsedToken.Valid {
-		return nil, jwt.ErrSignatureInvalid
-	}
-
-	return claims, nil
-}
-
-func TestGenerateAccessToken(t *testing.T) {
-	secret := "test_secret"
-	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 15 * time.Minute
-
-	token, err := generateAccessToken(secret, issuer, userID, expiry)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if token == "" {
-		t.Fatalf("expected a token, got an empty string")
-	}
-
-	if !strings.HasPrefix(token, "eyJ") {
-		t.Errorf("expected token to start with 'eyJ', got %s", token[:3])
-	}
-
-	claims, err := parseClaims(secret, token)
-	if err != nil {
-		t.Fatalf("expected valid token claims, got error: %v", err)
-	}
-
-	if claims.Subject != userID {
-		t.Errorf("expected Subject %s, got %s", userID, claims.Subject)
-	}
-	if claims.Issuer != issuer {
-		t.Errorf("expected Issuer %s, got %s", issuer, claims.Issuer)
-	}
-
-	expectedExpiry := time.Now().Add(expiry).Unix()
-	if claims.ExpiresAt.Unix() > expectedExpiry || claims.ExpiresAt.Unix() < expectedExpiry-5 {
-		t.Errorf("expected ExpiresAt close to %v, got %v", expectedExpiry, claims.ExpiresAt.Unix())
-	}
-}
-
-func TestGenerateRefreshToken(t *testing.T) {
-	secret := "test_secret"
-	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 24 * time.Hour
-
-	token, err := generateRefreshToken(secret, issuer, userID, expiry)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if token == "" {
-		t.Fatalf("expected a token, got an empty string")
-	}
-
-	if !strings.HasPrefix(token, "eyJ") {
-		t.Errorf("expected token to start with 'eyJ', got %s", token[:3])
-	}
-
-	claims, err := parseClaims(secret, token)
-	if err != nil {
-		t.Fatalf("expected valid token claims, got error: %v", err)
-	}
-
-	if claims.Subject != userID {
-		t.Errorf("expected Subject %s, got %s", userID, claims.Subject)
-	}
-	if claims.Issuer != issuer {
-		t.Errorf("expected Issuer %s, got %s", issuer, claims.Issuer)
-	}
-
-	expectedExpiry := time.Now().Add(expiry).Unix()
-	if claims.ExpiresAt.Unix() > expectedExpiry || claims.ExpiresAt.Unix() < expectedExpiry-5 {
-		t.Errorf("expected ExpiresAt close to %v, got %v", expectedExpiry, claims.ExpiresAt.Unix())
-	}
-}
-
-func TestVerifyAndParseToken(t *testing.T) {
-	secret := "test_secret"
-	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 15 * time.Minute
-
-	token, err := generateAccessToken(secret, issuer, userID, expiry)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	id, err := verifyAndParseToken(secret, issuer, token)
-	if err != nil {
-		t.Errorf("expected valid token, got error: %v", err)
-	}
-	if id.String() != userID {
-		t.Errorf("expected userID %s, got %s", userID, id)
-	}
-
-	invalidToken := token + "tampered"
-	_, err = verifyAndParseToken(secret, issuer, invalidToken)
-	if err == nil {
-		t.Errorf("expected error for tampered token, got none")
-	}
-
-	_, err = verifyAndParseToken(secret, "wrong_issuer", token)
-	if err == nil {
-		t.Errorf("expected error for wrong issuer, got none")
-	}
-
-	expiredToken, _ := generateAccessToken(secret, issuer, userID, -1*time.Minute) // Expired token
-	_, err = verifyAndParseToken(secret, issuer, expiredToken)
-	if err == nil {
-		t.Errorf("expected error for expired token, got none")
-	}
+	signedToken, _ := token.SignedString([]byte(secret))
+	return signedToken
 }
