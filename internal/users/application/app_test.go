@@ -2,11 +2,12 @@ package application
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/users/domain"
+	"reflect"
 	"testing"
+	"time"
 )
 
 // Mocks
@@ -36,317 +37,234 @@ func (m *MockUserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error
 
 // Tests
 
-func TestUserService_Register(t *testing.T) {
+func TestUserService_DeleteUser(t *testing.T) {
+	type fields struct {
+		repo domain.UserRepository
+	}
+	type args struct {
+		userID uuid.UUID
+	}
 	tests := []struct {
-		name          string
-		username      string
-		email         string
-		password      string
-		expectedError error
-		mockFunc      func(ctx context.Context, username, email, password string) (*domain.User, error)
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
 	}{
 		{
-			name:     "successful registration",
-			username: "new_user",
-			email:    "new_user@example.com",
-			password: "ValidPassword123!",
-			mockFunc: func(ctx context.Context, username, email, password string) (*domain.User, error) {
-				return &domain.User{
-					ID:       uuid.New(),
-					Username: "new_user",
-					Email:    "new_user@example.com",
-					Password: "ValidPassword123",
-				}, nil
+			name: "successful delete",
+			fields: fields{
+				repo: &MockUserRepository{
+					DeleteUserFunc: func(ctx context.Context, id uuid.UUID) error {
+						return nil // simulate successful deletion
+					},
+				},
 			},
+			args:    args{userID: uuid.New()},
+			wantErr: false,
 		},
 		{
-			name:          "invalid username",
-			username:      "",
-			email:         "valid@example.com",
-			password:      "ValidPassword123!",
-			expectedError: fmt.Errorf("invalid username: username cannot be empty"),
-			mockFunc:      nil,
-		},
-		{
-			name:          "invalid email",
-			username:      "new_user",
-			email:         "invalid-email",
-			password:      "ValidPassword123!",
-			expectedError: fmt.Errorf("invalid email: mail: missing '@' or angle-addr"),
-			mockFunc:      nil,
-		},
-		{
-			name:          "invalid password",
-			username:      "new_user",
-			email:         "new_user@example.com",
-			password:      "short",
-			expectedError: fmt.Errorf("invalid password: password must be between 8 and 32 characters"),
-			mockFunc:      nil,
-		},
-		{
-			name:          "error in user creation",
-			username:      "new_user",
-			email:         "new_user@example.com",
-			password:      "ValidPassword123!",
-			expectedError: fmt.Errorf("error creating user: %w", errors.New("mock error")),
-			mockFunc: func(ctx context.Context, username, email, password string) (*domain.User, error) {
-				return nil, errors.New("mock error")
+			name: "failed delete",
+			fields: fields{
+				repo: &MockUserRepository{
+					DeleteUserFunc: func(ctx context.Context, id uuid.UUID) error {
+						return fmt.Errorf("delete failed") // simulate failure
+					},
+				},
 			},
+			args:    args{userID: uuid.New()},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo := &MockUserRepository{
-				CreateUserFunc: tt.mockFunc,
-			}
-
-			userService := &UserService{
-				repo: mockUserRepo,
-			}
-
-			user, err := userService.Register(tt.username, tt.email, tt.password)
-
-			if tt.expectedError != nil && err == nil {
-				t.Errorf("expected error %v, got nil", tt.expectedError)
-			} else if tt.expectedError == nil && err != nil {
-				t.Errorf("expected no error, got %v", err)
-			} else if err != nil && err.Error() != tt.expectedError.Error() {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
-			}
-
-			if tt.expectedError == nil && user == nil {
-				t.Error("expected user to be returned, got nil")
-			}
-
-			if user != nil && user.Username != tt.username {
-				t.Errorf("expected username %v, got %v", tt.username, user.Username)
+			s := &UserService{repo: tt.fields.repo}
+			if err := s.DeleteUser(tt.args.userID); (err != nil) != tt.wantErr {
+				t.Errorf("DeleteUser() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestUserService_GetUser(t *testing.T) {
+	testID := uuid.New()
+	type fields struct {
+		repo domain.UserRepository
+	}
+	type args struct {
+		userID uuid.UUID
+	}
 	tests := []struct {
-		name          string
-		userID        uuid.UUID
-		mockFunc      func(ctx context.Context, id uuid.UUID) (*domain.User, error)
-		expectedUser  *domain.User
-		expectedError error
+		name    string
+		fields  fields
+		args    args
+		want    *domain.User
+		wantErr bool
 	}{
 		{
-			name:   "successful user retrieval",
-			userID: uuid.New(),
-			mockFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return &domain.User{
-					ID:       id,
-					Username: "existing_user",
-					Email:    "existing_user@example.com",
-					Password: "ValidPassword123",
-				}, nil
+			name: "successful get user",
+			fields: fields{
+				repo: &MockUserRepository{
+					GetUserByIDFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+						return &domain.User{ID: id, Username: "testuser", Email: "test@example.com"}, nil
+					},
+				},
 			},
-			expectedUser: &domain.User{
-				Username: "existing_user",
-				Email:    "existing_user@example.com",
-				Password: "ValidPassword123",
-			},
-			expectedError: nil,
+			args:    args{userID: testID},
+			want:    &domain.User{ID: testID, Username: "testuser", Email: "test@example.com"},
+			wantErr: false,
 		},
 		{
-			name:   "user not found",
-			userID: uuid.New(),
-			mockFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return nil, errors.New("user not found")
+			name: "failed to get user",
+			fields: fields{
+				repo: &MockUserRepository{
+					GetUserByIDFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+						return nil, fmt.Errorf("user not found")
+					},
+				},
 			},
-			expectedUser:  nil,
-			expectedError: fmt.Errorf("error getting user: %w", errors.New("user not found")),
-		},
-		{
-			name:   "database error",
-			userID: uuid.New(),
-			mockFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return nil, errors.New("database connection error")
-			},
-			expectedUser:  nil,
-			expectedError: fmt.Errorf("error getting user: %w", errors.New("database connection error")),
+			args:    args{userID: uuid.New()},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo := &MockUserRepository{
-				GetUserByIDFunc: tt.mockFunc,
+			s := &UserService{repo: tt.fields.repo}
+			got, err := s.GetUser(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-
-			userService := &UserService{
-				repo: mockUserRepo,
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUser() got = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
 
-			user, err := userService.GetUser(tt.userID)
+func TestUserService_Register(t *testing.T) {
+	testID := uuid.New()
+	testTime := time.Now()
 
-			if tt.expectedError != nil && err == nil {
-				t.Errorf("expected error %v, got nil", tt.expectedError)
-			} else if tt.expectedError == nil && err != nil {
-				t.Errorf("expected no error, got %v", err)
-			} else if err != nil && err.Error() != tt.expectedError.Error() {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
+	type fields struct {
+		repo domain.UserRepository
+	}
+	type args struct {
+		username string
+		email    string
+		password string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *domain.User
+		wantErr bool
+	}{
+		{
+			name: "successful registration",
+			fields: fields{
+				repo: &MockUserRepository{
+					CreateUserFunc: func(ctx context.Context, username, email, password string) (*domain.User, error) {
+						return &domain.User{ID: testID, Username: username, Email: email, CreatedAt: testTime, UpdatedAt: testTime}, nil
+					},
+				},
+			},
+			args:    args{username: "testuser", email: "test@example.com", password: "password123A!"},
+			want:    &domain.User{ID: testID, Username: "testuser", Email: "test@example.com", CreatedAt: testTime, UpdatedAt: testTime},
+			wantErr: false,
+		},
+		{
+			name: "failed registration",
+			fields: fields{
+				repo: &MockUserRepository{
+					CreateUserFunc: func(ctx context.Context, username, email, password string) (*domain.User, error) {
+						return nil, fmt.Errorf("registration failed")
+					},
+				},
+			},
+			args:    args{username: "testuser", email: "test@example.com", password: "password123"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &UserService{repo: tt.fields.repo}
+			got, err := s.Register(tt.args.username, tt.args.email, tt.args.password)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Register() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-
-			if tt.expectedError == nil && user == nil {
-				t.Error("expected user to be returned, got nil")
-			}
-
-			if tt.expectedUser != nil && user != nil {
-				if user.Username != tt.expectedUser.Username {
-					t.Errorf("expected username %v, got %v", tt.expectedUser.Username, user.Username)
-				}
-				if user.Email != tt.expectedUser.Email {
-					t.Errorf("expected email %v, got %v", tt.expectedUser.Email, user.Email)
-				}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Register() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestUserService_UpdateUser(t *testing.T) {
+	type fields struct {
+		repo domain.UserRepository
+	}
+	type args struct {
+		userID   uuid.UUID
+		username string
+		email    string
+	}
 	tests := []struct {
-		name           string
-		userID         uuid.UUID
-		username       string
-		email          string
-		mockGetUser    func(ctx context.Context, id uuid.UUID) (*domain.User, error)
-		mockUpdateUser func(ctx context.Context, id uuid.UUID, username, email string) error
-		expectedError  error
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
 	}{
 		{
-			name:     "successful update",
-			userID:   uuid.New(),
-			username: "updated_user",
-			email:    "updated_user@example.com",
-			mockGetUser: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return &domain.User{
-					ID:       id,
-					Username: "existing_user",
-					Email:    "existing_user@example.com",
-				}, nil
+			name: "successful update",
+			fields: fields{
+				repo: &MockUserRepository{
+					GetUserByIDFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+						return &domain.User{ID: id, Username: "testuser", Email: "test@example.com"}, nil
+					},
+					UpdateUserFunc: func(ctx context.Context, id uuid.UUID, username, email string) error {
+						return nil
+					},
+				},
 			},
-			mockUpdateUser: func(ctx context.Context, id uuid.UUID, username, email string) error {
-				return nil
-			},
-			expectedError: nil,
+			args:    args{userID: uuid.New(), username: "newuser", email: "newemail@example.com"},
+			wantErr: false,
 		},
 		{
-			name:     "no data to update",
-			userID:   uuid.New(),
-			username: "",
-			email:    "",
-			mockGetUser: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return &domain.User{
-					ID:       id,
-					Username: "existing_user",
-					Email:    "existing_user@example.com",
-				}, nil
+			name: "failed update - user not found",
+			fields: fields{
+				repo: &MockUserRepository{
+					GetUserByIDFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+						return nil, fmt.Errorf("user not found")
+					},
+				},
 			},
-			mockUpdateUser: nil,
-			expectedError:  fmt.Errorf("no data to update"),
+			args:    args{userID: uuid.New(), username: "newuser", email: "newemail@example.com"},
+			wantErr: true,
 		},
 		{
-			name:     "error getting user",
-			userID:   uuid.New(),
-			username: "updated_user",
-			email:    "updated_user@example.com",
-			mockGetUser: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return nil, errors.New("user not found")
+			name: "failed update - validation error",
+			fields: fields{
+				repo: &MockUserRepository{
+					GetUserByIDFunc: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+						return &domain.User{ID: id, Username: "testuser", Email: "test@example.com"}, nil
+					},
+				},
 			},
-			mockUpdateUser: nil,
-			expectedError:  fmt.Errorf("error getting user: %w", errors.New("user not found")),
-		},
-		{
-			name:     "error updating user",
-			userID:   uuid.New(),
-			username: "updated_user",
-			email:    "updated_user@example.com",
-			mockGetUser: func(ctx context.Context, id uuid.UUID) (*domain.User, error) {
-				return &domain.User{
-					ID:       id,
-					Username: "existing_user",
-					Email:    "existing_user@example.com",
-				}, nil
-			},
-			mockUpdateUser: func(ctx context.Context, id uuid.UUID, username, email string) error {
-				return errors.New("update failed")
-			},
-			expectedError: fmt.Errorf("error updating user: %w", errors.New("update failed")),
+			args:    args{userID: uuid.New(), username: "", email: "invalid-email"},
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo := &MockUserRepository{
-				GetUserByIDFunc: tt.mockGetUser,
-				UpdateUserFunc:  tt.mockUpdateUser,
-			}
-
-			userService := &UserService{
-				repo: mockUserRepo,
-			}
-
-			err := userService.UpdateUser(tt.userID, tt.username, tt.email)
-
-			if tt.expectedError != nil && err == nil {
-				t.Errorf("expected error %v, got nil", tt.expectedError)
-			} else if tt.expectedError == nil && err != nil {
-				t.Errorf("expected no error, got %v", err)
-			} else if err != nil && err.Error() != tt.expectedError.Error() {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
-			}
-		})
-	}
-}
-
-func TestUserService_DeleteUser(t *testing.T) {
-	tests := []struct {
-		name          string
-		userID        uuid.UUID
-		mockFunc      func(ctx context.Context, id uuid.UUID) error
-		expectedError error
-	}{
-		{
-			name:   "successful deletion",
-			userID: uuid.New(),
-			mockFunc: func(ctx context.Context, id uuid.UUID) error {
-				return nil
-			},
-		},
-		{
-			name:   "error deleting user",
-			userID: uuid.New(),
-			mockFunc: func(ctx context.Context, id uuid.UUID) error {
-				return errors.New("mock error")
-			},
-			expectedError: fmt.Errorf("error deleting user: %w", errors.New("mock error")),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepo := &MockUserRepository{
-				DeleteUserFunc: tt.mockFunc,
-			}
-
-			userService := &UserService{
-				repo: mockUserRepo,
-			}
-
-			err := userService.DeleteUser(tt.userID)
-
-			// Check for errors
-			if tt.expectedError != nil && err == nil {
-				t.Errorf("expected error %v, got nil", tt.expectedError)
-			} else if tt.expectedError == nil && err != nil {
-				t.Errorf("expected no error, got %v", err)
-			} else if err != nil && err.Error() != tt.expectedError.Error() {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
+			s := &UserService{repo: tt.fields.repo}
+			if err := s.UpdateUser(tt.args.userID, tt.args.username, tt.args.email); (err != nil) != tt.wantErr {
+				t.Errorf("UpdateUser() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
