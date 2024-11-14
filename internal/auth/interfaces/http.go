@@ -25,14 +25,14 @@ func (s *AuthServer) Middleware(handler func(uuid.UUID, http.ResponseWriter, *ht
 	return func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			respond.WithError(w, http.StatusUnauthorized, "missing or invalid Authorization header")
+			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidRequest.Error())
 			return
 		}
 		bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
 
 		userID, err := s.service.Authenticate(bearerToken)
 		if err != nil {
-			respond.WithError(w, http.StatusUnauthorized, "invalid token")
+			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
 			return
 		}
 
@@ -55,17 +55,17 @@ func (s *AuthServer) Login(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	accessToken, refreshToken, err := s.service.Login(p.Username, p.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrInternal) {
-			respond.WithError(w, http.StatusInternalServerError, "internal server error")
+			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 			return
 		}
-		respond.WithError(w, http.StatusUnauthorized, "invalid credentials")
+		respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidCredentials.Error())
 		return
 	}
 
@@ -88,17 +88,17 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	accessToken, err := s.service.Refresh(p.RefreshToken)
 	if err != nil {
 		if errors.Is(err, domain.ErrInternal) {
-			respond.WithError(w, http.StatusInternalServerError, "internal server error")
+			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 			return
 		}
-		respond.WithError(w, http.StatusUnauthorized, "invalid token")
+		respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
 		return
 	}
 
@@ -110,7 +110,7 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.Logout(userID)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, "internal server error")
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
