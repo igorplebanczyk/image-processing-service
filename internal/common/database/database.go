@@ -32,7 +32,7 @@ func (s *Service) Connect(user, password, host, port, dbName string) (*sql.DB, e
 	return db, nil
 }
 
-func (s *Service) Close() {
+func (s *Service) Stop() {
 	err := s.db.Close()
 	if err != nil {
 		slog.Error("Error closing database", "error", err)
