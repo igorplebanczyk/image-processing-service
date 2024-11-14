@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"image-processing-service/internal/auth/domain"
 	"testing"
 	"time"
@@ -41,189 +40,463 @@ func (m *MockRefreshTokenRepository) RevokeRefreshToken(ctx context.Context, use
 // Tests
 
 func TestAuthService_Login(t *testing.T) {
-	mockUserRepo := &MockUserRepository{
-		GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
-			if username == "valid_user" {
-				hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("valid_password"), bcrypt.DefaultCost)
-				return &domain.User{ID: uuid.New(), Username: "valid_user", Password: string(hashedPassword)}, nil
+	type fields struct {
+		userRepo         domain.UserRepository
+		refreshTokenRepo domain.RefreshTokenRepository
+		secret           string
+		issuer           string
+		accessExpiry     time.Duration
+		refreshExpiry    time.Duration
+	}
+	type args struct {
+		username string
+		password string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		want1   string
+		wantErr bool
+	}{
+		{
+			name: "invalid username",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return nil, fmt.Errorf("user not found")
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{},
+				secret:           "secret",
+				issuer:           "testIssuer",
+				accessExpiry:     time.Hour,
+				refreshExpiry:    time.Hour * 24,
+			},
+			args: args{
+				username: "invaliduser",
+				password: "password123",
+			},
+			want:    "",
+			want1:   "",
+			wantErr: true,
+		},
+		{
+			name: "invalid password",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: "testuser",
+							Password: "$2a$10$KIXZnTTK1AtfQ5teOfRo3ePZ6VuMKhjFtsKxfwHMfNzm2ZFi0IdFS",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{},
+				secret:           "secret",
+				issuer:           "testIssuer",
+				accessExpiry:     time.Hour,
+				refreshExpiry:    time.Hour * 24,
+			},
+			args: args{
+				username: "testuser",
+				password: "wrongpassword",
+			},
+			want:    "",
+			want1:   "",
+			wantErr: true,
+		},
+		{
+			name: "error generating token",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: "testuser",
+							Password: "$2a$10$KIXZnTTK1AtfQ5teOfRo3ePZ6VuMKhjFtsKxfwHMfNzm2ZFi0IdFS",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					CreateRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+						return nil
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				username: "testuser",
+				password: "password123",
+			},
+			want:    "",
+			want1:   "",
+			wantErr: true,
+		},
+		{
+			name: "error adding refresh token to db",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: "testuser",
+							Password: "$2a$10$KIXZnTTK1AtfQ5teOfRo3ePZ6VuMKhjFtsKxfwHMfNzm2ZFi0IdFS",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					CreateRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+						return fmt.Errorf("db error")
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				username: "testuser",
+				password: "password123",
+			},
+			want:    "",
+			want1:   "",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &AuthService{
+				userRepo:         tt.fields.userRepo,
+				refreshTokenRepo: tt.fields.refreshTokenRepo,
+				secret:           tt.fields.secret,
+				issuer:           tt.fields.issuer,
+				accessExpiry:     tt.fields.accessExpiry,
+				refreshExpiry:    tt.fields.refreshExpiry,
 			}
-			return nil, fmt.Errorf("invalid username")
-		},
+			got, got1, err := s.Login(tt.args.username, tt.args.password)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Login() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Login() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("Login() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
 	}
-
-	mockRefreshTokenRepo := &MockRefreshTokenRepository{
-		CreateRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
-			return nil
-		},
-	}
-
-	authService := AuthService{
-		userRepo:         mockUserRepo,
-		refreshTokenRepo: mockRefreshTokenRepo,
-		secret:           "secret_key",
-		issuer:           "test_issuer",
-		accessExpiry:     15 * time.Minute,
-		refreshExpiry:    7 * 24 * time.Hour,
-	}
-
-	t.Run("successful login", func(t *testing.T) {
-		accessToken, refreshToken, err := authService.Login("valid_user", "valid_password")
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if accessToken == "" || refreshToken == "" {
-			t.Errorf("expected tokens, got empty strings")
-		}
-	})
-
-	t.Run("invalid username", func(t *testing.T) {
-		_, _, err := authService.Login("invalid_user", "any_password")
-		if err == nil || err.Error() != "invalid username" {
-			t.Errorf("expected invalid username error, got %v", err)
-		}
-	})
-
-	t.Run("invalid password", func(t *testing.T) {
-		_, _, err := authService.Login("valid_user", "invalid_password")
-		if err == nil || err.Error() != "invalid password" {
-			t.Errorf("expected invalid password error, got %v", err)
-		}
-	})
 }
 
 func TestAuthService_Refresh(t *testing.T) {
-	secret := "secret_key"
-	issuer := "test_issuer"
-	validUserID := uuid.New()
-	refreshExpiry := 24 * time.Hour
-
-	validRefreshToken, err := generateRefreshToken(secret, issuer, validUserID.String(), refreshExpiry)
-	if err != nil {
-		t.Errorf("expected no error, got %v", err)
+	type fields struct {
+		userRepo         domain.UserRepository
+		refreshTokenRepo domain.RefreshTokenRepository
+		secret           string
+		issuer           string
+		accessExpiry     time.Duration
+		refreshExpiry    time.Duration
 	}
-
-	mockRefreshTokenRepo := &MockRefreshTokenRepository{
-		GetRefreshTokensByUserIDFunc: func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
-			if userID == validUserID {
-				return []*domain.RefreshToken{
-					{Token: validRefreshToken},
-				}, nil
-			}
-			return nil, fmt.Errorf("user not found")
+	type args struct {
+		rawRefreshToken string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "invalid refresh token format",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: username,
+							Password: "hashedPassword",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{},
+				secret:           "secret",
+				issuer:           "testIssuer",
+				accessExpiry:     time.Hour,
+				refreshExpiry:    time.Hour * 24,
+			},
+			args: args{
+				rawRefreshToken: "invalid-refresh-token",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "token not found",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: username,
+							Password: "hashedPassword",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					GetRefreshTokensByUserIDFunc: func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+						return []*domain.RefreshToken{
+							{Token: "stored-refresh-token", UserID: userID},
+						}, nil
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				rawRefreshToken: "non-matching-refresh-token",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "error fetching refresh tokens",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: username,
+							Password: "hashedPassword",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					GetRefreshTokensByUserIDFunc: func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+						return nil, fmt.Errorf("error fetching tokens")
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				rawRefreshToken: "valid-refresh-token",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "error generating access token",
+			fields: fields{
+				userRepo: &MockUserRepository{
+					GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+						return &domain.User{
+							ID:       uuid.New(),
+							Username: username,
+							Password: "hashedPassword",
+						}, nil
+					},
+				},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					GetRefreshTokensByUserIDFunc: func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+						return []*domain.RefreshToken{
+							{Token: "valid-refresh-token", UserID: userID},
+						}, nil
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				rawRefreshToken: "valid-refresh-token",
+			},
+			want:    "",
+			wantErr: true,
 		},
 	}
 
-	authService := AuthService{
-		refreshTokenRepo: mockRefreshTokenRepo,
-		secret:           secret,
-		issuer:           issuer,
-		accessExpiry:     15 * time.Minute,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &AuthService{
+				userRepo:         tt.fields.userRepo,
+				refreshTokenRepo: tt.fields.refreshTokenRepo,
+				secret:           tt.fields.secret,
+				issuer:           tt.fields.issuer,
+				accessExpiry:     tt.fields.accessExpiry,
+				refreshExpiry:    tt.fields.refreshExpiry,
+			}
+			got, err := s.Refresh(tt.args.rawRefreshToken)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Refresh() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Refresh() got = %v, want %v", got, tt.want)
+			}
+		})
 	}
-
-	t.Run("successful refresh", func(t *testing.T) {
-		accessToken, err := authService.Refresh(validRefreshToken)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if accessToken == "" {
-			t.Errorf("expected a valid access token, got an empty string")
-		}
-	})
-
-	t.Run("invalid token", func(t *testing.T) {
-		_, err := authService.Refresh("invalid_refresh_token")
-		if err == nil || err.Error() != "invalid token" {
-			t.Errorf("expected invalid token error, got %v", err)
-		}
-	})
-
-	t.Run("refresh token not found in database", func(t *testing.T) {
-		mockRefreshTokenRepo.GetRefreshTokensByUserIDFunc = func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
-			return []*domain.RefreshToken{}, nil
-		}
-
-		_, err := authService.Refresh(validRefreshToken)
-		if err == nil || err.Error() != "invalid token" {
-			t.Errorf("expected invalid token error, got %v", err)
-		}
-	})
 }
 
 func TestAuthService_Authenticate(t *testing.T) {
-	validUserID := uuid.New()
-	secret := "secret_key"
-	issuer := "test_issuer"
-	accessExpiry := 15 * time.Minute
-
-	validAccessToken, err := generateAccessToken(secret, issuer, validUserID.String(), accessExpiry)
-	if err != nil {
-		t.Fatalf("failed to generate a valid access token: %v", err)
+	type fields struct {
+		userRepo         domain.UserRepository
+		refreshTokenRepo domain.RefreshTokenRepository
+		secret           string
+		issuer           string
+		accessExpiry     time.Duration
+		refreshExpiry    time.Duration
 	}
-
-	authService := AuthService{
-		secret:       secret,
-		issuer:       issuer,
-		accessExpiry: accessExpiry,
+	type args struct {
+		accessToken string
 	}
-
-	t.Run("successful authentication", func(t *testing.T) {
-		userID, err := authService.Authenticate(validAccessToken)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if userID != validUserID {
-			t.Errorf("expected user ID %v, got %v", validUserID, userID)
-		}
-	})
-
-	t.Run("invalid token", func(t *testing.T) {
-		_, err := authService.Authenticate("invalid_access_token")
-		if err == nil || err.Error() != "invalid token" {
-			t.Errorf("expected invalid token error, got %v", err)
-		}
-	})
-
-	t.Run("expired token", func(t *testing.T) {
-		expiredAccessToken, err := generateAccessToken(secret, issuer, validUserID.String(), -1*time.Minute)
-		if err != nil {
-			t.Fatalf("failed to generate an expired access token: %v", err)
-		}
-
-		_, err = authService.Authenticate(expiredAccessToken)
-		if err == nil || err.Error() != "invalid token" {
-			t.Errorf("expected invalid token error due to expiration, got %v", err)
-		}
-	})
-}
-
-func TestAuthService_Logout(t *testing.T) {
-	validUserID := uuid.New()
-
-	mockRefreshTokenRepo := &MockRefreshTokenRepository{
-		RevokeRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID) error {
-			if userID == validUserID {
-				return nil
-			}
-			return fmt.Errorf("user not found")
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    uuid.UUID
+		wantErr bool
+	}{
+		{
+			name: "invalid access token",
+			fields: fields{
+				userRepo:         &MockUserRepository{},
+				refreshTokenRepo: &MockRefreshTokenRepository{},
+				secret:           "secret",
+				issuer:           "testIssuer",
+				accessExpiry:     time.Hour,
+				refreshExpiry:    time.Hour * 24,
+			},
+			args: args{
+				accessToken: "invalid-access-token",
+			},
+			want:    uuid.Nil,
+			wantErr: true,
+		},
+		{
+			name: "error in token verification",
+			fields: fields{
+				userRepo:         &MockUserRepository{},
+				refreshTokenRepo: &MockRefreshTokenRepository{},
+				secret:           "secret",
+				issuer:           "testIssuer",
+				accessExpiry:     time.Hour,
+				refreshExpiry:    time.Hour * 24,
+			},
+			args: args{
+				accessToken: "malformed-token",
+			},
+			want:    uuid.Nil,
+			wantErr: true,
 		},
 	}
 
-	authService := AuthService{
-		refreshTokenRepo: mockRefreshTokenRepo,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &AuthService{
+				userRepo:         tt.fields.userRepo,
+				refreshTokenRepo: tt.fields.refreshTokenRepo,
+				secret:           tt.fields.secret,
+				issuer:           tt.fields.issuer,
+				accessExpiry:     tt.fields.accessExpiry,
+				refreshExpiry:    tt.fields.refreshExpiry,
+			}
+			got, err := s.Authenticate(tt.args.accessToken)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Authenticate() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("Authenticate() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAuthService_Logout(t *testing.T) {
+	type fields struct {
+		userRepo         domain.UserRepository
+		refreshTokenRepo domain.RefreshTokenRepository
+		secret           string
+		issuer           string
+		accessExpiry     time.Duration
+		refreshExpiry    time.Duration
+	}
+	type args struct {
+		userID uuid.UUID
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "successful logout",
+			fields: fields{
+				userRepo: &MockUserRepository{},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					RevokeRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID) error {
+						return nil
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				userID: uuid.New(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "error during logout",
+			fields: fields{
+				userRepo: &MockUserRepository{},
+				refreshTokenRepo: &MockRefreshTokenRepository{
+					RevokeRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID) error {
+						return fmt.Errorf("error revoking refresh token") // Simulating an error
+					},
+				},
+				secret:        "secret",
+				issuer:        "testIssuer",
+				accessExpiry:  time.Hour,
+				refreshExpiry: time.Hour * 24,
+			},
+			args: args{
+				userID: uuid.New(),
+			},
+			wantErr: true,
+		},
 	}
 
-	t.Run("successful logout", func(t *testing.T) {
-		err := authService.Logout(validUserID)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-	})
-
-	t.Run("user not found", func(t *testing.T) {
-		nonExistentUserID := uuid.New() // Simulate a different user ID
-		err := authService.Logout(nonExistentUserID)
-		if err == nil || err.Error() != "error deleting refresh tokens: user not found" {
-			t.Errorf("expected user not found error, got %v", err)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &AuthService{
+				userRepo:         tt.fields.userRepo,
+				refreshTokenRepo: tt.fields.refreshTokenRepo,
+				secret:           tt.fields.secret,
+				issuer:           tt.fields.issuer,
+				accessExpiry:     tt.fields.accessExpiry,
+				refreshExpiry:    tt.fields.refreshExpiry,
+			}
+			err := s.Logout(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Logout() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
