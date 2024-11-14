@@ -1,137 +1,229 @@
 package application
 
 import (
-	"strings"
+	"context"
+	"fmt"
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+	"image-processing-service/internal/auth/domain"
 	"testing"
 	"time"
-
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
-func parseClaims(secret, token string) (*jwt.RegisteredClaims, error) {
-	parsedToken, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+// Mocks
+
+type MockUserRepository struct {
+	GetUserByUsernameFunc func(ctx context.Context, username string) (*domain.User, error)
+}
+
+func (m *MockUserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
+	return m.GetUserByUsernameFunc(ctx, username)
+}
+
+type MockRefreshTokenRepository struct {
+	CreateRefreshTokenFunc       func(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error
+	GetRefreshTokensByUserIDFunc func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error)
+	RevokeRefreshTokenFunc       func(ctx context.Context, userID uuid.UUID) error
+}
+
+func (m *MockRefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+	return m.CreateRefreshTokenFunc(ctx, userID, token, expiresAt)
+}
+
+func (m *MockRefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+	return m.GetRefreshTokensByUserIDFunc(ctx, userID)
+}
+
+func (m *MockRefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	return m.RevokeRefreshTokenFunc(ctx, userID)
+}
+
+// Tests
+
+func TestAuthService_Login(t *testing.T) {
+	mockUserRepo := &MockUserRepository{
+		GetUserByUsernameFunc: func(ctx context.Context, username string) (*domain.User, error) {
+			if username == "valid_user" {
+				hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("valid_password"), bcrypt.DefaultCost)
+				return &domain.User{ID: uuid.New(), Username: "valid_user", Password: string(hashedPassword)}, nil
+			}
+			return nil, fmt.Errorf("invalid username")
+		},
+	}
+
+	mockRefreshTokenRepo := &MockRefreshTokenRepository{
+		CreateRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+			return nil
+		},
+	}
+
+	authService := AuthService{
+		userRepo:         mockUserRepo,
+		refreshTokenRepo: mockRefreshTokenRepo,
+		secret:           "secret_key",
+		issuer:           "test_issuer",
+		accessExpiry:     15 * time.Minute,
+		refreshExpiry:    7 * 24 * time.Hour,
+	}
+
+	t.Run("successful login", func(t *testing.T) {
+		accessToken, refreshToken, err := authService.Login("valid_user", "valid_password")
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+		if accessToken == "" || refreshToken == "" {
+			t.Errorf("expected tokens, got empty strings")
+		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	claims, ok := parsedToken.Claims.(*jwt.RegisteredClaims)
-	if !ok || !parsedToken.Valid {
-		return nil, jwt.ErrSignatureInvalid
-	}
+	t.Run("invalid username", func(t *testing.T) {
+		_, _, err := authService.Login("invalid_user", "any_password")
+		if err == nil || err.Error() != "invalid username" {
+			t.Errorf("expected invalid username error, got %v", err)
+		}
+	})
 
-	return claims, nil
+	t.Run("invalid password", func(t *testing.T) {
+		_, _, err := authService.Login("valid_user", "invalid_password")
+		if err == nil || err.Error() != "invalid password" {
+			t.Errorf("expected invalid password error, got %v", err)
+		}
+	})
 }
 
-func TestGenerateAccessToken(t *testing.T) {
-	secret := "test_secret"
+func TestAuthService_Refresh(t *testing.T) {
+	secret := "secret_key"
 	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 15 * time.Minute
+	validUserID := uuid.New()
+	refreshExpiry := 24 * time.Hour
 
-	token, err := generateAccessToken(secret, issuer, userID, expiry)
+	validRefreshToken, err := generateRefreshToken(secret, issuer, validUserID.String(), refreshExpiry)
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+		t.Errorf("expected no error, got %v", err)
 	}
 
-	if token == "" {
-		t.Fatalf("expected a token, got an empty string")
+	mockRefreshTokenRepo := &MockRefreshTokenRepository{
+		GetRefreshTokensByUserIDFunc: func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+			if userID == validUserID {
+				return []*domain.RefreshToken{
+					{Token: validRefreshToken},
+				}, nil
+			}
+			return nil, fmt.Errorf("user not found")
+		},
 	}
 
-	if !strings.HasPrefix(token, "eyJ") {
-		t.Errorf("expected token to start with 'eyJ', got %s", token[:3])
+	authService := AuthService{
+		refreshTokenRepo: mockRefreshTokenRepo,
+		secret:           secret,
+		issuer:           issuer,
+		accessExpiry:     15 * time.Minute,
 	}
 
-	claims, err := parseClaims(secret, token)
-	if err != nil {
-		t.Fatalf("expected valid token claims, got error: %v", err)
-	}
+	t.Run("successful refresh", func(t *testing.T) {
+		accessToken, err := authService.Refresh(validRefreshToken)
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+		if accessToken == "" {
+			t.Errorf("expected a valid access token, got an empty string")
+		}
+	})
 
-	if claims.Subject != userID {
-		t.Errorf("expected Subject %s, got %s", userID, claims.Subject)
-	}
-	if claims.Issuer != issuer {
-		t.Errorf("expected Issuer %s, got %s", issuer, claims.Issuer)
-	}
+	t.Run("invalid token", func(t *testing.T) {
+		_, err := authService.Refresh("invalid_refresh_token")
+		if err == nil || err.Error() != "invalid token" {
+			t.Errorf("expected invalid token error, got %v", err)
+		}
+	})
 
-	expectedExpiry := time.Now().Add(expiry).Unix()
-	if claims.ExpiresAt.Unix() > expectedExpiry || claims.ExpiresAt.Unix() < expectedExpiry-5 {
-		t.Errorf("expected ExpiresAt close to %v, got %v", expectedExpiry, claims.ExpiresAt.Unix())
-	}
+	t.Run("refresh token not found in database", func(t *testing.T) {
+		mockRefreshTokenRepo.GetRefreshTokensByUserIDFunc = func(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+			return []*domain.RefreshToken{}, nil
+		}
+
+		_, err := authService.Refresh(validRefreshToken)
+		if err == nil || err.Error() != "invalid token" {
+			t.Errorf("expected invalid token error, got %v", err)
+		}
+	})
 }
 
-func TestGenerateRefreshToken(t *testing.T) {
-	secret := "test_secret"
+func TestAuthService_Authenticate(t *testing.T) {
+	validUserID := uuid.New()
+	secret := "secret_key"
 	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 24 * time.Hour
+	accessExpiry := 15 * time.Minute
 
-	token, err := generateRefreshToken(secret, issuer, userID, expiry)
+	validAccessToken, err := generateAccessToken(secret, issuer, validUserID.String(), accessExpiry)
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+		t.Fatalf("failed to generate a valid access token: %v", err)
 	}
 
-	if token == "" {
-		t.Fatalf("expected a token, got an empty string")
+	authService := AuthService{
+		secret:       secret,
+		issuer:       issuer,
+		accessExpiry: accessExpiry,
 	}
 
-	if !strings.HasPrefix(token, "eyJ") {
-		t.Errorf("expected token to start with 'eyJ', got %s", token[:3])
-	}
+	t.Run("successful authentication", func(t *testing.T) {
+		userID, err := authService.Authenticate(validAccessToken)
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+		if userID != validUserID {
+			t.Errorf("expected user ID %v, got %v", validUserID, userID)
+		}
+	})
 
-	claims, err := parseClaims(secret, token)
-	if err != nil {
-		t.Fatalf("expected valid token claims, got error: %v", err)
-	}
+	t.Run("invalid token", func(t *testing.T) {
+		_, err := authService.Authenticate("invalid_access_token")
+		if err == nil || err.Error() != "invalid token" {
+			t.Errorf("expected invalid token error, got %v", err)
+		}
+	})
 
-	if claims.Subject != userID {
-		t.Errorf("expected Subject %s, got %s", userID, claims.Subject)
-	}
-	if claims.Issuer != issuer {
-		t.Errorf("expected Issuer %s, got %s", issuer, claims.Issuer)
-	}
+	t.Run("expired token", func(t *testing.T) {
+		expiredAccessToken, err := generateAccessToken(secret, issuer, validUserID.String(), -1*time.Minute)
+		if err != nil {
+			t.Fatalf("failed to generate an expired access token: %v", err)
+		}
 
-	expectedExpiry := time.Now().Add(expiry).Unix()
-	if claims.ExpiresAt.Unix() > expectedExpiry || claims.ExpiresAt.Unix() < expectedExpiry-5 {
-		t.Errorf("expected ExpiresAt close to %v, got %v", expectedExpiry, claims.ExpiresAt.Unix())
-	}
+		_, err = authService.Authenticate(expiredAccessToken)
+		if err == nil || err.Error() != "invalid token" {
+			t.Errorf("expected invalid token error due to expiration, got %v", err)
+		}
+	})
 }
 
-func TestVerifyAndParseToken(t *testing.T) {
-	secret := "test_secret"
-	issuer := "test_issuer"
-	userID := uuid.New().String()
-	expiry := 15 * time.Minute
+func TestAuthService_Logout(t *testing.T) {
+	validUserID := uuid.New()
 
-	token, err := generateAccessToken(secret, issuer, userID, expiry)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	id, err := verifyAndParseToken(secret, issuer, token)
-	if err != nil {
-		t.Errorf("expected valid token, got error: %v", err)
-	}
-	if id.String() != userID {
-		t.Errorf("expected userID %s, got %s", userID, id)
+	mockRefreshTokenRepo := &MockRefreshTokenRepository{
+		RevokeRefreshTokenFunc: func(ctx context.Context, userID uuid.UUID) error {
+			if userID == validUserID {
+				return nil
+			}
+			return fmt.Errorf("user not found")
+		},
 	}
 
-	invalidToken := token + "tampered"
-	_, err = verifyAndParseToken(secret, issuer, invalidToken)
-	if err == nil {
-		t.Errorf("expected error for tampered token, got none")
+	authService := AuthService{
+		refreshTokenRepo: mockRefreshTokenRepo,
 	}
 
-	_, err = verifyAndParseToken(secret, "wrong_issuer", token)
-	if err == nil {
-		t.Errorf("expected error for wrong issuer, got none")
-	}
+	t.Run("successful logout", func(t *testing.T) {
+		err := authService.Logout(validUserID)
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
+		}
+	})
 
-	expiredToken, _ := generateAccessToken(secret, issuer, userID, -1*time.Minute) // Expired token
-	_, err = verifyAndParseToken(secret, issuer, expiredToken)
-	if err == nil {
-		t.Errorf("expected error for expired token, got none")
-	}
+	t.Run("user not found", func(t *testing.T) {
+		nonExistentUserID := uuid.New() // Simulate a different user ID
+		err := authService.Logout(nonExistentUserID)
+		if err == nil || err.Error() != "error deleting refresh tokens: user not found" {
+			t.Errorf("expected user not found error, got %v", err)
+		}
+	})
 }
