@@ -1,15 +1,22 @@
-* Add more logging
-* Add tests
-* Add IaC
-* Add OAPI specifications
-* Use proper PostgreSQL configuration
-* Use proper Redis configuration
-* Add RBAC and admin endpoints
-* Improve error handling
-* Add OpenID
-* Add a mail service
-* Add a forgotten password system
-* Add a CI/CD pipeline
-* Add sophisticated logging and monitoring
-* Add an reverse proxy
-* Add a README and LICENSE
+- [ ] Add tests
+  - [X] Domain layer tests
+  - [X] Application layer tests
+  - [ ] Interfaces layer tests
+  - [ ] Infrastructure layer tests
+  - [ ] Common services tests
+  - [ ] Main package tests 
+  - [ ] Integration tests
+  - [ ] Transformation layer tests
+- [ ] Improve error handling
+- [ ] Improve logging
+- [ ] Use proper PostgreSQL configuration
+- [ ] Use proper Redis configuration
+- [ ] Add Terraform IaC
+- [ ] Add OpenAPI specifications
+- [ ] Add RBAC and admin endpoints
+- [ ] Add monitoring
+- [ ] Add a mail service
+- [ ] Add a forgotten password system
+- [ ] Add a CI/CD pipeline
+- [ ] Add an reverse proxy
+- [ ] Add a README and LICENSE
