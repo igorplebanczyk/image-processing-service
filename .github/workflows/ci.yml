@@ -21,9 +21,11 @@ jobs:
           go-version: '1.23.3'
 
       - name: Install dependencies
+        working-directory: ./src
         run: go mod download
 
       - name: Run unit tests
+        working-directory: ./src
         run: go test ./... -cover
 
   style:
@@ -40,12 +42,14 @@ jobs:
           go-version: '1.23.3'
 
       - name: Check formatting
+        working-directory: ./src
         run: test -z $(go fmt ./...)
 
       - name: Install linter
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
       - name: Run linter
+        working-directory: ./src
         run: staticcheck ./...
 
   security:
@@ -65,4 +69,5 @@ jobs:
         run: go install github.com/securego/gosec/v2/cmd/gosec@latest
 
       - name: Run security checker
+        working-directory: ./src
         run: gosec ./...
