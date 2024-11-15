@@ -27,7 +27,10 @@ func Setup(logDir string) error {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
 
-	handler := slog.NewJSONHandler(file, nil)
+	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{
+		Level:     slog.LevelInfo,
+		AddSource: true,
+	})
 	logger := slog.New(handler)
 
 	// Set the custom logger as the default logger globally
