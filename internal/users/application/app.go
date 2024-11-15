@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/users/domain"
 	"time"
@@ -70,7 +71,7 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 	}
 
 	if username == "" && email == "" {
-		return errors.Join(domain.ErrInvalidRequest, errors.New("username or email must be provided"))
+		return errors.Join(domain.ErrInvalidRequest, fmt.Errorf("username or email must be provided"))
 	}
 
 	if username == "" {
