@@ -25,7 +25,7 @@ func New(db *sql.DB, txProvider *transactions.TransactionProvider, interval time
 }
 
 func (s *Worker) Start() {
-	slog.Info("Worker starting")
+	slog.Info("Starting database worker")
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
@@ -36,14 +36,13 @@ func (s *Worker) Start() {
 
 			err := s.repo.DeleteExpiredRefreshTokens(ctx)
 			if err != nil {
-				slog.Error("error deleting expired refresh tokens", "error", err)
+				slog.Error("Database error: error deleting expired refresh tokens", "error", err)
 			} else {
-				slog.Info("expired refresh tokens deleted")
+				slog.Info("Expired refresh tokens deleted")
 			}
 
 			cancel()
 		case <-s.stop:
-			slog.Info("Worker stopped")
 			return
 		}
 	}
@@ -51,4 +50,5 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop <- true
+	slog.Info("Database worker stopped")
 }

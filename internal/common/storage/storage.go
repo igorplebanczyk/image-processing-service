@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"log/slog"
 )
 
 type Service struct {
@@ -21,6 +22,8 @@ func NewService(accountName, accountKey, serviceURL, containerName string) (*Ser
 	if err != nil {
 		return nil, fmt.Errorf("error creating client: %w", err)
 	}
+
+	slog.Info("Connected to storage", "account", accountName, "container", containerName)
 
 	return &Service{
 		client:        client,

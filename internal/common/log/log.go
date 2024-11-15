@@ -36,5 +36,7 @@ func Setup(logDir string) error {
 	// Set the custom logger as the default logger globally
 	slog.SetDefault(logger)
 
+	slog.Info("Logger setup complete", "dir", logDir, "file", logFileName)
+
 	return nil
 }

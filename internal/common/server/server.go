@@ -59,10 +59,10 @@ func (s *Service) setup() {
 }
 
 func (s *Service) Start() {
-	slog.Info("Service starting", "port", s.port)
+	slog.Info("Starting server", "port", s.port)
 	err := s.server.ListenAndServe()
 	if err != nil {
-		slog.Error("Error starting server", "error", err)
+		slog.Error("Init error: error starting server", "error", err)
 		return
 	}
 }
@@ -70,7 +70,7 @@ func (s *Service) Start() {
 func (s *Service) Stop() {
 	err := s.server.Shutdown(context.Background())
 	if err != nil {
-		slog.Error("Error shutting down server", "error", err)
+		slog.Error("Shutdown error: error shutting down server", "error", err)
 	}
-	slog.Info("Service stopped")
+	slog.Info("Server stopped")
 }

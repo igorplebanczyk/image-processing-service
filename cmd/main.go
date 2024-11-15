@@ -46,12 +46,12 @@ func main() {
 		panic(err)
 	}
 
-	slog.Info("Starting Application...")
+	slog.Info("Initializing application")
 
 	app := &application{}
 	err = app.assemble()
 	if err != nil {
-		slog.Error("Error configuring services", "error", err)
+		slog.Error("Init error: error initializing application", "error", err)
 		panic(err)
 	}
 
@@ -61,11 +61,16 @@ func main() {
 	go app.dbWorker.Start()
 	go app.serverService.Start()
 
+	slog.Info("Application started")
+
 	<-ctx.Done()
-	slog.Info("Shutting down...")
+	slog.Info("Received shutdown signal")
+
 	app.dbWorker.Stop()
 	app.dbService.Stop()
 	app.serverService.Stop()
+
+	slog.Info("Application shutdown")
 }
 
 func (a *application) assemble() error {
@@ -100,7 +105,9 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
-	// Setup services
+	slog.Info("Environment variables obtained")
+
+	// Setup external services
 
 	dbService := database.NewService()
 	db, err := dbService.Connect(postgresUser, postgresPassword, postgresHost, postgresPort, postgresDB)
@@ -120,6 +127,8 @@ func (a *application) assemble() error {
 	if err != nil {
 		return fmt.Errorf("error creating storage: %w", err)
 	}
+
+	slog.Info("External services configured")
 
 	// Assemble the application
 
@@ -141,6 +150,8 @@ func (a *application) assemble() error {
 	a.serverService = serverService
 	a.dbService = dbService
 	a.dbWorker = dbWorker
+
+	slog.Info("Application assembled")
 
 	return nil
 }
