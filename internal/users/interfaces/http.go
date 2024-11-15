@@ -2,9 +2,11 @@ package interfaces
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"image-processing-service/internal/common/server/respond"
 	"image-processing-service/internal/users/application"
+	"image-processing-service/internal/users/domain"
 	"net/http"
 )
 
@@ -33,14 +35,17 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	user, err := s.service.Register(p.Username, p.Email, p.Password)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "error registering user")
-		return
+		if errors.Is(err, domain.ErrInternal) {
+			respond.WithError(w, http.StatusBadRequest, domain.ErrInternal.Error())
+			return
+		}
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 	}
 
 	respond.WithJSON(w, http.StatusCreated, response{
@@ -60,7 +65,7 @@ func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 
 	user, err := s.service.GetUser(userID)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "error getting user")
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -82,13 +87,21 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	err = s.service.UpdateUser(userID, p.Username, p.Email)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "error updating user")
+		if errors.Is(err, domain.ErrInternal) {
+			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+			return
+		}
+		if errors.Is(err, domain.ErrInvalidRequest) {
+			respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+			return
+		}
+		respond.WithError(w, http.StatusBadRequest, domain.ErrValidationFailed.Error())
 		return
 	}
 
@@ -98,7 +111,7 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.DeleteUser(userID)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "error deleting user")
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 

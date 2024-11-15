@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/google/uuid"
 	"image-processing-service/internal/users/domain"
 	"time"
@@ -19,22 +19,22 @@ func NewService(repo domain.UserRepository) *UserService {
 func (s *UserService) Register(username, email, password string) (*domain.User, error) {
 	err := domain.ValidateUsername(username)
 	if err != nil {
-		return nil, fmt.Errorf("invalid username: %w", err)
+		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	err = domain.ValidateEmail(email)
 	if err != nil {
-		return nil, fmt.Errorf("invalid email: %w", err)
+		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	err = domain.ValidatePassword(password)
 	if err != nil {
-		return nil, fmt.Errorf("invalid password: %w", err)
+		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	hashedPassword, err := domain.HashPassword(password)
 	if err != nil {
-		return nil, fmt.Errorf("error hashing password")
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -42,7 +42,7 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 
 	user, err := s.repo.CreateUser(ctx, username, email, hashedPassword)
 	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	return user, nil
@@ -54,7 +54,7 @@ func (s *UserService) GetUser(userID uuid.UUID) (*domain.User, error) {
 
 	user, err := s.repo.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting user: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	return user, nil
@@ -66,11 +66,11 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 
 	user, err := s.repo.GetUserByID(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("error getting user: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	if username == "" && email == "" {
-		return fmt.Errorf("no data to update")
+		return errors.Join(domain.ErrInvalidRequest, errors.New("username or email must be provided"))
 	}
 
 	if username == "" {
@@ -83,17 +83,17 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 
 	err = domain.ValidateUsername(username)
 	if err != nil {
-		return fmt.Errorf("invalid username: %w", err)
+		return errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	err = domain.ValidateEmail(email)
 	if err != nil {
-		return fmt.Errorf("invalid email: %w", err)
+		return errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	err = s.repo.UpdateUser(ctx, userID, username, email)
 	if err != nil {
-		return fmt.Errorf("error updating user: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	return nil
@@ -105,7 +105,7 @@ func (s *UserService) DeleteUser(userID uuid.UUID) error {
 
 	err := s.repo.DeleteUser(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("error deleting user: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	return nil
