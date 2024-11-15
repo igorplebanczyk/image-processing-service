@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -39,4 +40,12 @@ func Setup(logDir string) error {
 	slog.Info("Logger setup complete", "dir", logDir, "file", logFileName)
 
 	return nil
+}
+
+func LogHTTPRequest(r *http.Request) {
+	slog.Info("HTTP request", "method", r.Method, "url", r.URL.String(), "headers", r.Header)
+}
+
+func LogHTTPErr(err error) {
+	slog.Error("HTTP error", "error", err)
 }

@@ -3,13 +3,12 @@ package interfaces
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
+	"image-processing-service/internal/common/log"
 	"image-processing-service/internal/common/server/respond"
 	"image-processing-service/internal/images/application"
 	"image-processing-service/internal/images/domain"
 	"io"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,6 +23,8 @@ func NewServer(imagesService *application.ImageService) *ImageServer {
 }
 
 func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type response struct {
 		Name      string `json:"name"`
 		Size      int64  `json:"size"`
@@ -34,12 +35,14 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 
 	err := r.ParseMultipartForm(domain.MaxImageSize)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, "image too large")
 		return
 	}
 
 	imageFile, _, err := r.FormFile("image")
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, "missing image")
 		return
 	}
@@ -47,6 +50,7 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 
 	imageBytes, err := io.ReadAll(imageFile)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -54,8 +58,10 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	image, err := s.ImagesService.UploadImage(userID, name, imageBytes)
 	if err != nil {
 		if errors.Is(err, domain.ErrValidationFailed) {
+			log.LogHTTPErr(err)
 			respond.WithError(w, http.StatusBadRequest, err.Error())
 		}
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -68,6 +74,8 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 }
 
 func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -92,6 +100,7 @@ func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 
 	images, total, err := s.ImagesService.ListUserImages(userID, &page, &limit)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -114,6 +123,8 @@ func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 }
 
 func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -128,12 +139,14 @@ func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	imageData, err := s.ImagesService.GetImageData(userID, p.Name)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -146,6 +159,8 @@ func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 }
 
 func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -154,12 +169,14 @@ func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	imageBytes, err := s.ImagesService.DownloadImage(userID, p.Name)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -168,6 +185,8 @@ func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.
 }
 
 func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -176,12 +195,14 @@ func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	err = s.ImagesService.DeleteImage(userID, p.Name)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -190,6 +211,8 @@ func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 }
 
 func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Name            string                  `json:"name"`
 		Transformations []domain.Transformation `json:"transformations"`
@@ -199,17 +222,18 @@ func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
-	slog.Info(fmt.Sprintf("Transformations: %v", p.Transformations))
-
 	err = s.ImagesService.ApplyTransformations(userID, p.Name, p.Transformations)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidRequest) {
+			log.LogHTTPErr(err)
 			respond.WithError(w, http.StatusBadRequest, err.Error())
 		}
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}

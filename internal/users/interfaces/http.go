@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
+	"image-processing-service/internal/common/log"
 	"image-processing-service/internal/common/server/respond"
 	"image-processing-service/internal/users/application"
 	"image-processing-service/internal/users/domain"
@@ -19,6 +20,8 @@ func NewServer(service *application.UserService) *UserServer {
 }
 
 func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -35,6 +38,7 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
@@ -42,9 +46,11 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	user, err := s.service.Register(p.Username, p.Email, p.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrInternal) {
+			log.LogHTTPErr(err)
 			respond.WithError(w, http.StatusBadRequest, domain.ErrInternal.Error())
 			return
 		}
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 	}
 
@@ -55,7 +61,9 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type response struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`
@@ -65,6 +73,7 @@ func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 
 	user, err := s.service.GetUser(userID)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
@@ -78,6 +87,8 @@ func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 }
 
 func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -87,6 +98,7 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
@@ -94,13 +106,16 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	err = s.service.UpdateUser(userID, p.Username, p.Email)
 	if err != nil {
 		if errors.Is(err, domain.ErrInternal) {
+			log.LogHTTPErr(err)
 			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 			return
 		}
 		if errors.Is(err, domain.ErrInvalidRequest) {
+			log.LogHTTPErr(err)
 			respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 			return
 		}
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusBadRequest, domain.ErrValidationFailed.Error())
 		return
 	}
@@ -108,9 +123,12 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	log.LogHTTPRequest(r)
+
 	err := s.service.DeleteUser(userID)
 	if err != nil {
+		log.LogHTTPErr(err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
