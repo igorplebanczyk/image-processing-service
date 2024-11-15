@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/internal/common/database/transactions"
 	"image-processing-service/internal/images/domain"
+	"log/slog"
 	"time"
 )
 
@@ -20,6 +21,8 @@ func NewImageRepository(db *sql.DB, txProvider *transactions.TransactionProvider
 }
 
 func (r *ImageRepository) CreateImage(ctx context.Context, userID uuid.UUID, name string) (*domain.Image, error) {
+	slog.Info("DB query", "user_id", userID, "name", name)
+
 	image := domain.NewImage(userID, name)
 
 	err := r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
@@ -44,6 +47,8 @@ func (r *ImageRepository) GetImageByUserIDandName(
 	userID uuid.UUID,
 	name string,
 ) (*domain.Image, error) {
+	slog.Info("DB query", "user_id", userID, "name", name)
+
 	var image domain.Image
 
 	err := r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
@@ -70,6 +75,8 @@ func (r *ImageRepository) GetImagesByUserID(
 	page,
 	limit *int,
 ) ([]*domain.Image, int, error) {
+	slog.Info("DB query", "user_id", userID)
+
 	var rows *sql.Rows
 	var err error
 
@@ -113,6 +120,8 @@ func (r *ImageRepository) GetImagesByUserID(
 }
 
 func (r *ImageRepository) UpdateImage(ctx context.Context, id uuid.UUID) error {
+	slog.Info("DB query", "id", id)
+
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE images SET updated_at = $1 WHERE id = $2`, time.Now(), id)
 		if err != nil {
@@ -124,6 +133,8 @@ func (r *ImageRepository) UpdateImage(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *ImageRepository) DeleteImage(ctx context.Context, id uuid.UUID) error {
+	slog.Info("DB query", "id", id)
+
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM images WHERE id = $1`, id)
 		if err != nil {

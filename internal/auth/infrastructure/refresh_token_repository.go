@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/internal/auth/domain"
 	"image-processing-service/internal/common/database/transactions"
+	"log/slog"
 	"time"
 )
 
@@ -20,6 +21,8 @@ func NewRefreshTokenRepository(db *sql.DB, txProvider *transactions.TransactionP
 }
 
 func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+	slog.Info("DB query", "user_id", userID, "token", token, "expires_at", expiresAt)
+
 	id := uuid.New()
 	createdAt := time.Now()
 
@@ -35,6 +38,8 @@ func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 }
 
 func (r *RefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
+	slog.Info("DB query", "user_id", userID)
+
 	var refreshTokens []*domain.RefreshToken
 
 	rows, err := r.db.QueryContext(
@@ -61,6 +66,8 @@ func (r *RefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, u
 }
 
 func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	slog.Info("DB query", "user_id", userID)
+
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
 		if err != nil {

@@ -39,7 +39,7 @@ func (s *AuthServer) Middleware(handler func(uuid.UUID, http.ResponseWriter, *ht
 			return
 		}
 
-		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
+		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "user_id", userID)
 		handler(userID, w, r)
 	}
 }

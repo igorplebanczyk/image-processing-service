@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/internal/common/database/transactions"
 	"image-processing-service/internal/users/domain"
+	"log/slog"
 	"time"
 )
 
@@ -20,6 +21,8 @@ func NewUserRepository(db *sql.DB, txProvider *transactions.TransactionProvider)
 }
 
 func (r *UserRepository) CreateUser(ctx context.Context, username, email, password string) (*domain.User, error) {
+	slog.Info("DB query", "username", username, "email", email)
+
 	user := domain.NewUser(username, email, password)
 
 	err := r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
@@ -40,6 +43,8 @@ func (r *UserRepository) CreateUser(ctx context.Context, username, email, passwo
 }
 
 func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+	slog.Info("DB query", "id", id)
+
 	var user domain.User
 
 	err := r.db.QueryRowContext(ctx, `SELECT * FROM users WHERE id = $1`, id).
@@ -52,6 +57,8 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, id uuid.UUID, username, email string) error {
+	slog.Info("DB query", "id", id, "username", username, "email", email)
+
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, updated_at = $3 WHERE id = $4`,
 			username, email, time.Now(), id)
@@ -64,6 +71,8 @@ func (r *UserRepository) UpdateUser(ctx context.Context, id uuid.UUID, username,
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	slog.Info("DB query", "id", id)
+
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
 		if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"image-processing-service/internal/auth/domain"
+	"log/slog"
 )
 
 type UserRepository struct {
@@ -15,6 +16,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
+	slog.Info("DB query", "username", username)
+
 	var user domain.User
 
 	err := r.db.QueryRowContext(
