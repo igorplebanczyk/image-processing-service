@@ -51,6 +51,10 @@ func (s *AuthService) Login(username, password string) (string, string, error) {
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, user.ID.String(), s.accessExpiry)
+	if err != nil {
+		return "", "", errors.Join(domain.ErrInternal, err)
+	}
+
 	refreshToken, err := generateRefreshToken(s.secret, s.issuer, user.ID.String(), s.refreshExpiry)
 	if err != nil {
 		return "", "", errors.Join(domain.ErrInternal, err)
