@@ -1,7 +1,7 @@
 - [ ] Add tests
   - [X] Domain layer unit tests
   - [X] Application layer unit tests
-  - [ ] Transformation service unit tests
+  - [X] Transformation service unit tests
   - [ ] Infrastructure layer integration tests
   - [ ] Component tests
   - [ ] End-to-end tests
@@ -15,6 +15,7 @@
 - [ ] Add monitoring
 - [ ] Add a mail service
 - [ ] Add a forgotten password system
-- [ ] Add a CI/CD pipeline
+- [X] Add a CI/CD pipeline
+- [X] Add dependabot configuration
 - [ ] Add a reverse proxy
 - [ ] Add a README and LICENSE
