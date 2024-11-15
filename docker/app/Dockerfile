@@ -15,6 +15,9 @@ WORKDIR /root/
 
 COPY --from=builder /app/app /root/
 
-EXPOSE 80
+ARG PORT
+ENV PORT=${PORT}
+
+EXPOSE ${PORT}
 
 CMD ["./app"]

@@ -2,48 +2,47 @@ services:
   app:
     build:
       context: .
-      dockerfile: src/Dockerfile
+      dockerfile: docker/app/Dockerfile
+      args:
+        - PORT=${APP_PORT}
     ports:
-        - "${APP_PORT}:${APP_PORT}"
+      - "${APP_PORT}:${APP_PORT}"
     env_file:
       - .env
     depends_on:
-      db:
+      database:
         condition: service_healthy
       cache:
         condition: service_healthy
 
-  db:
-    image: postgres:15
+  database:
+    build:
+        context: .
+        dockerfile: docker/database/Dockerfile
+        args:
+            - PORT=${POSTGRES_PORT}
+            - USER=${POSTGRES_USER}
+            - DB=${POSTGRES_DB}
     env_file:
       - .env
     ports:
         - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./sql/schema:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
+      - database_data:/var/lib/postgresql/data
 
   cache:
-    image: redis:latest
+    build:
+      context: .
+      dockerfile: docker/cache/Dockerfile
+      args:
+        - PORT=${REDIS_PORT}
     env_file:
       - .env
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - cache_data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 5s
 
 volumes:
-  db_data:
+  database_data:
   cache_data:
