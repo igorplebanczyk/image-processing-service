@@ -1,0 +1,180 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	authApp "image-processing-service/src/internal/auth/application"
+	authInfra "image-processing-service/src/internal/auth/infrastructure"
+	authInterface "image-processing-service/src/internal/auth/interfaces"
+	"image-processing-service/src/internal/common/cache"
+	"image-processing-service/src/internal/common/database"
+	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/database/worker"
+	"image-processing-service/src/internal/common/log"
+	"image-processing-service/src/internal/common/server"
+	"image-processing-service/src/internal/common/storage"
+	imagesApp "image-processing-service/src/internal/images/application"
+	imagesInfra "image-processing-service/src/internal/images/infrastructure"
+	imagesInterface "image-processing-service/src/internal/images/interfaces"
+	usersApp "image-processing-service/src/internal/users/application"
+	usersInfra "image-processing-service/src/internal/users/infrastructure"
+	usersInterface "image-processing-service/src/internal/users/interfaces"
+	"log/slog"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+)
+
+const (
+	issuer                    = "image-processing-service"
+	accessTokenExpiration     = 15 * time.Minute
+	refreshTokenExpiration    = 15 * time.Hour
+	dbWorkerInterval          = time.Hour
+	transformationWorkerCount = 10
+	transformationQueueSize   = 100
+	logsDirectory             = "logs"
+)
+
+type application struct {
+	serverService *server.Service
+	dbService     *database.Service
+	dbWorker      *worker.Worker
+}
+
+func main() {
+	err := log.Setup(logsDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	slog.Info("Initializing application")
+
+	app := &application{}
+	err = app.assemble()
+	if err != nil {
+		slog.Error("Init error: error initializing application", "error", err)
+		panic(err)
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go app.dbWorker.Start()
+	go app.serverService.Start()
+
+	slog.Info("Application started")
+
+	<-ctx.Done()
+	slog.Info("Received shutdown signal")
+
+	app.dbWorker.Stop()
+	app.dbService.Stop()
+	app.serverService.Stop()
+
+	slog.Info("Application shutdown")
+}
+
+func (a *application) assemble() error {
+	// Get environment variables
+
+	port := os.Getenv("APP_PORT")
+	jwtSecret := os.Getenv("APP_JWT_SECRET")
+
+	postgresUser := os.Getenv("POSTGRES_USER")
+	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
+	postgresHost := os.Getenv("POSTGRES_HOST")
+	postgresPort := os.Getenv("POSTGRES_PORT")
+	postgresDB := os.Getenv("POSTGRES_DB")
+
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisDB := os.Getenv("REDIS_DB")
+
+	azureStorageAccountName := os.Getenv("AZURE_STORAGE_ACCOUNT_NAME")
+	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
+	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
+	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
+
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return fmt.Errorf("error converting port to integer: %w", err)
+	}
+
+	redisDBInt, err := strconv.Atoi(redisDB)
+	if err != nil {
+		return fmt.Errorf("error converting redis db to integer: %w", err)
+	}
+
+	slog.Info("Environment variables obtained")
+
+	// Setup external services
+
+	dbService := database.NewService()
+	db, err := dbService.Connect(postgresUser, postgresPassword, postgresHost, postgresPort, postgresDB)
+	if err != nil {
+		return fmt.Errorf("error connecting to database: %w", err)
+	}
+
+	txProvider := transactions.NewTransactionProvider(db)
+	dbWorker := worker.New(db, txProvider, dbWorkerInterval)
+
+	cacheService, err := cache.NewService(redisHost, redisPort, redisPassword, redisDBInt)
+	if err != nil {
+		return fmt.Errorf("error creating cache: %w", err)
+	}
+
+	storageService, err := storage.NewService(
+		azureStorageAccountName,
+		azureStorageAccountKey,
+		azureStorageAccountURL,
+		azureStorageContainerName,
+	)
+	if err != nil {
+		return fmt.Errorf("error creating storage: %w", err)
+	}
+
+	slog.Info("External services configured")
+
+	// Assemble the application
+
+	authUserRepo := authInfra.NewUserRepository(db)
+	authRefreshTokenRepo := authInfra.NewRefreshTokenRepository(db, txProvider)
+	authService := authApp.NewService(
+		authUserRepo,
+		authRefreshTokenRepo,
+		jwtSecret,
+		issuer,
+		accessTokenExpiration,
+		refreshTokenExpiration,
+	)
+	authServer := authInterface.NewServer(authService)
+
+	usersRepo := usersInfra.NewUserRepository(db, txProvider)
+	userService := usersApp.NewService(usersRepo)
+	usersServer := usersInterface.NewServer(userService)
+
+	imagesRepo := imagesInfra.NewImageRepository(db, txProvider)
+	imagesStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
+	imagesCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
+	imagesService := imagesApp.NewService(
+		imagesRepo,
+		imagesStorageRepo,
+		imagesCacheRepo,
+		transformationWorkerCount,
+		transformationQueueSize,
+	)
+	imagesServer := imagesInterface.NewServer(imagesService)
+
+	serverService := server.NewService(portInt, authServer, usersServer, imagesServer)
+
+	a.serverService = serverService
+	a.dbService = dbService
+	a.dbWorker = dbWorker
+
+	slog.Info("Application assembled")
+
+	return nil
+}
