@@ -6,7 +6,7 @@
   - [ ] Component tests
   - [ ] End-to-end tests
 - [X] Improve error handling
-- [ ] Improve logging
+- [X] Improve logging
 - [ ] Use proper PostgreSQL configuration
 - [ ] Use proper Redis configuration
 - [ ] Add Terraform IaC
