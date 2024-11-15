@@ -34,6 +34,8 @@ func NewService(host, port, password string, db int) (*Service, error) {
 }
 
 func (s *Service) Set(key string, value []byte, expiration time.Duration) error {
+	slog.Info("Setting key in cache", "key", key)
+
 	err := s.client.Set(s.ctx, key, value, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set key: %w", err)
@@ -43,6 +45,8 @@ func (s *Service) Set(key string, value []byte, expiration time.Duration) error 
 }
 
 func (s *Service) Get(key string) ([]byte, error) {
+	slog.Info("Getting key from cache", "key", key)
+
 	val, err := s.client.Get(s.ctx, key).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get value of key: %w", err)
@@ -52,6 +56,8 @@ func (s *Service) Get(key string) ([]byte, error) {
 }
 
 func (s *Service) Delete(key string) error {
+	slog.Info("Deleting key from cache", "key", key)
+
 	err := s.client.Del(s.ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete key: %w", err)
