@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.22.3'
 
       - name: Install dependencies
         run: go mod download
@@ -37,13 +37,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.22.3'
 
       - name: Check formatting
         run: test -z $(go fmt ./...)
 
       - name: Install linter
-        run: go install honnef.co/go/tools/cmd/staticcheck@v0.4.0
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
 
       - name: Run linter
         run: staticcheck ./...
@@ -59,10 +59,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.22.3'
 
       - name: Install security checker
-        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.16.0
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
 
       - name: Run security checker
         run: gosec ./...
