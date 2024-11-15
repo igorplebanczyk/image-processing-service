@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/google/uuid"
 	"image-processing-service/internal/images/application/transformations"
 	"image-processing-service/internal/images/domain"
@@ -34,12 +34,12 @@ func NewService(
 func (s *ImageService) UploadImage(userID uuid.UUID, imageName string, imageBytes []byte) (*domain.Image, error) {
 	err := domain.ValidateName(imageName)
 	if err != nil {
-		return nil, fmt.Errorf("invalid image name: %w", err)
+		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	err = domain.ValidateRawImage(imageBytes)
 	if err != nil {
-		return nil, fmt.Errorf("invalid image: %w", err)
+		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -47,19 +47,19 @@ func (s *ImageService) UploadImage(userID uuid.UUID, imageName string, imageByte
 
 	image, err := s.repo.CreateImage(ctx, userID, imageName)
 	if err != nil {
-		return nil, fmt.Errorf("error creating image: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	objectName := domain.CreateObjectName(userID, imageName)
 	err = s.storage.Upload(ctx, objectName, imageBytes)
 	if err != nil {
 		cancel()
-		return nil, fmt.Errorf("error uploading image: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.cache.Set(objectName, imageBytes, time.Hour)
 	if err != nil {
-		return nil, fmt.Errorf("error caching image: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	return image, nil
@@ -71,7 +71,7 @@ func (s *ImageService) ListUserImages(userID uuid.UUID, page, limit *int) ([]*do
 
 	images, total, err := s.repo.GetImagesByUserID(ctx, userID, page, limit)
 	if err != nil {
-		return nil, 0, fmt.Errorf("error fetching images: %w", err)
+		return nil, 0, errors.Join(domain.ErrInternal, err)
 	}
 
 	return images, total, nil
@@ -83,7 +83,7 @@ func (s *ImageService) GetImageData(userID uuid.UUID, imageName string) (*domain
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return nil, fmt.Errorf("error getting image: %w", err)
+		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
 	return image, nil
@@ -99,7 +99,7 @@ func (s *ImageService) DownloadImage(userID uuid.UUID, imageName string) ([]byte
 	if err != nil {
 		imageBytes, err = s.storage.Download(ctx, objectName)
 		if err != nil {
-			return nil, fmt.Errorf("error downloading image: %w", err)
+			return nil, errors.Join(domain.ErrInternal, err)
 		}
 	}
 
@@ -114,22 +114,22 @@ func (s *ImageService) DeleteImage(userID uuid.UUID, imageName string) error {
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return fmt.Errorf("error getting image ID: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.repo.DeleteImage(ctx, image.ID)
 	if err != nil {
-		return fmt.Errorf("error deleting image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.storage.Delete(ctx, objectName)
 	if err != nil {
-		return fmt.Errorf("error deleting image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.cache.Delete(objectName)
 	if err != nil {
-		return fmt.Errorf("error deleting image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	return nil
@@ -142,13 +142,16 @@ func (s *ImageService) ApplyTransformations(
 ) error {
 	imageBytes, err := s.DownloadImage(userID, imageName)
 	if err != nil {
-		return fmt.Errorf("error downloading image: %w", err)
+		return err
 	}
 
 	for _, transformation := range transformations {
 		imageBytes, err = s.transformationService.Apply(imageBytes, transformation)
 		if err != nil {
-			return fmt.Errorf("error applying transformation: %w", err)
+			if errors.Is(err, domain.ErrInvalidRequest) {
+				return errors.Join(domain.ErrInvalidRequest, err)
+			}
+			return err
 		}
 	}
 
@@ -159,22 +162,22 @@ func (s *ImageService) ApplyTransformations(
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return fmt.Errorf("error getting image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.repo.UpdateImage(ctx, image.ID)
 	if err != nil {
-		return fmt.Errorf("error updating image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.storage.Upload(ctx, objectName, imageBytes)
 	if err != nil {
-		return fmt.Errorf("error uploading transformed image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	err = s.cache.Set(objectName, imageBytes, time.Hour)
 	if err != nil {
-		return fmt.Errorf("error caching transformed image: %w", err)
+		return errors.Join(domain.ErrInternal, err)
 	}
 
 	return nil

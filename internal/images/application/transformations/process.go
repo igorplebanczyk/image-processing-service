@@ -1,6 +1,7 @@
 package transformations
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image-processing-service/internal/images/domain"
@@ -63,10 +64,10 @@ func (s *Service) processTask(imageBytes []byte, transformation domain.Transform
 	case domain.Sharpen:
 		transformed, err = sharpen(img, options)
 	default:
-		return nil, fmt.Errorf("unknown transformation: %s", transformation)
+		return nil, errors.Join(domain.ErrInvalidRequest, fmt.Errorf("unsupported transformation: %s", transformation))
 	}
 	if err != nil {
-		return nil, fmt.Errorf("error during %s transformation: %w", transformation, err)
+		return nil, errors.Join(domain.ErrInternal, fmt.Errorf("error applying transformation: %w", err))
 	}
 
 	return serialize(transformed, format)

@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/common/server/respond"
@@ -46,13 +47,16 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 
 	imageBytes, err := io.ReadAll(imageFile)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("error reading image: %v", err))
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
 	image, err := s.ImagesService.UploadImage(userID, name, imageBytes)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("error uploading image: %v", err))
+		if errors.Is(err, domain.ErrValidationFailed) {
+			respond.WithError(w, http.StatusBadRequest, err.Error())
+		}
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -88,7 +92,7 @@ func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 
 	images, total, err := s.ImagesService.ListUserImages(userID, &page, &limit)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("error fetching images: %v", err))
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -124,13 +128,13 @@ func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	imageData, err := s.ImagesService.GetImageData(userID, p.Name)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to get image: %v", err))
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -150,13 +154,13 @@ func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	imageBytes, err := s.ImagesService.DownloadImage(userID, p.Name)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to download image: %v", err))
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -172,13 +176,13 @@ func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
 	err = s.ImagesService.DeleteImage(userID, p.Name)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to delete image: %v", err))
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
@@ -195,7 +199,7 @@ func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		respond.WithError(w, http.StatusBadRequest, "invalid request")
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
 		return
 	}
 
@@ -203,7 +207,10 @@ func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http
 
 	err = s.ImagesService.ApplyTransformations(userID, p.Name, p.Transformations)
 	if err != nil {
-		respond.WithError(w, http.StatusInternalServerError, fmt.Sprintf("failed to apply transformations: %v", err))
+		if errors.Is(err, domain.ErrInvalidRequest) {
+			respond.WithError(w, http.StatusBadRequest, err.Error())
+		}
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
 		return
 	}
 
