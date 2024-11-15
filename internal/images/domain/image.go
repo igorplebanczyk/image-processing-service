@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"strings"
 	"time"
 )
 
@@ -29,6 +30,10 @@ func NewImage(userID uuid.UUID, name string) *Image {
 func ValidateName(name string) error {
 	if len(name) < 3 || len(name) > 128 {
 		return fmt.Errorf("name must be between 3 and 128 characters")
+	}
+
+	if strings.Contains(name, " ") {
+		return fmt.Errorf("name cannot contain spaces")
 	}
 
 	return nil

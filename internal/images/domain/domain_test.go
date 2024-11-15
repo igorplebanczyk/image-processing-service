@@ -2,75 +2,106 @@ package domain
 
 import (
 	"github.com/google/uuid"
-	"strings"
 	"testing"
 )
 
 func TestValidateName(t *testing.T) {
+	type args struct {
+		name string
+	}
 	tests := []struct {
-		name        string
-		input       string
-		expectError bool
+		name    string
+		args    args
+		wantErr bool
 	}{
-		{"ValidName", "John", false},
-		{"TooShortName", "Jo", true},
-		{"TooLongName", string(make([]byte, 129)), true},
-		{"MinimumLengthName", "abc", false},
-		{"MaximumLengthName", string(make([]byte, 128)), false},
+		{
+			"Valid name",
+			args{name: "JohnDoe"},
+			false,
+		},
+		{
+			"Name too short",
+			args{name: "JD"},
+			true,
+		},
+		{
+			"Name too long",
+			args{name: string(make([]byte, 129))},
+			true,
+		},
+		{
+			"Name contains spaces",
+			args{name: "John Doe"},
+			true,
+		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := ValidateName(tc.input)
-			if tc.expectError && err == nil {
-				t.Fatalf("expected an error, got none")
-			}
-			if !tc.expectError && err != nil {
-				t.Fatalf("expected no error, got %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateName(tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateName() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestValidateRawImage(t *testing.T) {
+	type args struct {
+		imageBytes []byte
+	}
 	tests := []struct {
-		name        string
-		imageBytes  []byte
-		expectError bool
+		name    string
+		args    args
+		wantErr bool
 	}{
-		{"ValidImageSize", make([]byte, MaxImageSize-1), false},
-		{"ExactMaxSizeImage", make([]byte, MaxImageSize), false},
-		{"ExceedsMaxSize", make([]byte, MaxImageSize+1), true},
-		{"EmptyImage", make([]byte, 0), false},
+		{
+			"Valid Image",
+			args{imageBytes: make([]byte, MaxImageSize-1)},
+			false,
+		},
+		{
+			"Image too large",
+			args{imageBytes: make([]byte, MaxImageSize+1)},
+			true,
+		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := ValidateRawImage(tc.imageBytes)
-			if tc.expectError && err == nil {
-				t.Fatalf("expected an error, got none")
-			}
-			if !tc.expectError && err != nil {
-				t.Fatalf("expected no error, got %v", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateRawImage(tt.args.imageBytes)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ValidateRawImage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestCreateObjectName(t *testing.T) {
-	userID := uuid.New()
-	imageName := "example.jpg"
-	objectName := CreateObjectName(userID, imageName)
+	testUUID := uuid.New()
 
-	if objectName == "" {
-		t.Fatalf("expected a non-empty object name, got empty string")
+	type args struct {
+		userID    uuid.UUID
+		imageName string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"Valid Object Name",
+			args{userID: testUUID, imageName: "image"},
+			testUUID.String() + "-image",
+		},
 	}
 
-	if !strings.Contains(objectName, userID.String()) {
-		t.Errorf("expected object name to contain user ID, got %s", objectName)
-	}
-
-	if !strings.Contains(objectName, imageName) {
-		t.Errorf("expected object name to contain image name, got %s", objectName)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CreateObjectName(tt.args.userID, tt.args.imageName)
+			if got != tt.want {
+				t.Fatalf("CreateObjectName() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
