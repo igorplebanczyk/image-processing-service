@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/internal/users/domain"
 	"time"
@@ -70,29 +69,22 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 		return errors.Join(domain.ErrInternal, err)
 	}
 
-	if username == "" && email == "" {
-		return errors.Join(domain.ErrInvalidRequest, fmt.Errorf("username or email must be provided"))
+	newUsername, newEmail, err := domain.DetermineUserDetailsToUpdate(user, username, email)
+	if err != nil {
+		return errors.Join(domain.ErrInvalidRequest, err)
 	}
 
-	if username == "" {
-		username = user.Username
-	}
-
-	if email == "" {
-		email = user.Email
-	}
-
-	err = domain.ValidateUsername(username)
+	err = domain.ValidateUsername(newUsername)
 	if err != nil {
 		return errors.Join(domain.ErrValidationFailed, err)
 	}
 
-	err = domain.ValidateEmail(email)
+	err = domain.ValidateEmail(newEmail)
 	if err != nil {
 		return errors.Join(domain.ErrValidationFailed, err)
 	}
 
-	err = s.repo.UpdateUser(ctx, userID, username, email)
+	err = s.repo.UpdateUser(ctx, userID, newUsername, newEmail)
 	if err != nil {
 		return errors.Join(domain.ErrInternal, err)
 	}

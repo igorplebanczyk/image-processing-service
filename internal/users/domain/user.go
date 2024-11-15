@@ -71,3 +71,19 @@ func HashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(hashed), err
 }
+
+func DetermineUserDetailsToUpdate(existingUser *User, newUsername, newEmail string) (string, string, error) {
+	if newUsername == "" && newEmail == "" {
+		return "", "", fmt.Errorf("username or email must be provided")
+	}
+
+	if newUsername == "" {
+		newUsername = existingUser.Username
+	}
+
+	if newEmail == "" {
+		newEmail = existingUser.Email
+	}
+
+	return newUsername, newEmail, nil
+}
