@@ -28,10 +28,13 @@ import (
 )
 
 const (
-	issuer                 = "image-processing-service"
-	accessTokenExpiration  = 15 * time.Minute
-	refreshTokenExpiration = 15 * time.Hour
-	dbWorkerInterval       = time.Hour
+	issuer                    = "image-processing-service"
+	accessTokenExpiration     = 15 * time.Minute
+	refreshTokenExpiration    = 15 * time.Hour
+	dbWorkerInterval          = time.Hour
+	transformationWorkerCount = 10
+	transformationQueueSize   = 100
+	logsDirectory             = "logs"
 )
 
 type application struct {
@@ -41,7 +44,7 @@ type application struct {
 }
 
 func main() {
-	err := log.Setup("logs")
+	err := log.Setup(logsDirectory)
 	if err != nil {
 		panic(err)
 	}
@@ -123,7 +126,12 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating cache: %w", err)
 	}
 
-	storageService, err := storage.NewService(azureStorageAccountName, azureStorageAccountKey, azureStorageAccountURL, azureStorageContainerName)
+	storageService, err := storage.NewService(
+		azureStorageAccountName,
+		azureStorageAccountKey,
+		azureStorageAccountURL,
+		azureStorageContainerName,
+	)
 	if err != nil {
 		return fmt.Errorf("error creating storage: %w", err)
 	}
@@ -134,7 +142,14 @@ func (a *application) assemble() error {
 
 	authUserRepo := authInfra.NewUserRepository(db)
 	authRefreshTokenRepo := authInfra.NewRefreshTokenRepository(db, txProvider)
-	authService := authApp.NewService(authUserRepo, authRefreshTokenRepo, jwtSecret, issuer, accessTokenExpiration, refreshTokenExpiration)
+	authService := authApp.NewService(
+		authUserRepo,
+		authRefreshTokenRepo,
+		jwtSecret,
+		issuer,
+		accessTokenExpiration,
+		refreshTokenExpiration,
+	)
 	authServer := authInterface.NewServer(authService)
 
 	usersRepo := usersInfra.NewUserRepository(db, txProvider)
@@ -142,7 +157,15 @@ func (a *application) assemble() error {
 	usersServer := usersInterface.NewServer(userService)
 
 	imagesRepo := imagesInfra.NewImageRepository(db, txProvider)
-	imagesService := imagesApp.NewService(imagesRepo, storageService, cacheService, 10, 100)
+	imagesStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
+	imagesCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
+	imagesService := imagesApp.NewService(
+		imagesRepo,
+		imagesStorageRepo,
+		imagesCacheRepo,
+		transformationWorkerCount,
+		transformationQueueSize,
+	)
 	imagesServer := imagesInterface.NewServer(imagesService)
 
 	serverService := server.NewService(portInt, authServer, usersServer, imagesServer)

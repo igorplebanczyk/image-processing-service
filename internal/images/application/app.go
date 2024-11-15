@@ -11,15 +11,15 @@ import (
 
 type ImageService struct {
 	repo                  domain.ImageRepository
-	storage               domain.StorageService
-	cache                 domain.CacheService
+	storage               domain.ImageStorageRepository
+	cache                 domain.ImageCacheRepository
 	transformationService *transformations.Service
 }
 
 func NewService(
 	repo domain.ImageRepository,
-	storage domain.StorageService,
-	cache domain.CacheService,
+	storage domain.ImageStorageRepository,
+	cache domain.ImageCacheRepository,
 	transformationWorkerCount int,
 	transformationQueueSize int,
 ) *ImageService {
@@ -57,7 +57,7 @@ func (s *ImageService) UploadImage(userID uuid.UUID, imageName string, imageByte
 		return nil, errors.Join(domain.ErrInternal, err)
 	}
 
-	err = s.cache.Set(objectName, imageBytes, time.Hour)
+	err = s.cache.Set(ctx, objectName, imageBytes, time.Hour)
 	if err != nil {
 		return nil, errors.Join(domain.ErrInternal, err)
 	}
@@ -95,7 +95,7 @@ func (s *ImageService) DownloadImage(userID uuid.UUID, imageName string) ([]byte
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	imageBytes, err := s.cache.Get(objectName)
+	imageBytes, err := s.cache.Get(ctx, objectName)
 	if err != nil {
 		imageBytes, err = s.storage.Download(ctx, objectName)
 		if err != nil {
@@ -127,7 +127,7 @@ func (s *ImageService) DeleteImage(userID uuid.UUID, imageName string) error {
 		return errors.Join(domain.ErrInternal, err)
 	}
 
-	err = s.cache.Delete(objectName)
+	err = s.cache.Delete(ctx, objectName)
 	if err != nil {
 		return errors.Join(domain.ErrInternal, err)
 	}
@@ -175,7 +175,7 @@ func (s *ImageService) ApplyTransformations(
 		return errors.Join(domain.ErrInternal, err)
 	}
 
-	err = s.cache.Set(objectName, imageBytes, time.Hour)
+	err = s.cache.Set(ctx, objectName, imageBytes, time.Hour)
 	if err != nil {
 		return errors.Join(domain.ErrInternal, err)
 	}
