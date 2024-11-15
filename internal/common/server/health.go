@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func health(w http.ResponseWriter, _ *http.Request) {
+func health(w http.ResponseWriter, r *http.Request) {
+	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 	respond.WithoutContent(w, http.StatusOK)
-	slog.Info("Server health check OK")
 }
