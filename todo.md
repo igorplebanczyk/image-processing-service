@@ -1,11 +1,10 @@
 - [ ] Add tests
-  - [X] Domain layer tests
-  - [X] Application layer tests
-  - [ ] Interfaces layer tests
-  - [ ] Infrastructure layer tests
-  - [ ] Common services tests
-  - [ ] Integration tests
-  - [ ] Transformation layer tests
+  - [X] Domain layer unit tests
+  - [X] Application layer unit tests
+  - [ ] Transformation service unit tests
+  - [ ] Infrastructure layer integration tests
+  - [ ] Component tests
+  - [ ] End-to-end tests
 - [X] Improve error handling
 - [ ] Improve logging
 - [ ] Use proper PostgreSQL configuration
