@@ -20,7 +20,7 @@ func Test_generateAccessToken(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "successful token generation",
+			name: "Successful access token generation",
 			args: args{
 				secret: "testsecret",
 				issuer: "testissuer",
@@ -96,7 +96,7 @@ func Test_verifyAndParseToken(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "successful token verification and parsing",
+			name: "Valid token",
 			args: args{
 				secret:   "testsecret",
 				issuer:   "testissuer",
@@ -106,7 +106,7 @@ func Test_verifyAndParseToken(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid token",
+			name: "Invalid token",
 			args: args{
 				secret:   "testsecret",
 				issuer:   "testissuer",
@@ -116,7 +116,7 @@ func Test_verifyAndParseToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid token issuer",
+			name: "Invalid token issuer",
 			args: args{
 				secret:   "testsecret",
 				issuer:   "wrongissuer",
