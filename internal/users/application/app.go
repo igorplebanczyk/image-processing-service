@@ -32,7 +32,7 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 		return nil, errors.Join(domain.ErrValidationFailed, err)
 	}
 
-	hashedPassword, err := domain.HashPassword(password)
+	hashedPassword, err := hashPassword(password)
 	if err != nil {
 		return nil, errors.Join(domain.ErrInternal, err)
 	}

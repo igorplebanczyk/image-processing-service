@@ -3,9 +3,9 @@ package domain
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"net/mail"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -38,6 +38,10 @@ func ValidateUsername(username string) error {
 		return fmt.Errorf("username must be between 3 and 32 characters")
 	}
 
+	if strings.Contains(username, " ") {
+		return fmt.Errorf("username cannot contain spaces")
+	}
+
 	return nil
 }
 
@@ -55,6 +59,10 @@ func ValidatePassword(password string) error {
 		return fmt.Errorf("password must be between 8 and 32 characters")
 	}
 
+	if strings.Contains(password, " ") {
+		return fmt.Errorf("password cannot contain spaces")
+	}
+
 	hasLower := regexp.MustCompile(`[a-z]`).MatchString
 	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString
 	hasDigit := regexp.MustCompile(`\d`).MatchString
@@ -65,11 +73,6 @@ func ValidatePassword(password string) error {
 	}
 
 	return nil
-}
-
-func HashPassword(password string) (string, error) {
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hashed), err
 }
 
 func DetermineUserDetailsToUpdate(existingUser *User, newUsername, newEmail string) (string, string, error) {
