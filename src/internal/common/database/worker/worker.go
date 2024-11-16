@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const interval = time.Hour
+
 type Worker struct {
 	repo     repository
 	ctx      context.Context
@@ -15,7 +17,7 @@ type Worker struct {
 	stop     chan bool
 }
 
-func New(db *sql.DB, txProvider *transactions.TransactionProvider, interval time.Duration) *Worker {
+func New(db *sql.DB, txProvider *transactions.TransactionProvider) *Worker {
 	return &Worker{
 		repo:     newRepository(db, txProvider),
 		ctx:      context.Background(),

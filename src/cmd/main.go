@@ -27,16 +27,6 @@ import (
 	"time"
 )
 
-const (
-	issuer                    = "image-processing-service"
-	accessTokenExpiration     = 15 * time.Minute
-	refreshTokenExpiration    = 15 * time.Hour
-	dbWorkerInterval          = time.Hour
-	transformationWorkerCount = 10
-	transformationQueueSize   = 100
-	logsDirectory             = "logs"
-)
-
 type application struct {
 	serverService *server.Service
 	dbService     *database.Service
@@ -44,17 +34,10 @@ type application struct {
 }
 
 func main() {
-	err := log.Setup(logsDirectory)
-	if err != nil {
-		panic(err)
-	}
-
-	slog.Info("Initializing application")
-
 	app := &application{}
-	err = app.assemble()
+	err := app.assemble()
 	if err != nil {
-		slog.Error("Init error: error initializing application", "error", err)
+		slog.Error("Init error: error assembling application", "error", err)
 		panic(err)
 	}
 
@@ -79,8 +62,12 @@ func main() {
 func (a *application) assemble() error {
 	// Get environment variables
 
-	port := os.Getenv("APP_PORT")
+	appPort := os.Getenv("APP_PORT")
+	issuer := os.Getenv("APP_JWT_ISSUER")
 	jwtSecret := os.Getenv("APP_JWT_SECRET")
+	accessTokenExpiration := os.Getenv("APP_JWT_ACCESS_TOKEN_EXPIRATION")
+	refreshTokenExpiration := os.Getenv("APP_JWT_REFRESH_TOKEN_EXPIRATION")
+	appLogsDir := os.Getenv("APP_LOGS_DIR")
 
 	postgresUser := os.Getenv("POSTGRES_USER")
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
@@ -98,19 +85,38 @@ func (a *application) assemble() error {
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
 
-	portInt, err := strconv.Atoi(port)
+	// Setup logging
+
+	err := log.Setup(appLogsDir)
+	if err != nil {
+		return fmt.Errorf("error setting up logs: %w", err)
+	}
+
+	// Convert environment variables to appropriate types
+
+	appPortInt, err := strconv.Atoi(appPort)
 	if err != nil {
 		return fmt.Errorf("error converting port to integer: %w", err)
 	}
+
+	accessTokenExpirationInt, err := strconv.Atoi(accessTokenExpiration)
+	if err != nil {
+		return fmt.Errorf("error converting access token expiration to integer: %w", err)
+	}
+	accessTokenExpirationTime := time.Duration(accessTokenExpirationInt) * time.Minute
+
+	refreshTokenExpirationInt, err := strconv.Atoi(refreshTokenExpiration)
+	if err != nil {
+		return fmt.Errorf("error converting refresh token expiration to integer: %w", err)
+	}
+	refreshTokenExpirationTime := time.Duration(refreshTokenExpirationInt) * time.Hour
 
 	redisDBInt, err := strconv.Atoi(redisDB)
 	if err != nil {
 		return fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
-	slog.Info("Environment variables obtained")
-
-	// Setup external services
+	// Setup common services
 
 	dbService := database.NewService()
 	db, err := dbService.Connect(postgresUser, postgresPassword, postgresHost, postgresPort, postgresDB)
@@ -119,7 +125,7 @@ func (a *application) assemble() error {
 	}
 
 	txProvider := transactions.NewTransactionProvider(db)
-	dbWorker := worker.New(db, txProvider, dbWorkerInterval)
+	dbWorker := worker.New(db, txProvider)
 
 	cacheService, err := cache.NewService(redisHost, redisPort, redisPassword, redisDBInt)
 	if err != nil {
@@ -147,8 +153,8 @@ func (a *application) assemble() error {
 		authRefreshTokenRepo,
 		jwtSecret,
 		issuer,
-		accessTokenExpiration,
-		refreshTokenExpiration,
+		accessTokenExpirationTime,
+		refreshTokenExpirationTime,
 	)
 	authServer := authInterface.NewServer(authService)
 
@@ -159,16 +165,10 @@ func (a *application) assemble() error {
 	imagesRepo := imagesInfra.NewImageRepository(db, txProvider)
 	imagesStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
 	imagesCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
-	imagesService := imagesApp.NewService(
-		imagesRepo,
-		imagesStorageRepo,
-		imagesCacheRepo,
-		transformationWorkerCount,
-		transformationQueueSize,
-	)
+	imagesService := imagesApp.NewService(imagesRepo, imagesStorageRepo, imagesCacheRepo)
 	imagesServer := imagesInterface.NewServer(imagesService)
 
-	serverService := server.NewService(portInt, authServer, usersServer, imagesServer)
+	serverService := server.NewService(appPortInt, authServer, usersServer, imagesServer)
 
 	a.serverService = serverService
 	a.dbService = dbService

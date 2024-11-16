@@ -5,13 +5,18 @@ import (
 	"sync"
 )
 
+const (
+	workerCount = 10
+	queueSize   = 100
+)
+
 type Service struct {
 	taskQueue   chan task
 	workerCount int
 	wg          sync.WaitGroup
 }
 
-func New(workerCount int, queueSize int) *Service {
+func New() *Service {
 	service := &Service{
 		taskQueue:   make(chan task, queueSize),
 		workerCount: workerCount,

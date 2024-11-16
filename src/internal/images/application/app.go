@@ -20,14 +20,12 @@ func NewService(
 	repo domain.ImageRepository,
 	storage domain.ImageStorageRepository,
 	cache domain.ImageCacheRepository,
-	transformationWorkerCount int,
-	transformationQueueSize int,
 ) *ImageService {
 	return &ImageService{
 		repo:                  repo,
 		storage:               storage,
 		cache:                 cache,
-		transformationService: transformations.New(transformationWorkerCount, transformationQueueSize),
+		transformationService: transformations.New(),
 	}
 }
 
