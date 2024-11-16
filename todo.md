@@ -7,7 +7,6 @@
   - [ ] End-to-end tests
 - [X] Improve error handling
 - [X] Improve logging
-- [ ] Fix being able to override images
 - [ ] Add Terraform IaC
 - [ ] Add OpenAPI specifications
 - [ ] Add RBAC and admin endpoints
