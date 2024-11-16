@@ -8,8 +8,6 @@
 - [X] Improve error handling
 - [X] Improve logging
 - [ ] Fix being able to override images
-- [ ] Use proper PostgreSQL configuration
-- [ ] Use proper Redis configuration
 - [ ] Add Terraform IaC
 - [ ] Add OpenAPI specifications
 - [ ] Add RBAC and admin endpoints
