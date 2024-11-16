@@ -22,6 +22,7 @@ services:
         args:
             - PORT=${POSTGRES_PORT}
             - USER=${POSTGRES_USER}
+            - PASSWORD=${POSTGRES_PASSWORD}
             - DB=${POSTGRES_DB}
     env_file:
       - .env
