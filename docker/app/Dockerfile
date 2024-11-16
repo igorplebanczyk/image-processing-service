@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY src/ ./
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app ./cmd/main.go -ldflags="-s -w"
 
 FROM alpine:latest
 
