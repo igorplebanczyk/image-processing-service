@@ -10,7 +10,7 @@
 - [X] Add Terraform IaC
 - [ ] Add OpenAPI specifications
 - [X] Add RBAC
-- [ ] Add admin endpoints
+- [X] Add admin endpoints
 - [ ] Add monitoring
 - [ ] Add a mail service
 - [ ] Add a forgotten password system
