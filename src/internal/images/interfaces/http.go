@@ -14,15 +14,15 @@ import (
 	"time"
 )
 
-type ImageServer struct {
+type ImageAPI struct {
 	ImagesService *application.ImageService
 }
 
-func NewServer(imagesService *application.ImageService) *ImageServer {
-	return &ImageServer{ImagesService: imagesService}
+func NewServer(imagesService *application.ImageService) *ImageAPI {
+	return &ImageAPI{ImagesService: imagesService}
 }
 
-func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Name      string `json:"name"`
 		Size      int64  `json:"size"`
@@ -71,7 +71,7 @@ func (s *ImageServer) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	})
 }
 
-func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) List(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -118,7 +118,7 @@ func (s *ImageServer) List(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 	})
 }
 
-func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -152,7 +152,7 @@ func (s *ImageServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 	})
 }
 
-func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) Download(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -176,7 +176,7 @@ func (s *ImageServer) Download(userID uuid.UUID, w http.ResponseWriter, r *http.
 	respond.WithImage(w, http.StatusOK, imageBytes, p.Name)
 }
 
-func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}
@@ -200,7 +200,7 @@ func (s *ImageServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name            string                  `json:"name"`
 		Transformations []domain.Transformation `json:"transformations"`
@@ -229,7 +229,7 @@ func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *ImageServer) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -276,7 +276,7 @@ func (s *ImageServer) AdminListAllImages(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-func (s *ImageServer) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		ID uuid.UUID `json:"id"`
 	}

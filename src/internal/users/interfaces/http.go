@@ -11,15 +11,15 @@ import (
 	"net/http"
 )
 
-type UserServer struct {
+type UserAPI struct {
 	service *application.UserService
 }
 
-func NewServer(service *application.UserService) *UserServer {
-	return &UserServer{service: service}
+func NewServer(service *application.UserService) *UserAPI {
+	return &UserAPI{service: service}
 }
 
-func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 	type parameters struct {
 		Username string `json:"username"`
@@ -60,7 +60,7 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *UserAPI) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	type response struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`
@@ -83,7 +83,7 @@ func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 	})
 }
 
-func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -118,7 +118,7 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *UserAPI) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.DeleteUser(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
@@ -129,7 +129,7 @@ func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Req
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserServer) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
+func (s *UserAPI) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 	type response struct {
 		ID        string `json:"id"`
 		Username  string `json:"username"`
@@ -161,7 +161,7 @@ func (s *UserServer) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 	respond.WithJSON(w, http.StatusOK, resp)
 }
 
-func (s *UserServer) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		UserID uuid.UUID   `json:"user_id"`
 		Role   domain.Role `json:"role"`
@@ -186,7 +186,7 @@ func (s *UserServer) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserServer) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+func (s *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		UserID uuid.UUID `json:"user_id"`
 	}

@@ -12,19 +12,19 @@ import (
 )
 
 type Service struct {
-	port        int
-	server      *http.Server
-	authServer  *authInterface.AuthServer
-	userServer  *userInterface.UserServer
-	imageServer *imageInterface.ImageServer
+	port     int
+	server   *http.Server
+	authAPI  *authInterface.AuthAPI
+	userAPI  *userInterface.UserAPI
+	imageAPI *imageInterface.ImageAPI
 }
 
-func NewService(port int, authService *authInterface.AuthServer, usersCfg *userInterface.UserServer, imagesCfg *imageInterface.ImageServer) *Service {
+func NewService(port int, authService *authInterface.AuthAPI, usersCfg *userInterface.UserAPI, imagesCfg *imageInterface.ImageAPI) *Service {
 	service := &Service{
-		port:        port,
-		authServer:  authService,
-		userServer:  usersCfg,
-		imageServer: imagesCfg,
+		port:     port,
+		authAPI:  authService,
+		userAPI:  usersCfg,
+		imageAPI: imagesCfg,
 	}
 	service.setup()
 	return service
@@ -41,28 +41,28 @@ func (s *Service) setup() {
 
 	mux.HandleFunc("/health", health)
 
-	mux.HandleFunc("POST /users", s.userServer.Register)
-	mux.HandleFunc("GET /users", s.authServer.UserMiddleware(s.userServer.Info))
-	mux.HandleFunc("PUT /users", s.authServer.UserMiddleware(s.userServer.Update))
-	mux.HandleFunc("DELETE /users", s.authServer.UserMiddleware(s.userServer.Delete))
+	mux.HandleFunc("POST /users", s.userAPI.Register)
+	mux.HandleFunc("GET /users", s.authAPI.UserMiddleware(s.userAPI.Info))
+	mux.HandleFunc("PUT /users", s.authAPI.UserMiddleware(s.userAPI.Update))
+	mux.HandleFunc("DELETE /users", s.authAPI.UserMiddleware(s.userAPI.Delete))
 
-	mux.HandleFunc("POST /login", s.authServer.Login)
-	mux.HandleFunc("POST /refresh", s.authServer.Refresh)
-	mux.HandleFunc("DELETE /logout", s.authServer.UserMiddleware(s.authServer.Logout))
+	mux.HandleFunc("POST /login", s.authAPI.Login)
+	mux.HandleFunc("POST /refresh", s.authAPI.Refresh)
+	mux.HandleFunc("DELETE /logout", s.authAPI.UserMiddleware(s.authAPI.Logout))
 
-	mux.HandleFunc("POST /images", s.authServer.UserMiddleware(s.imageServer.Upload))
-	mux.HandleFunc("GET /images/file", s.authServer.UserMiddleware(s.imageServer.Download))
-	mux.HandleFunc("GET /images/info", s.authServer.UserMiddleware(s.imageServer.Info))
-	mux.HandleFunc("GET /images/list", s.authServer.UserMiddleware(s.imageServer.List))
-	mux.HandleFunc("PUT /images", s.authServer.UserMiddleware(s.imageServer.Transform))
-	mux.HandleFunc("DELETE /images", s.authServer.UserMiddleware(s.imageServer.Delete))
+	mux.HandleFunc("POST /images", s.authAPI.UserMiddleware(s.imageAPI.Upload))
+	mux.HandleFunc("GET /images/file", s.authAPI.UserMiddleware(s.imageAPI.Download))
+	mux.HandleFunc("GET /images/info", s.authAPI.UserMiddleware(s.imageAPI.Info))
+	mux.HandleFunc("GET /images/list", s.authAPI.UserMiddleware(s.imageAPI.List))
+	mux.HandleFunc("PUT /images", s.authAPI.UserMiddleware(s.imageAPI.Transform))
+	mux.HandleFunc("DELETE /images", s.authAPI.UserMiddleware(s.imageAPI.Delete))
 
-	mux.HandleFunc("GET /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminListAllUsers))
-	mux.HandleFunc("PATCH /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminUpdateRole))
-	mux.HandleFunc("DELETE /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminDeleteUser))
-	mux.HandleFunc("DELETE /admin/logout", s.authServer.AdminMiddleware(s.authServer.AdminLogoutUser))
-	mux.HandleFunc("GET /admin/images", s.authServer.AdminMiddleware(s.imageServer.AdminListAllImages))
-	mux.HandleFunc("DELETE /admin/images", s.authServer.AdminMiddleware(s.imageServer.AdminDeleteImage))
+	mux.HandleFunc("GET /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminListAllUsers))
+	mux.HandleFunc("PATCH /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminUpdateRole))
+	mux.HandleFunc("DELETE /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminDeleteUser))
+	mux.HandleFunc("DELETE /admin/logout", s.authAPI.AdminMiddleware(s.authAPI.AdminLogoutUser))
+	mux.HandleFunc("GET /admin/images", s.authAPI.AdminMiddleware(s.imageAPI.AdminListAllImages))
+	mux.HandleFunc("DELETE /admin/images", s.authAPI.AdminMiddleware(s.imageAPI.AdminDeleteImage))
 }
 
 func (s *Service) Start() {

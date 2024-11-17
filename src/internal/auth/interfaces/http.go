@@ -12,12 +12,12 @@ import (
 	"strings"
 )
 
-type AuthServer struct {
+type AuthAPI struct {
 	service *application.AuthService
 }
 
-func NewServer(authService *application.AuthService) *AuthServer {
-	return &AuthServer{
+func NewServer(authService *application.AuthService) *AuthAPI {
+	return &AuthAPI{
 		service: authService,
 	}
 }
@@ -30,7 +30,7 @@ func extractTokenFromHeader(r *http.Request) (string, error) {
 	return strings.TrimPrefix(authHeader, "Bearer "), nil
 }
 
-func (s *AuthServer) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
@@ -51,7 +51,7 @@ func (s *AuthServer) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter,
 	}
 }
 
-func (s *AuthServer) AdminMiddleware(handler func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
@@ -77,7 +77,7 @@ func (s *AuthServer) AdminMiddleware(handler func(http.ResponseWriter, *http.Req
 	}
 }
 
-func (s *AuthServer) Login(w http.ResponseWriter, r *http.Request) {
+func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 
 	type parameters struct {
@@ -117,7 +117,7 @@ func (s *AuthServer) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
+func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
 	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 
 	type parameters struct {
@@ -154,7 +154,7 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.Logout(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
@@ -165,7 +165,7 @@ func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Req
 	respond.WithoutContent(w, http.StatusOK)
 }
 
-func (s *AuthServer) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
+func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		UserID uuid.UUID `json:"user_id"`
 	}

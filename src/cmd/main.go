@@ -156,19 +156,19 @@ func (a *application) assemble() error {
 		accessTokenExpirationTime,
 		refreshTokenExpirationTime,
 	)
-	authServer := authInterface.NewServer(authService)
+	authAPI := authInterface.NewServer(authService)
 
-	usersRepo := usersInfra.NewUserRepository(db, txProvider)
-	userService := usersApp.NewService(usersRepo)
-	usersServer := usersInterface.NewServer(userService)
+	userRepo := usersInfra.NewUserRepository(db, txProvider)
+	userService := usersApp.NewService(userRepo)
+	userAPI := usersInterface.NewServer(userService)
 
-	imagesRepo := imagesInfra.NewImageRepository(db, txProvider)
-	imagesStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
-	imagesCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
-	imagesService := imagesApp.NewService(imagesRepo, imagesStorageRepo, imagesCacheRepo)
-	imagesServer := imagesInterface.NewServer(imagesService)
+	imageRepo := imagesInfra.NewImageRepository(db, txProvider)
+	imageStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
+	imageCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
+	imageService := imagesApp.NewService(imageRepo, imageStorageRepo, imageCacheRepo)
+	imageAPI := imagesInterface.NewServer(imageService)
 
-	serverService := server.NewService(appPortInt, authServer, usersServer, imagesServer)
+	serverService := server.NewService(appPortInt, authAPI, userAPI, imageAPI)
 
 	a.serverService = serverService
 	a.dbService = dbService
