@@ -128,3 +128,84 @@ func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Req
 
 	respond.WithoutContent(w, http.StatusNoContent)
 }
+
+func (s *UserServer) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
+	type response struct {
+		ID        string `json:"id"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Role      string `json:"role"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	users, err := s.service.GetAllUsers()
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	var resp []response
+	for _, user := range users {
+		resp = append(resp, response{
+			ID:        user.ID.String(),
+			Username:  user.Username,
+			Email:     user.Email,
+			Role:      user.Role.String(),
+			CreatedAt: user.CreatedAt.String(),
+			UpdatedAt: user.UpdatedAt.String(),
+		})
+	}
+
+	respond.WithJSON(w, http.StatusOK, resp)
+}
+
+func (s *UserServer) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		UserID uuid.UUID   `json:"user_id"`
+		Role   domain.Role `json:"role"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		return
+	}
+
+	err = s.service.UpdateUserRole(p.UserID, p.Role)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (s *UserServer) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		UserID uuid.UUID `json:"user_id"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		return
+	}
+
+	err = s.service.DeleteUser(p.UserID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}

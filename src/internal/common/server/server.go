@@ -56,6 +56,10 @@ func (s *Service) setup() {
 	mux.HandleFunc("GET /images/list", s.authServer.UserMiddleware(s.imageServer.List))
 	mux.HandleFunc("PUT /images", s.authServer.UserMiddleware(s.imageServer.Transform))
 	mux.HandleFunc("DELETE /images", s.authServer.UserMiddleware(s.imageServer.Delete))
+
+	mux.HandleFunc("GET /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminListAllUsers))
+	mux.HandleFunc("PATCH /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminUpdateRole))
+	mux.HandleFunc("DELETE /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminDeleteUser))
 }
 
 func (s *Service) Start() {

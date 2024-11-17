@@ -82,3 +82,39 @@ func (r *UserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 		return nil
 	})
 }
+
+func (r *UserRepository) GetAllUsers(ctx context.Context) ([]domain.User, error) {
+	slog.Info("DB query")
+
+	rows, err := r.db.QueryContext(ctx, `SELECT * FROM users`)
+	if err != nil {
+		return nil, fmt.Errorf("error getting users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var user domain.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning user: %w", err)
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+func (r *UserRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role domain.Role) error {
+	slog.Info("DB query", "id", id, "role", role)
+
+	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `UPDATE users SET role = $1, updated_at = $2 WHERE id = $3`, role, time.Now(), id)
+		if err != nil {
+			return fmt.Errorf("error updating user role: %w", err)
+		}
+
+		return nil
+	})
+}

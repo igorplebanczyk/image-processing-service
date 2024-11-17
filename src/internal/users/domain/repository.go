@@ -20,4 +20,6 @@ type UserRepository interface {
 		email string,
 	) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
+	GetAllUsers(ctx context.Context) ([]User, error)
+	UpdateUserRole(ctx context.Context, id uuid.UUID, role Role) error
 }

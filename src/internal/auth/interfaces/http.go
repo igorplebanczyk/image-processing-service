@@ -51,7 +51,7 @@ func (s *AuthServer) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter,
 	}
 }
 
-func (s *AuthServer) AdminMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (s *AuthServer) AdminMiddleware(handler func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
@@ -73,7 +73,7 @@ func (s *AuthServer) AdminMiddleware(handler func(uuid.UUID, http.ResponseWriter
 		}
 
 		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "user_id", userID)
-		handler(userID, w, r)
+		handler(w, r)
 	}
 }
 
