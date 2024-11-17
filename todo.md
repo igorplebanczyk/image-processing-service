@@ -9,7 +9,8 @@
 - [X] Improve logging
 - [X] Add Terraform IaC
 - [ ] Add OpenAPI specifications
-- [ ] Add RBAC and admin endpoints
+- [X] Add RBAC
+- [ ] Add admin endpoints
 - [ ] Add monitoring
 - [ ] Add a mail service
 - [ ] Add a forgotten password system
