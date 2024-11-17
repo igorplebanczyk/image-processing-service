@@ -228,3 +228,74 @@ func (s *ImageServer) Transform(userID uuid.UUID, w http.ResponseWriter, r *http
 
 	respond.WithoutContent(w, http.StatusNoContent)
 }
+
+func (s *ImageServer) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
+	type responseItem struct {
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	type response struct {
+		Images     []responseItem `json:"images"`
+		Page       int            `json:"page"`
+		Limit      int            `json:"limit"`
+		TotalCount int            `json:"total_count"`
+	}
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	images, total, err := s.ImagesService.AdminListAllImages(&page, &limit)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	var responseImages []responseItem
+	for _, img := range images {
+		responseImages = append(responseImages, responseItem{
+			Name:      img.Name,
+			CreatedAt: img.CreatedAt,
+			UpdatedAt: img.UpdatedAt,
+		})
+	}
+
+	respond.WithJSON(w, http.StatusOK, response{
+		Images:     responseImages,
+		Page:       page,
+		Limit:      limit,
+		TotalCount: total,
+	})
+}
+
+func (s *ImageServer) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		ID uuid.UUID `json:"id"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		return
+	}
+
+	err = s.ImagesService.AdminDeleteImage(p.ID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}

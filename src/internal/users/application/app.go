@@ -104,7 +104,7 @@ func (s *UserService) DeleteUser(userID uuid.UUID) error {
 	return nil
 }
 
-func (s *UserService) GetAllUsers() ([]domain.User, error) {
+func (s *UserService) AdminGetAllUsers() ([]domain.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -116,7 +116,7 @@ func (s *UserService) GetAllUsers() ([]domain.User, error) {
 	return users, nil
 }
 
-func (s *UserService) UpdateUserRole(userID uuid.UUID, role domain.Role) error {
+func (s *UserService) AdminUpdateUserRole(userID uuid.UUID, role domain.Role) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

@@ -144,3 +144,46 @@ func (r *ImageRepository) DeleteImage(ctx context.Context, id uuid.UUID) error {
 		return nil
 	})
 }
+
+func (r *ImageRepository) GetAllImages(ctx context.Context, page, limit *int) ([]*domain.Image, int, error) {
+	slog.Info("DB query")
+
+	var rows *sql.Rows
+	var err error
+
+	// If page and limit are provided, apply pagination; otherwise, fetch all results
+	if page != nil && limit != nil {
+		offset := (*page - 1) * (*limit)
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT id, user_id, name, created_at, updated_at 
+			FROM images 
+			ORDER BY created_at DESC 
+			LIMIT $1 OFFSET $2`, *limit, offset)
+	} else {
+		rows, err = r.db.QueryContext(ctx, `
+			SELECT id, user_id, name, created_at, updated_at 
+			FROM images 
+			ORDER BY created_at DESC`)
+	}
+	if err != nil {
+		return nil, -1, fmt.Errorf("error getting all images: %w", err)
+	}
+	defer rows.Close()
+
+	var imagesList []*domain.Image
+	for rows.Next() {
+		var image domain.Image
+		if err := rows.Scan(&image.ID, &image.UserID, &image.Name, &image.CreatedAt, &image.UpdatedAt); err != nil {
+			return nil, -1, fmt.Errorf("error scanning image: %w", err)
+		}
+		imagesList = append(imagesList, &image)
+	}
+
+	var totalCount int
+	err = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM images`).Scan(&totalCount)
+	if err != nil {
+		return nil, -1, fmt.Errorf("error getting total image count: %w", err)
+	}
+
+	return imagesList, totalCount, nil
+}

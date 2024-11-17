@@ -139,7 +139,7 @@ func (s *UserServer) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 		UpdatedAt string `json:"updated_at"`
 	}
 
-	users, err := s.service.GetAllUsers()
+	users, err := s.service.AdminGetAllUsers()
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
@@ -176,7 +176,7 @@ func (s *UserServer) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.service.UpdateUserRole(p.UserID, p.Role)
+	err = s.service.AdminUpdateUserRole(p.UserID, p.Role)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())

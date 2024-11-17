@@ -25,6 +25,7 @@ type ImageRepository interface {
 	) ([]*Image, int, error)
 	UpdateImage(ctx context.Context, id uuid.UUID) error
 	DeleteImage(ctx context.Context, id uuid.UUID) error
+	GetAllImages(ctx context.Context, page, limit *int) ([]*Image, int, error)
 }
 
 type ImageStorageRepository interface {
