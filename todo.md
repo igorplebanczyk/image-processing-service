@@ -7,7 +7,7 @@
   - [ ] End-to-end tests
 - [X] Improve error handling
 - [X] Improve logging
-- [ ] Add Terraform IaC
+- [X] Add Terraform IaC
 - [ ] Add OpenAPI specifications
 - [ ] Add RBAC and admin endpoints
 - [ ] Add monitoring
