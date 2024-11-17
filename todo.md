@@ -14,6 +14,7 @@
 - [ ] Add monitoring
 - [ ] Add a mail service
 - [ ] Add a forgotten password system
+- [ ] Create and store image previews; add a preview endpoint
 - [X] Add a CI/CD pipeline
 - [X] Add dependabot configuration
 - [ ] Add a reverse proxy
