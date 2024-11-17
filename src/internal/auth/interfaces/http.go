@@ -164,3 +164,27 @@ func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Req
 
 	respond.WithoutContent(w, http.StatusOK)
 }
+
+func (s *AuthServer) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		UserID uuid.UUID `json:"user_id"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		return
+	}
+
+	err = s.service.AdminLogoutUser(p.UserID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusOK)
+}

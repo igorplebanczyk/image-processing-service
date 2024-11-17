@@ -77,3 +77,16 @@ func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID 
 		return nil
 	})
 }
+
+func (r *RefreshTokenRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
+	slog.Info("DB query", "user_id", userID)
+
+	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
+		if err != nil {
+			return fmt.Errorf("error revoking refresh tokens: %w", err)
+		}
+
+		return nil
+	})
+}

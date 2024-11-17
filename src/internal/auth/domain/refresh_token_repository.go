@@ -15,4 +15,5 @@ type RefreshTokenRepository interface {
 	) error
 	GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error
+	RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
 }

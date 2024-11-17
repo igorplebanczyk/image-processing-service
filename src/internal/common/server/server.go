@@ -60,6 +60,7 @@ func (s *Service) setup() {
 	mux.HandleFunc("GET /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminListAllUsers))
 	mux.HandleFunc("PATCH /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminUpdateRole))
 	mux.HandleFunc("DELETE /admin/users", s.authServer.AdminMiddleware(s.userServer.AdminDeleteUser))
+	mux.HandleFunc("DELETE /admin/logout", s.authServer.AdminMiddleware(s.authServer.AdminLogoutUser))
 }
 
 func (s *Service) Start() {
