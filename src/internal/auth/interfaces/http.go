@@ -22,20 +22,53 @@ func NewServer(authService *application.AuthService) *AuthServer {
 	}
 }
 
-func (s *AuthServer) Middleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func extractTokenFromHeader(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return "", domain.ErrInvalidRequest
+	}
+	return strings.TrimPrefix(authHeader, "Bearer "), nil
+}
+
+func (s *AuthServer) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		token, err := extractTokenFromHeader(r)
+		if err != nil {
 			slog.Error("HTTP request error", "error", domain.ErrInvalidRequest.Error())
 			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidRequest.Error())
 			return
 		}
-		bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
 
-		userID, err := s.service.Authenticate(bearerToken)
+		userID, err := s.service.Authenticate(token)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
+			return
+		}
+
+		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "user_id", userID)
+		handler(userID, w, r)
+	}
+}
+
+func (s *AuthServer) AdminMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token, err := extractTokenFromHeader(r)
+		if err != nil {
+			slog.Error("HTTP request error", "error", domain.ErrInvalidRequest.Error())
+			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidRequest.Error())
+			return
+		}
+
+		userID, err := s.service.AuthenticateAdmin(token)
+		if err != nil {
+			if errors.Is(err, domain.ErrInvalidToken) {
+				slog.Error("HTTP request error", "error", err)
+				respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
+				return
+			}
+			slog.Error("HTTP request error", "error", err)
+			respond.WithError(w, http.StatusForbidden, domain.ErrPermissionDenied.Error())
 			return
 		}
 

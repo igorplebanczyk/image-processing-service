@@ -110,6 +110,27 @@ func (s *AuthService) Authenticate(accessToken string) (uuid.UUID, error) {
 	return id, nil
 }
 
+func (s *AuthService) AuthenticateAdmin(accessToken string) (uuid.UUID, error) {
+	id, err := s.Authenticate(accessToken)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	role, err := s.userRepo.GetUserRoleByID(ctx, id)
+	if err != nil {
+		return uuid.Nil, errors.Join(domain.ErrInternal, err)
+	}
+
+	if role != domain.AdminRole {
+		return uuid.Nil, domain.ErrPermissionDenied
+	}
+
+	return id, nil
+}
+
 func (s *AuthService) Logout(userID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
