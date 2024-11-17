@@ -1,4 +1,4 @@
-.PHONY: build run stop test coverage
+.PHONY: build run stop test lint sec
 
 build:
 	docker-compose build
@@ -10,7 +10,10 @@ stop:
 	docker-compose down
 
 test:
-	cd src && go test -v ./...
+	cd src && go test -v -cover ./...
 
-coverage:
-	cd src && go test -cover ./...
+lint:
+	cd src && staticcheck ./...
+
+sec:
+	cd src && gosec ./...
