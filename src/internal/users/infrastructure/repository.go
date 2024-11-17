@@ -26,9 +26,9 @@ func (r *UserRepository) CreateUser(ctx context.Context, username, email, passwo
 	user := domain.NewUser(username, email, password)
 
 	err := r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
-		_, err := tx.ExecContext(ctx, `INSERT INTO users (id, username, email, password, created_at, updated_at) 
-											VALUES ($1, $2, $3, $4, $5, $6)`,
-			user.ID, user.Username, user.Email, user.Password, user.CreatedAt, user.UpdatedAt)
+		_, err := tx.ExecContext(ctx, `INSERT INTO users (id, username, email, password, role,created_at, updated_at) 
+											VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+			user.ID, user.Username, user.Email, user.Password, user.Role, user.CreatedAt, user.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("error creating users: %w", err)
 		}
@@ -48,7 +48,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain
 	var user domain.User
 
 	err := r.db.QueryRowContext(ctx, `SELECT * FROM users WHERE id = $1`, id).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
@@ -56,7 +56,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain
 	return &user, nil
 }
 
-func (r *UserRepository) UpdateUser(ctx context.Context, id uuid.UUID, username, email string) error {
+func (r *UserRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {
 	slog.Info("DB query", "id", id, "username", username, "email", email)
 
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {

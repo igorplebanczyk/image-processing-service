@@ -84,7 +84,7 @@ func (s *UserService) UpdateUser(userID uuid.UUID, username, email string) error
 		return errors.Join(domain.ErrValidationFailed, err)
 	}
 
-	err = s.repo.UpdateUser(ctx, userID, newUsername, newEmail)
+	err = s.repo.UpdateUserDetails(ctx, userID, newUsername, newEmail)
 	if err != nil {
 		return errors.Join(domain.ErrInternal, err)
 	}

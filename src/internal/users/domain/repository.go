@@ -13,7 +13,7 @@ type UserRepository interface {
 		password string,
 	) (*User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
-	UpdateUser(
+	UpdateUserDetails(
 		ctx context.Context,
 		id uuid.UUID,
 		username,

@@ -9,11 +9,19 @@ import (
 	"time"
 )
 
+type Role string
+
+const (
+	AdminRole Role = "admin"
+	UserRole  Role = "user"
+)
+
 type User struct {
 	ID        uuid.UUID
 	Username  string
 	Email     string
 	Password  string
+	Role      Role
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -24,6 +32,7 @@ func NewUser(username, email, password string) *User {
 		Username:  username,
 		Email:     email,
 		Password:  password,
+		Role:      UserRole,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
