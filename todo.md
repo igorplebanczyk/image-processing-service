@@ -1,21 +1,82 @@
-- [ ] Add tests
-  - [X] Domain layer unit tests
-  - [X] Application layer unit tests
-  - [X] Transformation service unit tests
-  - [ ] Infrastructure layer integration tests
-  - [ ] Component tests
-  - [ ] End-to-end tests
 - [X] Improve error handling
 - [X] Improve logging
 - [X] Add Terraform IaC
-- [ ] Add OpenAPI specifications
+- [X] Add a CI pipeline
+- [X] Add dependabot configuration
 - [X] Add RBAC
 - [X] Add admin endpoints
-- [ ] Add monitoring
+- [ ] Add tests
+  - [X] Add domain layer unit tests
+  - [X] Add application layer unit tests
+  - [X] Add transformation service unit tests
+  - [ ] Add infrastructure layer integration tests
+  - [ ] Add component tests
+  - [ ] Add end-to-end tests
+- [ ] Revise the API setup
+  - [ ] Add an endpoint for verifying whether a user is an admin
+  - [ ] Add a versioning system
+  - [ ] Streamline the error responses
+  - [ ] Revise the semantics of the endpoints
+  - [ ] Consider using path and query parameters more
+- [ ] Add metrics
+  - [ ] Add a metrics service
+  - [ ] Collect metrics across the application
+  - [ ] Export metrics to Prometheus via a private endpoint
+  - [ ] Setup Prometheus in Docker Compose
+  - [ ] Add an admin endpoint for collecting aggregated metrics from Prometheus
+- [ ] Add a soft delete mechanism for users
+  - [ ] Add a deleted_at column to the users table
+  - [ ] Update the appropriate queries to include the deleted_at column
+  - [ ] Update the database worker to remove users with a deleted_at value after a certain period
+- [ ] Revise the PostgreSQL setup
+  - [ ] Revise the migrations system
+  - [ ] Streamline and revise the schema setup
+  - [ ] Rethink adding proper configurations
+- [ ] Revise the Redis setup
+  - [ ] Revise the Redis capabilities and how to use them properly
+  - [ ] Rethink adding proper configurations
+- [ ] Create and store image previews
+  - [ ] Add a preview service for generating previews
+  - [ ] Update blob names to include a preview suffix
+  - [ ] Store previews in the blob storage
+  - [ ] Add preview endpoints: both singular and batch
 - [ ] Add a mail service
-- [ ] Add a forgotten password system
-- [ ] Create and store image previews; add a preview endpoint
-- [X] Add a CI/CD pipeline
-- [X] Add dependabot configuration
+  - [ ] Add a registration confirmation email
+  - [ ] Add a password reset system
+  - [ ] Add an admin broadcast system
+- [ ] Add OpenAPI specifications
+  - [ ] Use some library to generate OpenAPI specifications from the code
+  - [ ] Serve the OpenAPI specifications via a /docs endpoint
 - [ ] Add a reverse proxy
-- [ ] Add a README and LICENSE
+  - [ ] Add Traefik to the Docker Compose setup
+  - [ ] Add rate limiting and other security features
+  - [ ] Add a caching layer
+  - [ ] Revise API security best practices
+  - [ ] Add a simple way to manage HTTPS and domains
+- [ ] Revise the logging system
+  - [ ] Add more logs
+  - [ ] Use log levels more effectively
+  - [ ] Add more context to the logs
+  - [ ] Revise the storage of logs
+- [ ] Revise the project structure
+  - [ ] Attempt to streamline the main package
+  - [ ] Standardize naming conventions
+  - [ ] Split large files into smaller ones
+  - [ ] Consider using CQRS
+  - [ ] Extract common functionality into helper functions
+  - [ ] Unit test the helper functions
+  - [ ] Add comments where necessary
+- [ ] Revise the Docker setup
+  - [ ] Streamline the Dockerfiles
+  - [ ] Revise naming conventions
+  - [ ] Consider using a more explicit network setup
+  - [ ] Consider using more configurations
+  - [ ] Revise security best practices
+- [ ] Add a deployment pipeline
+  - [ ] Update Terraform files to set up Azure App Service
+  - [ ] Add a CD workflow
+- [ ] Add documentation
+  - [ ] Add a .env template
+  - [ ] Add a README.md file
+  - [ ] Add a SECURITY.md file
+  - [ ] Add a LICENSE
