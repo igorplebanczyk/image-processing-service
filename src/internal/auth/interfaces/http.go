@@ -121,7 +121,7 @@ func (s *AuthServer) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *AuthServer) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.Logout(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)

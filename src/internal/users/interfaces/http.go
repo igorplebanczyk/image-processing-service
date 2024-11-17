@@ -60,7 +60,7 @@ func (s *UserServer) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *UserServer) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	type response struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`
@@ -118,7 +118,7 @@ func (s *UserServer) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *UserServer) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.DeleteUser(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
