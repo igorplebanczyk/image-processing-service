@@ -13,7 +13,7 @@
   - [ ] Add component tests
   - [ ] Add end-to-end tests
 - [ ] Revise the API setup
-  - [ ] Add an endpoint for verifying whether a user is an admin
+  - [X] Add an endpoint for verifying whether a user is an admin
   - [ ] Add a versioning system
   - [ ] Streamline the error responses
   - [ ] Revise the semantics of the endpoints

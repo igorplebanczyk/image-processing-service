@@ -188,3 +188,7 @@ func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
 
 	respond.WithoutContent(w, http.StatusOK)
 }
+
+func (s *AuthAPI) AdminAccess(w http.ResponseWriter, _ *http.Request) {
+	respond.WithoutContent(w, http.StatusOK)
+}
