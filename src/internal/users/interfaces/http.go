@@ -60,7 +60,7 @@ func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *UserAPI) Info(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (s *UserAPI) GetData(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	type response struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`

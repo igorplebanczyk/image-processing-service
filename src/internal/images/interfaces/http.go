@@ -71,7 +71,7 @@ func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (s *ImageAPI) List(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) GetDataAll(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
 		Name      string    `json:"name"`
 		CreatedAt time.Time `json:"created_at"`
@@ -118,7 +118,7 @@ func (s *ImageAPI) List(userID uuid.UUID, w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (s *ImageAPI) Info(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (s *ImageAPI) GetData(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name string `json:"name"`
 	}

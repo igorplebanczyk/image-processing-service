@@ -16,8 +16,8 @@
   - [X] Add an endpoint for verifying whether a user is an admin
   - [ ] Add a versioning system
   - [ ] Streamline the error responses
-  - [ ] Revise the semantics of the endpoints
-  - [ ] Consider using path and query parameters more
+  - [X] Revise the semantics of the endpoints
+  - [X] Consider using path and query parameters more
 - [ ] Redesign the transformation service
   - [ ] Add an assembler that deserializes the image, combines transformations in to a linked list and assigns a channel
   - [ ] Add a queue that holds the transformations before they are processed

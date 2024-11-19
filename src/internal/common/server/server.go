@@ -41,27 +41,27 @@ func (s *Service) setup() {
 
 	mux.HandleFunc("/health", health)
 
+	mux.HandleFunc("POST /auth/login", s.authAPI.Login)
+	mux.HandleFunc("POST /auth/refresh", s.authAPI.Refresh)
+	mux.HandleFunc("DELETE /auth/logout", s.authAPI.UserMiddleware(s.authAPI.Logout))
+
 	mux.HandleFunc("POST /users", s.userAPI.Register)
-	mux.HandleFunc("GET /users", s.authAPI.UserMiddleware(s.userAPI.Info))
+	mux.HandleFunc("GET /users", s.authAPI.UserMiddleware(s.userAPI.GetData))
 	mux.HandleFunc("PUT /users", s.authAPI.UserMiddleware(s.userAPI.Update))
 	mux.HandleFunc("DELETE /users", s.authAPI.UserMiddleware(s.userAPI.Delete))
 
-	mux.HandleFunc("POST /login", s.authAPI.Login)
-	mux.HandleFunc("POST /refresh", s.authAPI.Refresh)
-	mux.HandleFunc("DELETE /logout", s.authAPI.UserMiddleware(s.authAPI.Logout))
-
 	mux.HandleFunc("POST /images", s.authAPI.UserMiddleware(s.imageAPI.Upload))
+	mux.HandleFunc("GET /images/", s.authAPI.UserMiddleware(s.imageAPI.GetDataAll))
+	mux.HandleFunc("GET /images/", s.authAPI.UserMiddleware(s.imageAPI.GetData))
 	mux.HandleFunc("GET /images/file", s.authAPI.UserMiddleware(s.imageAPI.Download))
-	mux.HandleFunc("GET /images/info", s.authAPI.UserMiddleware(s.imageAPI.Info))
-	mux.HandleFunc("GET /images/list", s.authAPI.UserMiddleware(s.imageAPI.List))
 	mux.HandleFunc("PUT /images", s.authAPI.UserMiddleware(s.imageAPI.Transform))
 	mux.HandleFunc("DELETE /images", s.authAPI.UserMiddleware(s.imageAPI.Delete))
 
-	mux.HandleFunc("GET /admin/access", s.authAPI.AdminMiddleware(s.authAPI.AdminAccess))
+	mux.HandleFunc("GET /admin/auth/access", s.authAPI.AdminMiddleware(s.authAPI.AdminAccess))
+	mux.HandleFunc("DELETE /admin/auth/logout", s.authAPI.AdminMiddleware(s.authAPI.AdminLogoutUser))
 	mux.HandleFunc("GET /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminListAllUsers))
 	mux.HandleFunc("PATCH /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminUpdateRole))
 	mux.HandleFunc("DELETE /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminDeleteUser))
-	mux.HandleFunc("DELETE /admin/logout", s.authAPI.AdminMiddleware(s.authAPI.AdminLogoutUser))
 	mux.HandleFunc("GET /admin/images", s.authAPI.AdminMiddleware(s.imageAPI.AdminListAllImages))
 	mux.HandleFunc("DELETE /admin/images", s.authAPI.AdminMiddleware(s.imageAPI.AdminDeleteImage))
 }
