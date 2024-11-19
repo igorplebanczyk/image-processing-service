@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+const Version = "1.0.0"
+
 func WithError(w http.ResponseWriter, code int, msg string) {
 	type response struct {
 		Error string `json:"error"`
@@ -18,7 +20,7 @@ func WithError(w http.ResponseWriter, code int, msg string) {
 		return
 	}
 
-	applySecurityHeaders(w)
+	applyCommonHeaders(w)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -30,7 +32,7 @@ func WithError(w http.ResponseWriter, code int, msg string) {
 }
 
 func WithoutContent(w http.ResponseWriter, code int) {
-	applySecurityHeaders(w)
+	applyCommonHeaders(w)
 	w.WriteHeader(code)
 }
 
@@ -41,7 +43,7 @@ func WithJSON(w http.ResponseWriter, code int, payload any) {
 		return
 	}
 
-	applySecurityHeaders(w)
+	applyCommonHeaders(w)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -55,7 +57,7 @@ func WithJSON(w http.ResponseWriter, code int, payload any) {
 func WithImage(w http.ResponseWriter, code int, imageBytes []byte, imageName string) {
 	contentType := http.DetectContentType(imageBytes)
 
-	applySecurityHeaders(w)
+	applyCommonHeaders(w)
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", imageName))
 	w.WriteHeader(code)
@@ -67,7 +69,8 @@ func WithImage(w http.ResponseWriter, code int, imageBytes []byte, imageName str
 	}
 }
 
-func applySecurityHeaders(w http.ResponseWriter) {
+func applyCommonHeaders(w http.ResponseWriter) {
+	w.Header().Set("API-Version", Version)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "deny")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';")
