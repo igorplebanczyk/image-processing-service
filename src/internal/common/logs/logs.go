@@ -1,4 +1,4 @@
-package log
+package logs
 
 import (
 	"fmt"
@@ -15,16 +15,16 @@ func Setup(logDir string) error {
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(logDir, 0700)
 		if err != nil {
-			return fmt.Errorf("failed to create log directory: %w", err)
+			return fmt.Errorf("failed to create logs directory: %w", err)
 		}
 	}
 
-	logFileName := currDate + ".log"
+	logFileName := currDate + ".logs"
 	logFilePath := filepath.Clean(filepath.Join(logDir, logFileName))
 
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %w", err)
+		return fmt.Errorf("failed to open logs file: %w", err)
 	}
 
 	handler := slog.NewJSONHandler(file, &slog.HandlerOptions{
