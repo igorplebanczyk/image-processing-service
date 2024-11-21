@@ -18,23 +18,22 @@
   - [X] Streamline the error responses
   - [X] Revise the semantics of the endpoints
   - [X] Consider using path and query parameters more
-- [ ] Redesign the transformation service
-  - [ ] Add an assembler that deserializes the image, combines transformations in to a linked list and assigns a channel
-  - [ ] Add a queue that holds the transformations before they are processed
-  - [ ] Add an orchestrators that manages workers and assigns transformations to them
-  - [ ] Add a worker that processes the transformations concurrently
-  - [ ] Add a deassembler that serializes the image and sends it back to the client via the channel
-  - [ ] Test it with unit tests
+- [ ] Revise the logging system
+  - [ ] Add more logs
+  - [ ] Add more context to the logs
+  - [X] Add a log aggregation system
+  - [ ] Use proper Loki and Promtail configurations
+  - [ ] Consider storing log indexes in a volume/cloud storage
 - [ ] Add metrics
   - [ ] Add a metrics service
   - [ ] Collect metrics across the application
   - [ ] Export metrics to Prometheus via a private endpoint
   - [ ] Setup Prometheus in Docker Compose
   - [ ] Add an admin endpoint for collecting aggregated metrics from Prometheus
-- [ ] Add a soft delete mechanism for users
-  - [ ] Add a deleted_at column to the users table
-  - [ ] Update the appropriate queries to include the deleted_at column
-  - [ ] Update the database worker to remove users with a deleted_at value after a certain period
+- [ ] Add a dashboard
+  - [ ] Add Grafana to the Docker Compose setup
+  - [ ] Add a dashboard for the metrics
+  - [ ] Add a dashboard for the logs
 - [ ] Revise the PostgreSQL setup
   - [ ] Revise the migrations system
   - [ ] Streamline and revise the schema setup
@@ -42,6 +41,23 @@
 - [ ] Revise the Redis setup
   - [ ] Revise the Redis capabilities and how to use them properly
   - [ ] Rethink adding proper configurations
+- [ ] Revise the Docker setup
+  - [ ] Streamline the Dockerfiles
+  - [ ] Revise naming conventions
+  - [ ] Consider using a more explicit network setup
+  - [ ] Consider using more configurations
+  - [ ] Revise security best practices
+- [ ] Redesign the transformation service
+  - [ ] Add an assembler that deserializes the image, combines transformations in to a linked list and assigns a channel
+  - [ ] Add a queue that holds the transformations before they are processed
+  - [ ] Add an orchestrators that manages workers and assigns transformations to them
+  - [ ] Add a worker that processes the transformations concurrently
+  - [ ] Add a deassembler that serializes the image and sends it back to the client via the channel
+  - [ ] Test it with unit tests
+- [ ] Add a soft delete mechanism for users
+  - [ ] Add a deleted_at column to the users table
+  - [ ] Update the appropriate queries to include the deleted_at column
+  - [ ] Update the database worker to remove users with a deleted_at value after a certain period
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews
   - [ ] Update blob names to include a preview suffix
@@ -51,20 +67,15 @@
   - [ ] Add a registration confirmation email
   - [ ] Add a password reset system
   - [ ] Add an admin broadcast system
-- [ ] Add OpenAPI specifications
-  - [ ] Use some library to generate OpenAPI specifications from the code
-  - [ ] Serve the OpenAPI specifications via a /docs endpoint
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
   - [ ] Add rate limiting and other security features
   - [ ] Add a caching layer
   - [ ] Revise API security best practices
   - [ ] Add a simple way to manage HTTPS and domains
-- [ ] Revise the logging system
-  - [ ] Add more logs
-  - [ ] Use log levels more effectively
-  - [ ] Add more context to the logs
-  - [ ] Revise the storage of logs
+- [ ] Add OpenAPI specifications
+  - [ ] Use some library to generate OpenAPI specifications from the code
+  - [ ] Serve the OpenAPI specifications via a /docs endpoint
 - [ ] Revise the project structure
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
@@ -73,12 +84,6 @@
   - [ ] Extract common functionality into helper functions
   - [ ] Unit test the helper functions
   - [ ] Add comments where necessary
-- [ ] Revise the Docker setup
-  - [ ] Streamline the Dockerfiles
-  - [ ] Revise naming conventions
-  - [ ] Consider using a more explicit network setup
-  - [ ] Consider using more configurations
-  - [ ] Revise security best practices
 - [ ] Add a deployment pipeline
   - [ ] Update Terraform files to set up Azure App Service
   - [ ] Add a CD workflow
