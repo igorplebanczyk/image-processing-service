@@ -12,10 +12,10 @@
   - [ ] Add infrastructure layer integration tests
   - [ ] Add component tests
   - [ ] Add end-to-end tests
-- [ ] Revise the API setup
+- [X] Revise the API setup
   - [X] Add an endpoint for verifying whether a user is an admin
   - [X] Add a versioning system
-  - [ ] Streamline the error responses
+  - [X] Streamline the error responses
   - [X] Revise the semantics of the endpoints
   - [X] Consider using path and query parameters more
 - [ ] Redesign the transformation service
