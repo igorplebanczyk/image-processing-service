@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/domain"
 	"log/slog"
@@ -27,7 +28,7 @@ func (r *UserRepository) GetUserByUsername(ctx context.Context, username string)
 		username,
 	).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting user by username: %w", err)
 	}
 
 	return &user, nil
@@ -44,7 +45,7 @@ func (r *UserRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (dom
 		id,
 	).Scan(&role)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting user role by ID: %w", err)
 	}
 
 	return role, nil

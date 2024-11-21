@@ -2,10 +2,9 @@ package interfaces
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/application"
-	"image-processing-service/src/internal/auth/domain"
+	commonerrors "image-processing-service/src/internal/common/errors"
 	"image-processing-service/src/internal/common/server/respond"
 	"log/slog"
 	"net/http"
@@ -25,7 +24,7 @@ func NewServer(authService *application.AuthService) *AuthAPI {
 func extractTokenFromHeader(r *http.Request) (string, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return "", domain.ErrInvalidRequest
+		return "", commonerrors.NewInvalidInput("missing or invalid Authorization header")
 	}
 	return strings.TrimPrefix(authHeader, "Bearer "), nil
 }
@@ -34,15 +33,15 @@ func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *h
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
-			slog.Error("HTTP request error", "error", domain.ErrInvalidRequest.Error())
-			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidRequest.Error())
+			slog.Error("HTTP request error", "error", err)
+			respond.WithError(w, err)
 			return
 		}
 
 		userID, err := s.service.Authenticate(token)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
-			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
+			respond.WithError(w, err)
 			return
 		}
 
@@ -55,20 +54,15 @@ func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
-			slog.Error("HTTP request error", "error", domain.ErrInvalidRequest.Error())
-			respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidRequest.Error())
+			slog.Error("HTTP request error", "error", err)
+			respond.WithError(w, err)
 			return
 		}
 
 		userID, err := s.service.AuthenticateAdmin(token)
 		if err != nil {
-			if errors.Is(err, domain.ErrInvalidToken) {
-				slog.Error("HTTP request error", "error", err)
-				respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
-				return
-			}
 			slog.Error("HTTP request error", "error", err)
-			respond.WithError(w, http.StatusForbidden, domain.ErrPermissionDenied.Error())
+			respond.WithError(w, err)
 			return
 		}
 
@@ -95,19 +89,14 @@ func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&p)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	accessToken, refreshToken, err := s.service.Login(p.Username, p.Password)
 	if err != nil {
-		if errors.Is(err, domain.ErrInternal) {
-			slog.Error("HTTP request error", "error", err)
-			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
-			return
-		}
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidCredentials.Error())
+		respond.WithError(w, err)
 		return
 	}
 
@@ -133,19 +122,14 @@ func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&p)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	accessToken, err := s.service.Refresh(p.RefreshToken)
 	if err != nil {
-		if errors.Is(err, domain.ErrInternal) {
-			slog.Error("HTTP request error", "error", err)
-			respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
-			return
-		}
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusUnauthorized, domain.ErrInvalidToken.Error())
+		respond.WithError(w, err)
 		return
 	}
 
@@ -158,7 +142,7 @@ func (s *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Reques
 	err := s.service.Logout(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		respond.WithError(w, err)
 		return
 	}
 
@@ -175,14 +159,14 @@ func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&p)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusBadRequest, domain.ErrInvalidRequest.Error())
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.service.AdminLogoutUser(p.UserID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, http.StatusInternalServerError, domain.ErrInternal.Error())
+		respond.WithError(w, err)
 		return
 	}
 

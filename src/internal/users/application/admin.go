@@ -2,8 +2,9 @@ package application
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/google/uuid"
+	commonerrors "image-processing-service/src/internal/common/errors"
 	"image-processing-service/src/internal/users/domain"
 	"time"
 )
@@ -14,7 +15,7 @@ func (s *UserService) AdminGetAllUsers() ([]domain.User, error) {
 
 	users, err := s.repo.GetAllUsers(ctx)
 	if err != nil {
-		return nil, errors.Join(domain.ErrInternal, err)
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}
 
 	return users, nil
@@ -26,7 +27,7 @@ func (s *UserService) AdminUpdateUserRole(userID uuid.UUID, role domain.Role) er
 
 	err := s.repo.UpdateUserRole(ctx, userID, role)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error updating user role in database: %v", err))
 	}
 
 	return nil

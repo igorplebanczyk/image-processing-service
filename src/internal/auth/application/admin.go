@@ -2,9 +2,9 @@ package application
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/google/uuid"
-	"image-processing-service/src/internal/auth/domain"
+	commonerrors "image-processing-service/src/internal/common/errors"
 	"time"
 )
 
@@ -14,7 +14,7 @@ func (s *AuthService) AdminLogoutUser(userID uuid.UUID) error {
 
 	err := s.refreshTokenRepo.RevokeAllUserRefreshTokens(ctx, userID)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("failed to revoke refresh tokens: %v", err))
 	}
 
 	return nil

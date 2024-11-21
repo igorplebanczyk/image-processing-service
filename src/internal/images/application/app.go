@@ -2,8 +2,9 @@ package application
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/google/uuid"
+	commonerrors "image-processing-service/src/internal/common/errors"
 	"image-processing-service/src/internal/images/application/transformations"
 	"image-processing-service/src/internal/images/domain"
 	"time"
@@ -32,12 +33,12 @@ func NewService(
 func (s *ImageService) UploadImage(userID uuid.UUID, imageName string, imageBytes []byte) (*domain.Image, error) {
 	err := domain.ValidateName(imageName)
 	if err != nil {
-		return nil, errors.Join(domain.ErrValidationFailed, err)
+		return nil, commonerrors.NewInvalidInput(fmt.Sprintf("invalid image name: %v", err))
 	}
 
 	err = domain.ValidateRawImage(imageBytes)
 	if err != nil {
-		return nil, errors.Join(domain.ErrValidationFailed, err)
+		return nil, commonerrors.NewInvalidInput("invalid image data")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -45,19 +46,19 @@ func (s *ImageService) UploadImage(userID uuid.UUID, imageName string, imageByte
 
 	image, err := s.repo.CreateImage(ctx, userID, imageName)
 	if err != nil {
-		return nil, errors.Join(domain.ErrInternal, err)
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error creating image in database: %v", err))
 	}
 
 	objectName := domain.CreateObjectName(userID, imageName)
 	err = s.storage.Upload(ctx, objectName, imageBytes)
 	if err != nil {
 		cancel()
-		return nil, errors.Join(domain.ErrInternal, err)
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error uploading image to storage: %v", err))
 	}
 
 	err = s.cache.Set(ctx, objectName, imageBytes, time.Hour)
 	if err != nil {
-		return nil, errors.Join(domain.ErrInternal, err)
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error caching image: %v", err))
 	}
 
 	return image, nil
@@ -69,7 +70,7 @@ func (s *ImageService) ListUserImages(userID uuid.UUID, page, limit *int) ([]*do
 
 	images, total, err := s.repo.GetImagesByUserID(ctx, userID, page, limit)
 	if err != nil {
-		return nil, 0, errors.Join(domain.ErrInternal, err)
+		return nil, 0, commonerrors.NewInternal(fmt.Sprintf("error fetching images from database: %v", err))
 	}
 
 	return images, total, nil
@@ -81,7 +82,7 @@ func (s *ImageService) GetImageData(userID uuid.UUID, imageName string) (*domain
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return nil, errors.Join(domain.ErrInternal, err)
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error reading image from database: %v", err))
 	}
 
 	return image, nil
@@ -97,7 +98,7 @@ func (s *ImageService) DownloadImage(userID uuid.UUID, imageName string) ([]byte
 	if err != nil {
 		imageBytes, err = s.storage.Download(ctx, objectName)
 		if err != nil {
-			return nil, errors.Join(domain.ErrInternal, err)
+			return nil, commonerrors.NewInternal(fmt.Sprintf("error downloading image from storage: %v", err))
 		}
 	}
 
@@ -112,22 +113,22 @@ func (s *ImageService) DeleteImage(userID uuid.UUID, imageName string) error {
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error reading image from database: %v", err))
 	}
 
 	err = s.repo.DeleteImage(ctx, image.ID)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error deleting image from database: %v", err))
 	}
 
 	err = s.storage.Delete(ctx, objectName)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error deleting image from storage: %v", err))
 	}
 
 	err = s.cache.Delete(ctx, objectName)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error deleting image from cache: %v", err))
 	}
 
 	return nil
@@ -146,9 +147,6 @@ func (s *ImageService) ApplyTransformations(
 	for _, transformation := range transformations {
 		imageBytes, err = s.transformationService.Apply(imageBytes, transformation)
 		if err != nil {
-			if errors.Is(err, domain.ErrInvalidRequest) {
-				return errors.Join(domain.ErrInvalidRequest, err)
-			}
 			return err
 		}
 	}
@@ -160,22 +158,22 @@ func (s *ImageService) ApplyTransformations(
 
 	image, err := s.repo.GetImageByUserIDandName(ctx, userID, imageName)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error reading image from database: %v", err))
 	}
 
 	err = s.repo.UpdateImage(ctx, image.ID)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error updating image in database: %v", err))
 	}
 
 	err = s.storage.Upload(ctx, objectName, imageBytes)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error uploading image to storage: %v", err))
 	}
 
 	err = s.cache.Set(ctx, objectName, imageBytes, time.Hour)
 	if err != nil {
-		return errors.Join(domain.ErrInternal, err)
+		return commonerrors.NewInternal(fmt.Sprintf("error caching image: %v", err))
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	commonerrors "image-processing-service/src/internal/common/errors"
 	"image/jpeg"
 	"image/png"
 )
@@ -14,14 +15,14 @@ func serialize(img image.Image, format string) ([]byte, error) {
 	switch format {
 	case "jpeg":
 		if err := jpeg.Encode(&buf, img, nil); err != nil {
-			return nil, fmt.Errorf("failed to encode image as JPEG: %w", err)
+			return nil, commonerrors.NewInternal("failed to encode image as JPEG")
 		}
 	case "png":
 		if err := png.Encode(&buf, img); err != nil {
-			return nil, fmt.Errorf("failed to encode image as PNG: %w", err)
+			return nil, commonerrors.NewInternal("failed to encode image as PNG")
 		}
 	default:
-		return nil, fmt.Errorf("unsupported format: %s", format)
+		return nil, commonerrors.NewInternal("unsupported image format")
 	}
 
 	return buf.Bytes(), nil
@@ -30,7 +31,7 @@ func serialize(img image.Image, format string) ([]byte, error) {
 func deserialize(data []byte) (image.Image, string, error) {
 	img, format, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		return nil, "", fmt.Errorf("error decoding image: %w", err)
+		return nil, "", commonerrors.NewInvalidInput(fmt.Sprintf("error decoding image: %v", err))
 	}
 
 	return img, format, nil
