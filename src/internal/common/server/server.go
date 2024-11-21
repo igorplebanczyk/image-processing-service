@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	authInterface "image-processing-service/src/internal/auth/interfaces"
+	"image-processing-service/src/internal/common/server/telemetry"
 	imageInterface "image-processing-service/src/internal/images/interfaces"
 	userInterface "image-processing-service/src/internal/users/interfaces"
 	"log/slog"
@@ -34,7 +35,7 @@ func (s *Service) setup() {
 	mux := http.NewServeMux()
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.port),
-		Handler:           mux,
+		Handler:           telemetry.TelemetryMiddleware(mux),
 		ReadTimeout:       time.Minute,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -51,8 +52,8 @@ func (s *Service) setup() {
 	mux.HandleFunc("DELETE /users", s.authAPI.UserMiddleware(s.userAPI.Delete))
 
 	mux.HandleFunc("POST /images", s.authAPI.UserMiddleware(s.imageAPI.Upload))
-	mux.HandleFunc("GET /images/", s.authAPI.UserMiddleware(s.imageAPI.GetDataAll))
-	mux.HandleFunc("GET /images/", s.authAPI.UserMiddleware(s.imageAPI.GetData))
+	mux.HandleFunc("GET /images/data/all", s.authAPI.UserMiddleware(s.imageAPI.GetDataAll))
+	mux.HandleFunc("GET /images/data", s.authAPI.UserMiddleware(s.imageAPI.GetData))
 	mux.HandleFunc("GET /images/file", s.authAPI.UserMiddleware(s.imageAPI.Download))
 	mux.HandleFunc("PUT /images", s.authAPI.UserMiddleware(s.imageAPI.Transform))
 	mux.HandleFunc("DELETE /images", s.authAPI.UserMiddleware(s.imageAPI.Delete))

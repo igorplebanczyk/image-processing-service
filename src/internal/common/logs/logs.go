@@ -19,7 +19,7 @@ func Setup(logDir string) error {
 		}
 	}
 
-	logFileName := currDate + ".logs"
+	logFileName := currDate + ".log"
 	logFilePath := filepath.Clean(filepath.Join(logDir, logFileName))
 
 	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0600)

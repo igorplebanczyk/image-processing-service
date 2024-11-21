@@ -20,7 +20,6 @@ func NewServer(service *application.UserService) *UserAPI {
 }
 
 func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
-	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`

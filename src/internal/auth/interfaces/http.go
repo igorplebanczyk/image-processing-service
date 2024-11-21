@@ -45,7 +45,6 @@ func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *h
 			return
 		}
 
-		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "user_id", userID)
 		handler(userID, w, r)
 	}
 }
@@ -59,21 +58,18 @@ func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Reques
 			return
 		}
 
-		userID, err := s.service.AuthenticateAdmin(token)
+		_, err = s.service.AuthenticateAdmin(token)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, err)
 			return
 		}
 
-		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path, "user_id", userID)
 		handler(w, r)
 	}
 }
 
 func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
-	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
-
 	type parameters struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -107,8 +103,6 @@ func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
-	slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
-
 	type parameters struct {
 		RefreshToken string `json:"refresh_token"`
 	}
