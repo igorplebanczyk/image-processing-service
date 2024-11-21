@@ -1,6 +1,6 @@
 FROM grafana/promtail:latest
 
-COPY ./docker/logs/promtail.yaml /etc/promtail/promtail.yaml
+COPY ./config/promtail.yaml /etc/promtail/promtail.yaml
 
 EXPOSE 9080
 
