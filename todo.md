@@ -20,7 +20,7 @@
   - [X] Consider using path and query parameters more
 - [ ] Revise the logging system
   - [ ] Add more logs
-  - [ ] Add more context to the logs
+  - [X] Add more context to the logs
   - [X] Add a log aggregation system
   - [X] Use proper Loki and Promtail configurations
   - [ ] Consider storing log indexes in a volume/cloud storage
