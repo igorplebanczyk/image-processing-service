@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image-processing-service/src/internal/common/cache"
+	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 	"time"
 )
@@ -17,7 +18,7 @@ func NewImageCacheRepository(cache *cache.Service) *ImageCacheRepository {
 }
 
 func (r *ImageCacheRepository) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {
-	slog.Info("Setting key in cache", "key", key)
+	slog.Info("Setting key in cache", "type", logs.Cache, "key", key)
 
 	err := r.cache.Client().Set(ctx, key, value, expiration).Err()
 	if err != nil {
@@ -28,7 +29,7 @@ func (r *ImageCacheRepository) Set(ctx context.Context, key string, value []byte
 }
 
 func (r *ImageCacheRepository) Get(ctx context.Context, key string) ([]byte, error) {
-	slog.Info("Getting key from cache", "key", key)
+	slog.Info("Getting key from cache", "type", logs.Cache, "key", key)
 
 	val, err := r.cache.Client().Get(ctx, key).Result()
 	if err != nil {
@@ -39,7 +40,7 @@ func (r *ImageCacheRepository) Get(ctx context.Context, key string) ([]byte, err
 }
 
 func (r *ImageCacheRepository) Delete(ctx context.Context, key string) error {
-	slog.Info("Deleting key from cache", "key", key)
+	slog.Info("Deleting key from cache", "type", logs.Cache, "key", key)
 
 	err := r.cache.Client().Del(ctx, key).Err()
 	if err != nil {

@@ -37,7 +37,7 @@ func main() {
 	app := &application{}
 	err := app.assemble()
 	if err != nil {
-		slog.Error("Init error: error assembling application", "error", err)
+		slog.Error("Init error: error assembling application", "type", logs.Error, "error", err)
 		panic(err)
 	}
 
@@ -47,16 +47,16 @@ func main() {
 	go app.dbWorker.Start()
 	go app.serverService.Start()
 
-	slog.Info("Application started")
+	slog.Info("Application started", "type", logs.Standard)
 
 	<-ctx.Done()
-	slog.Info("Received shutdown signal")
+	slog.Info("Received shutdown signal", "type", logs.Standard)
 
 	app.dbWorker.Stop()
 	app.dbService.Stop()
 	app.serverService.Stop()
 
-	slog.Info("Application shutdown")
+	slog.Info("Application shutdown", "type", logs.Standard)
 }
 
 func (a *application) assemble() error {
@@ -142,7 +142,7 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating storage: %w", err)
 	}
 
-	slog.Info("External services configured")
+	slog.Info("External services configured", "type", logs.Standard)
 
 	// Assemble the application
 
@@ -174,7 +174,7 @@ func (a *application) assemble() error {
 	a.dbService = dbService
 	a.dbWorker = dbWorker
 
-	slog.Info("Application assembled")
+	slog.Info("Application assembled", "type", logs.Standard)
 
 	return nil
 }

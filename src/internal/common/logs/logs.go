@@ -40,3 +40,15 @@ func Setup(logDir string) error {
 
 	return nil
 }
+
+type Type string
+
+const (
+	Standard Type = "standard"
+	Error    Type = "error"
+	HTTP     Type = "http"
+	HTTPErr  Type = "http_err"
+	DB       Type = "db"
+	Cache    Type = "cache"
+	Storage  Type = "storage"
+)

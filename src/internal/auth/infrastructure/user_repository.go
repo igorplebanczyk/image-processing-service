@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/domain"
+	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 )
 
@@ -18,7 +19,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
-	slog.Info("DB query", "username", username)
+	slog.Info("DB query", "type", logs.DB, "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("username: %s", username))
 
 	var user domain.User
 
@@ -35,8 +36,7 @@ func (r *UserRepository) GetUserByUsername(ctx context.Context, username string)
 }
 
 func (r *UserRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
-	slog.Info("DB query", "id", id)
-
+	slog.Info("DB query", "type", logs.DB, "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	var role domain.Role
 
 	err := r.db.QueryRowContext(

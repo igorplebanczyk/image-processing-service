@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/application"
 	commonerrors "image-processing-service/src/internal/common/errors"
+	"image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server/respond"
 	"log/slog"
 	"net/http"
@@ -33,14 +34,14 @@ func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *h
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
-			slog.Error("HTTP request error", "error", err)
+			slog.Error("HTTP request error", "type", logs.Error, "error", err)
 			respond.WithError(w, err)
 			return
 		}
 
 		userID, err := s.service.Authenticate(token)
 		if err != nil {
-			slog.Error("HTTP request error", "error", err)
+			slog.Error("HTTP request error", "type", logs.Error, "error", err)
 			respond.WithError(w, err)
 			return
 		}
@@ -53,14 +54,14 @@ func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := extractTokenFromHeader(r)
 		if err != nil {
-			slog.Error("HTTP request error", "error", err)
+			slog.Error("HTTP request error", "type", logs.Error, "error", err)
 			respond.WithError(w, err)
 			return
 		}
 
 		_, err = s.service.AuthenticateAdmin(token)
 		if err != nil {
-			slog.Error("HTTP request error", "error", err)
+			slog.Error("HTTP request error", "type", logs.Error, "error", err)
 			respond.WithError(w, err)
 			return
 		}
@@ -84,14 +85,14 @@ func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	accessToken, refreshToken, err := s.service.Login(p.Username, p.Password)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -115,14 +116,14 @@ func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	accessToken, err := s.service.Refresh(p.RefreshToken)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -135,7 +136,7 @@ func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
 func (s *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.Logout(userID)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -152,14 +153,14 @@ func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.service.AdminLogoutUser(p.UserID)
 	if err != nil {
-		slog.Error("HTTP request error", "error", err)
+		slog.Error("HTTP request error", "type", logs.Error, "error", err)
 		respond.WithError(w, err)
 		return
 	}

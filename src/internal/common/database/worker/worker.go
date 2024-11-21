@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 	"time"
 )
@@ -27,7 +28,7 @@ func New(db *sql.DB, txProvider *transactions.TransactionProvider) *Worker {
 }
 
 func (s *Worker) Start() {
-	slog.Info("Starting database worker")
+	slog.Info("Starting database worker", "type", logs.Standard)
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
@@ -38,9 +39,9 @@ func (s *Worker) Start() {
 
 			err := s.repo.DeleteExpiredRefreshTokens(ctx)
 			if err != nil {
-				slog.Error("Database error: error deleting expired refresh tokens", "error", err)
+				slog.Error("Database error: error deleting expired refresh tokens", "type", logs.Error, "error", err)
 			} else {
-				slog.Info("Expired refresh tokens deleted")
+				slog.Info("Expired refresh tokens deleted", "type", logs.Standard)
 			}
 
 			cancel()
@@ -52,5 +53,5 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop <- true
-	slog.Info("Database worker stopped")
+	slog.Info("Database worker stopped", "type", logs.Standard)
 }

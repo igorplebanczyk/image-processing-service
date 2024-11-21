@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 )
 
@@ -16,7 +17,7 @@ func NewService() *Service {
 }
 
 func (s *Service) Connect(user, password, host, port, dbName string) (*sql.DB, error) {
-	slog.Info("Connecting to database...", "user", user, "host", host, "port", port, "db", dbName)
+	slog.Info("Connecting to database...", "type", logs.Standard)
 	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbName)
 
 	db, err := sql.Open("postgres", url)
@@ -38,7 +39,7 @@ func (s *Service) Connect(user, password, host, port, dbName string) (*sql.DB, e
 func (s *Service) Stop() {
 	err := s.db.Close()
 	if err != nil {
-		slog.Error("Shutdown error: error closing database", "error", err)
+		slog.Error("Shutdown error: error closing database", "type", logs.Error, "error", err)
 	}
-	slog.Info("Database connection closed")
+	slog.Info("Database connection closed", "type", logs.Standard)
 }

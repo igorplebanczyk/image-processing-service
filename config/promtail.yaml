@@ -34,6 +34,9 @@ scrape_configs:
             method: method
             path: path
 
+            # HTTP Error Logs
+            status_code: status_code
+
             # DB Logs
             operation: operation
             table: table
@@ -55,6 +58,7 @@ scrape_configs:
           error:
           method:
           path:
+          status_code:
           operation:
           table:
           parameters:

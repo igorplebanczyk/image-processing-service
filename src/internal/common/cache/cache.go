@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 )
 
@@ -12,7 +13,7 @@ type Service struct {
 }
 
 func NewService(host, port, password string, db int) (*Service, error) {
-	slog.Info("Connecting to cache...", "host", host, "port", port, "db", db)
+	slog.Info("Connecting to cache...", "type", logs.Standard)
 	addr := fmt.Sprintf("%s:%s", host, port)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -24,7 +25,7 @@ func NewService(host, port, password string, db int) (*Service, error) {
 		return nil, fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
-	slog.Info("Connected to cache")
+	slog.Info("Connected to cache", "type", logs.Standard)
 	return &Service{
 		client: client,
 	}, nil
