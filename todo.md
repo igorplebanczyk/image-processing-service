@@ -22,7 +22,7 @@
   - [ ] Add more logs
   - [ ] Add more context to the logs
   - [X] Add a log aggregation system
-  - [ ] Use proper Loki and Promtail configurations
+  - [X] Use proper Loki and Promtail configurations
   - [ ] Consider storing log indexes in a volume/cloud storage
 - [ ] Add metrics
   - [ ] Add a metrics service

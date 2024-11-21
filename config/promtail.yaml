@@ -1,5 +1,6 @@
 server:
   http_listen_port: 9080
+  http_metrics_port: 9091
 
 positions:
   filename: /tmp/positions.yaml
@@ -8,10 +9,79 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: system
+  - job_name: app_logs
     static_configs:
       - targets:
           - localhost
         labels:
-          job: varlogs
+          job: app_logs
           __path__: /root/logs/*log
+    pipeline_stages:
+      - json:
+          expressions:
+            time: time
+            level: level
+            type: type
+            msg: msg
+            function: source.function
+            file: source.file
+            line: source.line
+
+            # Error Logs
+            error: error
+
+            # HTTP Logs
+            method: method
+            path: path
+
+            # DB Logs
+            operation: operation
+            table: table
+            parameters: parameters
+
+            # Cache Logs
+            key: key
+
+            # Storage Logs
+            name: name
+
+      - labels:
+          timestamp: "{{ .time }}"
+          type:
+          level:
+          function:
+          file:
+          line:
+          error:
+          method:
+          path:
+          operation:
+          table:
+          parameters:
+          key:
+          name:
+
+      - template:
+          source: |
+            {
+              "time": "{{ .time }}",
+              "source": {
+                "function": "{{ .source.function }}",
+                "file": "{{ .source.file }}",
+                "line": "{{ .source.line }}"
+              },
+              "level": "{{ .level }}",
+              "type": "{{ .type }}",
+              "msg": "{{ .msg }}",
+              "details": {{ if .details }}{{ .details }}{{ else }}{}{{ end }}
+            }
+
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+
+      - drop:
+          expression: '(.time == "" || .level == "" || .type == "" || .msg == "")'
+
+      - output:
+          source: msg
