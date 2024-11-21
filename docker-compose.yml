@@ -19,17 +19,17 @@ services:
 
   database:
     build:
-        context: .
-        dockerfile: docker/database/Dockerfile
-        args:
-            - PORT=${POSTGRES_PORT}
-            - USER=${POSTGRES_USER}
-            - PASSWORD=${POSTGRES_PASSWORD}
-            - DB=${POSTGRES_DB}
+      context: .
+      dockerfile: docker/database/Dockerfile
+      args:
+        - PORT=${POSTGRES_PORT}
+        - USER=${POSTGRES_USER}
+        - PASSWORD=${POSTGRES_PASSWORD}
+        - DB=${POSTGRES_DB}
     env_file:
       - .env
     ports:
-        - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - database_data:/var/lib/postgresql/data
 
@@ -45,6 +45,34 @@ services:
       - "${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - cache_data:/data
+
+  loki:
+    build:
+        context: .
+        dockerfile: docker/logs/loki.Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3100:3100"
+    volumes:
+      - logs_data:/data/loki
+    depends_on:
+      - app
+    environment:
+      - LOKI_STORAGE_PATH=/data/loki
+
+  promtail:
+    build:
+        context: .
+        dockerfile: docker/logs/promtail.Dockerfile
+    env_file:
+        - .env
+    ports:
+      - "9080:9080"
+    volumes:
+      - logs_data:/root/logs
+    depends_on:
+      - loki
 
 volumes:
   database_data:
