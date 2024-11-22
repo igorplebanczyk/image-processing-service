@@ -84,9 +84,15 @@
   - [ ] Extract common functionality into helper functions
   - [ ] Unit test the helper functions
   - [ ] Add comments where necessary
+- [ ] Improve the Terraform setup
+  - [ ] Add a setup file for the resource group and virtual network
+  - [ ] Add a setup file for Azure Container Registry
+  - [ ] Add a setup file for Azure Container Apps
+  - [ ] Improve the setup file for Azure Blob Storage
+  - [ ] Improve the overall setup (Makefile, variables, etc.)
 - [ ] Add a deployment pipeline
-  - [ ] Update Terraform files to set up Azure App Service
   - [ ] Add a CD workflow
+  - [ ] Figure out how to handle environment variables
 - [ ] Add documentation
   - [ ] Add a .env template
   - [ ] Add a README.md file
