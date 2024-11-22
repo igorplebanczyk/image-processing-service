@@ -21,7 +21,7 @@ func NewRefreshTokenRepository(db *sql.DB, txProvider *transactions.TransactionP
 }
 
 func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
-	slog.Info("DB query", "user_id", userID, "token", token, "expires_at", expiresAt)
+	slog.Info("DB query", "operation", "INSERT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s, token: %s, expires_at: %s", userID, token, expiresAt))
 
 	id := uuid.New()
 	createdAt := time.Now()
@@ -38,7 +38,7 @@ func (r *RefreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 }
 
 func (r *RefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, userID uuid.UUID) ([]*domain.RefreshToken, error) {
-	slog.Info("DB query", "user_id", userID)
+	slog.Info("DB query", "operation", "SELECT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
 
 	var refreshTokens []*domain.RefreshToken
 
@@ -66,7 +66,7 @@ func (r *RefreshTokenRepository) GetRefreshTokensByUserID(ctx context.Context, u
 }
 
 func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
-	slog.Info("DB query", "user_id", userID)
+	slog.Info("DB query", "operation", "DELETE", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
 
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
@@ -79,7 +79,7 @@ func (r *RefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID 
 }
 
 func (r *RefreshTokenRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
-	slog.Info("DB query", "user_id", userID)
+	slog.Info("DB query", "operation", "DELETE", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
 
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
