@@ -3,7 +3,6 @@ package infrastructure
 import (
 	"context"
 	"fmt"
-	"image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/storage"
 	"image-processing-service/src/internal/images/domain"
 	"log/slog"
@@ -18,7 +17,7 @@ func NewImageStorageRepository(storage *storage.Service) *ImageStorageRepository
 }
 
 func (r *ImageStorageRepository) Upload(ctx context.Context, blobName string, data []byte) error {
-	slog.Info("Uploading file to storage", "type", logs.Storage, "name", blobName)
+	slog.Info("Uploading file to storage", "blob_name", blobName)
 
 	_, err := r.storage.Client().UploadBuffer(ctx, r.storage.ContainerName(), blobName, data, nil)
 	if err != nil {
@@ -29,7 +28,7 @@ func (r *ImageStorageRepository) Upload(ctx context.Context, blobName string, da
 }
 
 func (r *ImageStorageRepository) Download(ctx context.Context, blobName string) ([]byte, error) {
-	slog.Info("Downloading file from storage", "type", logs.Storage, "name", blobName)
+	slog.Info("Downloading file from storage", "blob_name", blobName)
 
 	var data = make([]byte, domain.MaxImageSize)
 	_, err := r.storage.Client().DownloadBuffer(ctx, r.storage.ContainerName(), blobName, data, nil)
@@ -41,7 +40,7 @@ func (r *ImageStorageRepository) Download(ctx context.Context, blobName string) 
 }
 
 func (r *ImageStorageRepository) Delete(ctx context.Context, blobName string) error {
-	slog.Info("Deleting file from storage", "type", logs.Storage, "name", blobName)
+	slog.Info("Deleting file from storage", "blob_name", blobName)
 
 	_, err := r.storage.Client().DeleteBlob(ctx, r.storage.ContainerName(), blobName, nil)
 	if err != nil {

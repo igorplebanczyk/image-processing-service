@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	commonerrors "image-processing-service/src/internal/common/errors"
-	"image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server/respond"
 	"image-processing-service/src/internal/images/application"
 	"image-processing-service/src/internal/images/domain"
@@ -35,14 +34,14 @@ func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 
 	err := r.ParseMultipartForm(domain.MaxImageSize)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput(fmt.Sprintf("image size exceeds %d bytes", domain.MaxImageSize)))
 		return
 	}
 
 	imageFile, _, err := r.FormFile("image")
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("image file not found"))
 		return
 	}
@@ -50,14 +49,14 @@ func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 
 	imageBytes, err := io.ReadAll(imageFile)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid image file"))
 		return
 	}
 
 	image, err := s.ImagesService.UploadImage(userID, name, imageBytes)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -94,7 +93,7 @@ func (s *ImageAPI) GetDataAll(userID uuid.UUID, w http.ResponseWriter, r *http.R
 
 	images, total, err := s.ImagesService.ListUserImages(userID, &page, &limit)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -131,14 +130,14 @@ func (s *ImageAPI) GetData(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	imageData, err := s.ImagesService.GetImageData(userID, p.Name)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -159,14 +158,14 @@ func (s *ImageAPI) Download(userID uuid.UUID, w http.ResponseWriter, r *http.Req
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	imageBytes, err := s.ImagesService.DownloadImage(userID, p.Name)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -183,14 +182,14 @@ func (s *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.ImagesService.DeleteImage(userID, p.Name)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -208,14 +207,14 @@ func (s *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.ImagesService.ApplyTransformations(userID, p.Name, p.Transformations)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -248,7 +247,7 @@ func (s *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 
 	images, total, err := s.ImagesService.AdminListAllImages(&page, &limit)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -279,14 +278,14 @@ func (s *ImageAPI) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.ImagesService.AdminDeleteImage(p.ID)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}

@@ -3,7 +3,6 @@ package storage
 import (
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
-	"image-processing-service/src/internal/common/logs"
 	"log/slog"
 )
 
@@ -23,7 +22,7 @@ func NewService(accountName, accountKey, serviceURL, containerName string) (*Ser
 		return nil, fmt.Errorf("error creating client: %w", err)
 	}
 
-	slog.Info("Connected to storage", "type", logs.Standard)
+	slog.Info("Connected to storage", "account", accountName, "container", containerName)
 
 	return &Service{
 		client:        client,

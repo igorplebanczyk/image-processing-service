@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	commonerrors "image-processing-service/src/internal/common/errors"
-	"image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server/respond"
 	"image-processing-service/src/internal/users/application"
 	"image-processing-service/src/internal/users/domain"
@@ -37,14 +36,14 @@ func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	user, err := s.service.Register(p.Username, p.Email, p.Password)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -66,7 +65,7 @@ func (s *UserAPI) GetData(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 
 	user, err := s.service.GetUser(userID)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -89,14 +88,14 @@ func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Reques
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.service.UpdateUser(userID, p.Username, p.Email)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -107,7 +106,7 @@ func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Reques
 func (s *UserAPI) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	err := s.service.DeleteUser(userID)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -127,7 +126,7 @@ func (s *UserAPI) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 
 	users, err := s.service.AdminGetAllUsers()
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -157,14 +156,14 @@ func (s *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.service.AdminUpdateUserRole(p.UserID, p.Role)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
@@ -181,14 +180,14 @@ func (s *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
 		return
 	}
 
 	err = s.service.DeleteUser(p.UserID)
 	if err != nil {
-		slog.Error("HTTP request error", "type", logs.Error, "error", err)
+		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}

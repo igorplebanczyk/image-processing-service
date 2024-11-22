@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/common/database/transactions"
-	"image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/images/domain"
 	"log/slog"
 	"time"
@@ -22,7 +21,7 @@ func NewImageRepository(db *sql.DB, txProvider *transactions.TransactionProvider
 }
 
 func (r *ImageRepository) CreateImage(ctx context.Context, userID uuid.UUID, name string) (*domain.Image, error) {
-	slog.Info("DB query", "type", logs.DB, "operation", "INSERT", "table", "images", "parameters", fmt.Sprintf("user_id: %s, name: %s", userID, name))
+	slog.Info("DB query", "user_id", userID, "name", name)
 
 	image := domain.NewImage(userID, name)
 
@@ -48,7 +47,7 @@ func (r *ImageRepository) GetImageByUserIDandName(
 	userID uuid.UUID,
 	name string,
 ) (*domain.Image, error) {
-	slog.Info("DB query", "type", logs.DB, "operation", "SELECT", "table", "images", "parameters", fmt.Sprintf("user_id: %s, name: %s", userID, name))
+	slog.Info("DB query", "user_id", userID, "name", name)
 
 	var image domain.Image
 
@@ -76,7 +75,7 @@ func (r *ImageRepository) GetImagesByUserID(
 	page,
 	limit *int,
 ) ([]*domain.Image, int, error) {
-	slog.Info("DB query", "type", logs.DB, "operation", "SELECT", "table", "images", "parameters", fmt.Sprintf("user_id: %s", userID))
+	slog.Info("DB query", "user_id", userID)
 
 	var rows *sql.Rows
 	var err error
@@ -121,7 +120,7 @@ func (r *ImageRepository) GetImagesByUserID(
 }
 
 func (r *ImageRepository) UpdateImage(ctx context.Context, id uuid.UUID) error {
-	slog.Info("DB query", "type", logs.DB, "operation", "UPDATE", "table", "images", "parameters", fmt.Sprintf("id: %s", id))
+	slog.Info("DB query", "id", id)
 
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE images SET updated_at = $1 WHERE id = $2`, time.Now(), id)
@@ -134,7 +133,7 @@ func (r *ImageRepository) UpdateImage(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *ImageRepository) DeleteImage(ctx context.Context, id uuid.UUID) error {
-	slog.Info("DB query", "type", logs.DB, "operation", "DELETE", "table", "images", "parameters", fmt.Sprintf("id: %s", id))
+	slog.Info("DB query", "id", id)
 
 	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM images WHERE id = $1`, id)
@@ -147,7 +146,7 @@ func (r *ImageRepository) DeleteImage(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *ImageRepository) GetAllImages(ctx context.Context, page, limit *int) ([]*domain.Image, int, error) {
-	slog.Info("DB query", "type", logs.DB, "operation", "SELECT", "table", "images")
+	slog.Info("DB query")
 
 	var rows *sql.Rows
 	var err error
