@@ -1,5 +1,5 @@
 x-logging:
-  &default-logging
+  &logging
   driver: "json-file"
   options:
     max-size: "32m"
@@ -10,24 +10,26 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/app/Dockerfile
+      dockerfile: docker/app.Dockerfile
       args:
         - PORT=${APP_PORT}
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
     env_file:
       - .env
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    networks:
+        - app
+    logging: *logging
     depends_on:
-      database:
+      postgres:
         condition: service_healthy
-      cache:
+      redis:
         condition: service_healthy
-    logging: *default-logging
 
-  database:
+  postgres:
     build:
       context: .
-      dockerfile: docker/database/Dockerfile
+      dockerfile: docker/postgres.Dockerfile
       args:
         - PORT=${POSTGRES_PORT}
         - USER=${POSTGRES_USER}
@@ -37,42 +39,53 @@ services:
       - .env
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    networks:
+        - app
     volumes:
-      - database_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
-  cache:
+  redis:
     build:
       context: .
-      dockerfile: docker/cache/Dockerfile
+      dockerfile: docker/redis.Dockerfile
       args:
         - PORT=${REDIS_PORT}
     env_file:
       - .env
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
+    networks:
+        - app
     volumes:
-      - cache_data:/data
+      - redis_data:/data
 
   loki:
     build:
         context: .
-        dockerfile: docker/logs/loki.Dockerfile
-    env_file:
-      - .env
+        dockerfile: docker/loki.Dockerfile
     ports:
       - "3100:3100"
+    networks:
+        - app
 
   promtail:
     build:
         context: .
-        dockerfile: docker/logs/promtail.Dockerfile
-    env_file:
-        - .env
+        dockerfile: docker/promtail.Dockerfile
     ports:
       - "9080:9080"
+    networks:
+        - app
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
 
+networks:
+  app:
+    name: app
+    driver: bridge
+
 volumes:
-  database_data:
-  cache_data:
+  postgres_data:
+    name: postgres_data
+  redis_data:
+    name: redis_data
