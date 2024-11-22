@@ -1,3 +1,11 @@
+x-logging:
+  &default-logging
+  driver: "json-file"
+  options:
+    max-size: "32m"
+    max-file: "10"
+    tag: "{{.Name}}"
+
 services:
   app:
     build:
@@ -14,8 +22,7 @@ services:
         condition: service_healthy
       cache:
         condition: service_healthy
-    volumes:
-      - logs_data:/root/${APP_LOGS_DIR}
+    logging: *default-logging
 
   database:
     build:
@@ -54,12 +61,6 @@ services:
       - .env
     ports:
       - "3100:3100"
-    volumes:
-      - logs_data:/data/loki
-    depends_on:
-      - app
-    environment:
-      - LOKI_STORAGE_PATH=/data/loki
 
   promtail:
     build:
@@ -70,11 +71,8 @@ services:
     ports:
       - "9080:9080"
     volumes:
-      - logs_data:/root/logs
-    depends_on:
-      - loki
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
 
 volumes:
   database_data:
   cache_data:
-  logs_data:

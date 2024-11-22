@@ -67,7 +67,6 @@ func (a *application) assemble() error {
 	jwtSecret := os.Getenv("APP_JWT_SECRET")
 	accessTokenExpiration := os.Getenv("APP_JWT_ACCESS_TOKEN_EXPIRATION")
 	refreshTokenExpiration := os.Getenv("APP_JWT_REFRESH_TOKEN_EXPIRATION")
-	appLogsDir := os.Getenv("APP_LOGS_DIR")
 
 	postgresUser := os.Getenv("POSTGRES_USER")
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
@@ -87,7 +86,7 @@ func (a *application) assemble() error {
 
 	// Setup logging
 
-	err := logs.Setup(appLogsDir)
+	err := logs.Setup()
 	if err != nil {
 		return fmt.Errorf("error setting up logs: %w", err)
 	}

@@ -1,6 +1,5 @@
 server:
   http_listen_port: 9080
-  http_metrics_port: 9091
 
 positions:
   filename: /tmp/positions.yaml
@@ -34,6 +33,9 @@ scrape_configs:
             method: method
             path: path
 
+            # HTTP Error Logs
+            status_code: status_code
+
             # DB Logs
             operation: operation
             table: table
@@ -47,7 +49,6 @@ scrape_configs:
 
       - labels:
           timestamp: "{{ .time }}"
-          type:
           level:
           function:
           file:
@@ -55,6 +56,7 @@ scrape_configs:
           error:
           method:
           path:
+          status_code:
           operation:
           table:
           parameters:
@@ -71,17 +73,27 @@ scrape_configs:
                 "line": "{{ .source.line }}"
               },
               "level": "{{ .level }}",
-              "type": "{{ .type }}",
               "msg": "{{ .msg }}",
-              "details": {{ if .details }}{{ .details }}{{ else }}{}{{ end }}
+              "details": {
+                {{ if .error }}"error": "{{ .error }}",{{ end }}
+                {{ if .method }}"method": "{{ .method }}",{{ end }}
+                {{ if .path }}"path": "{{ .path }}",{{ end }}
+                {{ if .status_code }}"status_code": "{{ .status_code }}",{{ end }}
+                {{ if .operation }}"operation": "{{ .operation }}",{{ end }}
+                {{ if .table }}"table": "{{ .table }}",{{ end }}
+                {{ if .parameters }}"parameters": "{{ .parameters }}",{{ end }}
+                {{ if .key }}"key": "{{ .key }}",{{ end }}
+                {{ if .name }}"name": "{{ .name }}"{{ end }}
+              }
             }
+      
 
       - timestamp:
           source: time
           format: RFC3339Nano
 
       - drop:
-          expression: '(.time == "" || .level == "" || .type == "" || .msg == "")'
+          expression: '(.time == "" || .level == "" || .msg == "")'
 
       - output:
           source: msg
