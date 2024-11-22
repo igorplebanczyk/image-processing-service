@@ -44,7 +44,7 @@
 - [ ] Revise the Docker setup
   - [ ] Streamline the Dockerfiles
   - [ ] Revise naming conventions
-  - [ ] Consider using a more explicit network setup
+  - [X] Consider using a more explicit network setup
   - [ ] Consider using more configurations
   - [ ] Revise security best practices
 - [ ] Redesign the transformation service
