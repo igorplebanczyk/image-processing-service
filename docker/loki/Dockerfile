@@ -1,6 +1,6 @@
 FROM grafana/loki:latest
 
-COPY ./config/loki.yaml /etc/loki/loki.yaml
+COPY ./config/loki/loki.yaml /etc/loki/loki.yaml
 
 EXPOSE 3100
 

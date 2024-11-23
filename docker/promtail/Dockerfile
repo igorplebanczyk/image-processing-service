@@ -1,6 +1,6 @@
 FROM grafana/promtail:latest
 
-COPY ./config/promtail.yaml /etc/promtail/promtail.yaml
+COPY ./config/promtail/promtail.yaml /etc/promtail/promtail.yaml
 
 EXPOSE 9080
 

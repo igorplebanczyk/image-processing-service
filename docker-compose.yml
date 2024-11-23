@@ -10,7 +10,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/app.Dockerfile
+      dockerfile: docker/app/Dockerfile
       args:
         - PORT=${APP_PORT}
     labels:
@@ -32,7 +32,7 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: docker/postgres.Dockerfile
+      dockerfile: docker/postgres/Dockerfile
       args:
         - PORT=${POSTGRES_PORT}
         - USER=${POSTGRES_USER}
@@ -51,7 +51,7 @@ services:
   redis:
     build:
       context: .
-      dockerfile: docker/redis.Dockerfile
+      dockerfile: docker/redis/Dockerfile
       args:
         - PORT=${REDIS_PORT}
     logging: *logging
@@ -67,7 +67,7 @@ services:
   promtail:
     build:
         context: .
-        dockerfile: docker/promtail.Dockerfile
+        dockerfile: docker/promtail/Dockerfile
     logging: *logging
     ports:
       - "9080:9080"
@@ -80,7 +80,7 @@ services:
   loki:
     build:
         context: .
-        dockerfile: docker/loki.Dockerfile
+        dockerfile: docker/loki/Dockerfile
     logging: *logging
     ports:
       - "3100:3100"
@@ -90,7 +90,7 @@ services:
   grafana:
     build:
         context: .
-        dockerfile: docker/grafana.Dockerfile
+        dockerfile: docker/grafana/Dockerfile
     logging: *logging
     env_file:
       - .env
@@ -105,7 +105,7 @@ services:
 
 networks:
   app:
-    name: app
+    name: network
     driver: bridge
 
 volumes:
