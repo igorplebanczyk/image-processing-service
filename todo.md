@@ -33,7 +33,7 @@
 - [ ] Add a dashboard
   - [X] Add Grafana to the Docker Compose setup
   - [ ] Add a dashboard for the metrics
-  - [ ] Add a dashboard for the logs
+  - [X] Add a dashboard for the logs
 - [ ] Revise the PostgreSQL setup
   - [ ] Revise the migrations system
   - [ ] Streamline and revise the schema setup
