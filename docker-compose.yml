@@ -16,13 +16,13 @@ services:
     labels:
       logging: "promtail"
       logging_jobname: "app"
+    logging: *logging
     env_file:
       - .env
     ports:
       - "${APP_PORT}:${APP_PORT}"
     networks:
         - app
-    logging: *logging
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,6 +38,7 @@ services:
         - USER=${POSTGRES_USER}
         - PASSWORD=${POSTGRES_PASSWORD}
         - DB=${POSTGRES_DB}
+    logging: *logging
     env_file:
       - .env
     ports:
@@ -53,6 +54,7 @@ services:
       dockerfile: docker/redis.Dockerfile
       args:
         - PORT=${REDIS_PORT}
+    logging: *logging
     env_file:
       - .env
     ports:
@@ -66,6 +68,7 @@ services:
     build:
         context: .
         dockerfile: docker/promtail.Dockerfile
+    logging: *logging
     ports:
       - "9080:9080"
     networks:
@@ -78,6 +81,7 @@ services:
     build:
         context: .
         dockerfile: docker/loki.Dockerfile
+    logging: *logging
     ports:
       - "3100:3100"
     networks:
@@ -87,6 +91,7 @@ services:
     build:
         context: .
         dockerfile: docker/grafana.Dockerfile
+    logging: *logging
     env_file:
       - .env
     ports:
