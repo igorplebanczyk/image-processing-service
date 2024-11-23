@@ -29,7 +29,7 @@ func NewService(host, sender, password string) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) SendText(to []string, subject, body string) error {
+func (s *Service) SendText(recipient string, subject, body string) error {
 	message := mail.NewMsg()
 
 	err := message.From(s.sender)
@@ -37,11 +37,9 @@ func (s *Service) SendText(to []string, subject, body string) error {
 		return fmt.Errorf("failed to set sender: %v", err)
 	}
 
-	for _, recipient := range to {
-		err = message.To(recipient)
-		if err != nil {
-			return fmt.Errorf("failed to set recipient: %v", err)
-		}
+	err = message.To(recipient)
+	if err != nil {
+		return fmt.Errorf("failed to set recipient: %v", err)
 	}
 
 	message.Subject(subject)

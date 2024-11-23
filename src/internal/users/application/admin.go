@@ -46,7 +46,7 @@ func (s *UserService) AdminBroadcast(subject, body string) error {
 	errorChan := make(chan error, len(users))
 
 	for _, user := range users {
-		err = s.mailService.SendText([]string{user.Email}, subject, body)
+		err = s.mailService.SendText(user.Email, subject, body)
 		if err != nil {
 			errorChan <- commonerrors.NewInternal(fmt.Sprintf("error sending email to user %s: %v", user.Email, err))
 		}
