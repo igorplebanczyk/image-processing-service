@@ -35,7 +35,7 @@ func (s *Service) setup() {
 	mux := http.NewServeMux()
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.port),
-		Handler:           telemetry.TelemetryMiddleware(mux),
+		Handler:           telemetry.Middleware(mux),
 		ReadTimeout:       time.Minute,
 		ReadHeaderTimeout: 5 * time.Second,
 	}

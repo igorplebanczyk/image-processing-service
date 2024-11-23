@@ -15,7 +15,7 @@ func (r *responseRecorder) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 }
 
-func TelemetryMiddleware(next http.Handler) http.HandlerFunc {
+func Middleware(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rr := &responseRecorder{w, http.StatusOK}
 
