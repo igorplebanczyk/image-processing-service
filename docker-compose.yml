@@ -15,6 +15,7 @@ services:
         - PORT=${APP_PORT}
     labels:
       logging: "promtail"
+      logging_jobname: "app"
     env_file:
       - .env
     ports:

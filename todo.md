@@ -18,12 +18,12 @@
   - [X] Streamline the error responses
   - [X] Revise the semantics of the endpoints
   - [X] Consider using path and query parameters more
-- [ ] Revise the logging system
-  - [ ] Add more logs
+- [X] Revise the logging system
+  - [X] Add more logs
   - [X] Add more context to the logs
   - [X] Add a log aggregation system
   - [X] Use proper Loki and Promtail configurations
-  - [ ] Consider storing log indexes in a volume/cloud storage
+  - [X] Consider storing log indexes in a volume/cloud storage
 - [ ] Add metrics
   - [ ] Add a metrics service
   - [ ] Collect metrics across the application
@@ -31,7 +31,7 @@
   - [ ] Setup Prometheus in Docker Compose
   - [ ] Add an admin endpoint for collecting aggregated metrics from Prometheus
 - [ ] Add a dashboard
-  - [ ] Add Grafana to the Docker Compose setup
+  - [X] Add Grafana to the Docker Compose setup
   - [ ] Add a dashboard for the metrics
   - [ ] Add a dashboard for the logs
 - [ ] Revise the PostgreSQL setup
