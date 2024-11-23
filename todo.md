@@ -8,7 +8,8 @@
 - [ ] Add tests
   - [X] Add domain layer unit tests
   - [X] Add application layer unit tests
-  - [X] Add transformation service unit tests
+    - [ ] Add unit tests for subservices of the application layer
+  - [ ] Add interfaces layer unit tests
   - [ ] Add infrastructure layer integration tests
   - [ ] Add component tests
   - [ ] Add end-to-end tests
