@@ -59,10 +59,10 @@
   - [ ] Update blob names to include a preview suffix
   - [ ] Store previews in the blob storage
   - [ ] Add preview endpoints: both singular and batch
-- [ ] Add a mail service
+- [X] Add a mail service
   - [ ] Add a registration confirmation email
   - [ ] Add a password reset system
-  - [ ] Add an admin broadcast system
+  - [X] Add an admin broadcast system
 - [ ] Revise the project structure
   - [ ] Collect more logs
   - [ ] Set up a wrapper for DB queries to collect logs and metrics

@@ -10,6 +10,7 @@ import (
 	"image-processing-service/src/internal/common/database"
 	"image-processing-service/src/internal/common/database/transactions"
 	"image-processing-service/src/internal/common/database/worker"
+	"image-processing-service/src/internal/common/emails"
 	_ "image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server"
 	"image-processing-service/src/internal/common/storage"
@@ -84,6 +85,9 @@ func (a *application) assemble() error {
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
 
+	mailSenderEmail := os.Getenv("MAIL_SENDER_EMAIL")
+	mailSenderPassword := os.Getenv("MAIL_SENDER_PASSWORD")
+
 	// Convert environment variables to appropriate types
 
 	appPortInt, err := strconv.Atoi(appPort)
@@ -134,6 +138,11 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating storage: %w", err)
 	}
 
+	mailService, err := emails.NewService(mailSenderEmail, mailSenderPassword)
+	if err != nil {
+		return fmt.Errorf("error creating email service: %w", err)
+	}
+
 	slog.Info("External services configured")
 
 	// Assemble the application
@@ -151,7 +160,7 @@ func (a *application) assemble() error {
 	authAPI := authInterface.NewServer(authService)
 
 	userRepo := usersInfra.NewUserRepository(db, txProvider)
-	userService := usersApp.NewService(userRepo)
+	userService := usersApp.NewService(userRepo, mailService)
 	userAPI := usersInterface.NewServer(userService)
 
 	imageRepo := imagesInfra.NewImageRepository(db, txProvider)

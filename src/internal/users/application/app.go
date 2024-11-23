@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"image-processing-service/src/internal/common/emails"
 	commonerrors "image-processing-service/src/internal/common/errors"
 	"image-processing-service/src/internal/users/domain"
 	"time"
 )
 
 type UserService struct {
-	repo domain.UserRepository
+	repo        domain.UserRepository
+	mailService *emails.Service
 }
 
-func NewService(repo domain.UserRepository) *UserService {
-	return &UserService{repo: repo}
+func NewService(repo domain.UserRepository, mailService *emails.Service) *UserService {
+	return &UserService{repo: repo, mailService: mailService}
 }
 
 func (s *UserService) Register(username, email, password string) (*domain.User, error) {

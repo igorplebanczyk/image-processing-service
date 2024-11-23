@@ -194,3 +194,28 @@ func (s *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	respond.WithoutContent(w, http.StatusNoContent)
 }
+
+func (s *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Subject string `json:"subject"`
+		Body    string `json:"body"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	err = s.service.AdminBroadcast(p.Subject, p.Body)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
