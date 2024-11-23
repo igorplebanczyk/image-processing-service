@@ -41,11 +41,10 @@
   - [X] Revise the Redis capabilities and how to use them properly
   - [X] Rethink adding proper configurations
 - [ ] Revise the Docker setup
-  - [ ] Streamline the Dockerfiles
+  - [X] Streamline the Dockerfiles
   - [ ] Revise naming conventions
   - [X] Consider using a more explicit network setup
-  - [ ] Consider using more configurations
-  - [ ] Revise security best practices
+  - [X] Consider using more configurations
 - [ ] Redesign the transformation service
   - [ ] Add an assembler that deserializes the image, combines transformations in to a linked list and assigns a channel
   - [ ] Add a queue that holds the transformations before they are processed
