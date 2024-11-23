@@ -10,9 +10,9 @@ type Service struct {
 	sender string
 }
 
-func NewService(sender, password string) (*Service, error) {
+func NewService(host, sender, password string) (*Service, error) {
 	client, err := mail.NewClient(
-		"smtp.gmail.com",
+		host,
 		mail.WithPort(587),
 		mail.WithTLSPortPolicy(mail.TLSMandatory),
 		mail.WithSMTPAuth(mail.SMTPAuthLogin),

@@ -85,6 +85,7 @@ func (a *application) assemble() error {
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
 
+	mailHost := os.Getenv("MAIL_HOST")
 	mailSenderEmail := os.Getenv("MAIL_SENDER_EMAIL")
 	mailSenderPassword := os.Getenv("MAIL_SENDER_PASSWORD")
 
@@ -138,7 +139,7 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating storage: %w", err)
 	}
 
-	mailService, err := emails.NewService(mailSenderEmail, mailSenderPassword)
+	mailService, err := emails.NewService(mailHost, mailSenderEmail, mailSenderPassword)
 	if err != nil {
 		return fmt.Errorf("error creating email service: %w", err)
 	}
