@@ -24,15 +24,14 @@
   - [X] Add a log aggregation system
   - [X] Use proper Loki and Promtail configurations
   - [X] Consider storing log indexes in a volume/cloud storage
-- [ ] Add metrics
-  - [ ] Add a metrics service
-  - [ ] Collect metrics across the application
-  - [ ] Export metrics to Prometheus via a private endpoint
-  - [ ] Setup Prometheus in Docker Compose
-  - [ ] Add an admin endpoint for collecting aggregated metrics from Prometheus
-- [ ] Add a dashboard
+- [X] Add metrics
+  - [X] Add a metrics service
+  - [X] Collect metrics across the application
+  - [X] Export metrics to Prometheus via a private endpoint
+  - [X] Setup Prometheus in Docker Compose
+- [X] Add a dashboard
   - [X] Add Grafana to the Docker Compose setup
-  - [ ] Add a dashboard for the metrics
+  - [X] Add a dashboard for the metrics
   - [X] Add a dashboard for the logs
 - [ ] Revise the PostgreSQL setup
   - [ ] Revise the migrations system
@@ -67,6 +66,15 @@
   - [ ] Add a registration confirmation email
   - [ ] Add a password reset system
   - [ ] Add an admin broadcast system
+- [ ] Revise the project structure
+  - [ ] Collect more logs
+  - [ ] Set up a wrapper for DB queries to collect logs and metrics
+  - [ ] Attempt to streamline the main package
+  - [ ] Standardize naming conventions
+  - [ ] Split large files into smaller ones
+  - [ ] Extract common functionality into helper functions
+  - [ ] Unit test the helper functions
+  - [ ] Add comments where necessary
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
   - [ ] Add rate limiting and other security features
@@ -76,14 +84,6 @@
 - [ ] Add OpenAPI specifications
   - [ ] Use some library to generate OpenAPI specifications from the code
   - [ ] Serve the OpenAPI specifications via a /docs endpoint
-- [ ] Revise the project structure
-  - [ ] Attempt to streamline the main package
-  - [ ] Standardize naming conventions
-  - [ ] Split large files into smaller ones
-  - [ ] Consider using CQRS
-  - [ ] Extract common functionality into helper functions
-  - [ ] Unit test the helper functions
-  - [ ] Add comments where necessary
 - [ ] Improve the Terraform setup
   - [ ] Add a setup file for the resource group and virtual network
   - [ ] Add a setup file for Azure Container Registry
