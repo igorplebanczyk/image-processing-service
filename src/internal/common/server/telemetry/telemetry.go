@@ -1,8 +1,10 @@
 package telemetry
 
 import (
+	"image-processing-service/src/internal/common/metrics"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 type responseRecorder struct {
@@ -21,7 +23,13 @@ func Middleware(next http.Handler) http.HandlerFunc {
 
 		slog.Info("HTTP request", "method", r.Method, "path", r.URL.Path)
 
+		start := time.Now()
+
 		next.ServeHTTP(rr, r)
+
+		duration := time.Since(start).Seconds()
+		metrics.HttpRequestsTotal.WithLabelValues(r.Method, http.StatusText(rr.statusCode)).Inc()
+		metrics.HttpDurationSeconds.WithLabelValues(r.Method, http.StatusText(rr.statusCode)).Observe(duration)
 
 		if rr.statusCode >= 400 {
 			slog.Error(

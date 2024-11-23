@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	authInterface "image-processing-service/src/internal/auth/interfaces"
+	"image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/common/server/telemetry"
 	imageInterface "image-processing-service/src/internal/images/interfaces"
 	userInterface "image-processing-service/src/internal/users/interfaces"
@@ -40,6 +41,7 @@ func (s *Service) setup() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
+	mux.Handle("/metrics", metrics.Handler())
 	mux.HandleFunc("/health", health)
 
 	mux.HandleFunc("POST /auth/login", s.authAPI.Login)
