@@ -33,13 +33,13 @@
   - [X] Add Grafana to the Docker Compose setup
   - [X] Add a dashboard for the metrics
   - [X] Add a dashboard for the logs
-- [ ] Revise the PostgreSQL setup
-  - [ ] Revise the migrations system
-  - [ ] Streamline and revise the schema setup
-  - [ ] Rethink adding proper configurations
-- [ ] Revise the Redis setup
-  - [ ] Revise the Redis capabilities and how to use them properly
-  - [ ] Rethink adding proper configurations
+- [X] Revise the PostgreSQL setup
+  - [X] Revise the migrations system
+  - [X] Streamline and revise the schema setup
+  - [X] Rethink adding proper configurations
+- [x] Revise the Redis setup
+  - [X] Revise the Redis capabilities and how to use them properly
+  - [X] Rethink adding proper configurations
 - [ ] Revise the Docker setup
   - [ ] Streamline the Dockerfiles
   - [ ] Revise naming conventions
@@ -57,6 +57,7 @@
   - [ ] Add a deleted_at column to the users table
   - [ ] Update the appropriate queries to include the deleted_at column
   - [ ] Update the database worker to remove users with a deleted_at value after a certain period
+- [ ] Add a storage worker that removes dangling images from the blob storage
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews
   - [ ] Update blob names to include a preview suffix
