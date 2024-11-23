@@ -13,16 +13,17 @@ const interval = time.Hour
 type Worker struct {
 	repo     repository
 	ctx      context.Context
+	stop     context.CancelFunc
 	interval time.Duration
-	stop     chan bool
 }
 
 func New(db *sql.DB, txProvider *transactions.TransactionProvider) *Worker {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		repo:     newRepository(db, txProvider),
-		ctx:      context.Background(),
+		ctx:      ctx,
 		interval: interval,
-		stop:     make(chan bool),
+		stop:     cancel,
 	}
 }
 
@@ -44,13 +45,13 @@ func (s *Worker) Start() {
 			}
 
 			cancel()
-		case <-s.stop:
+		case <-s.ctx.Done():
 			return
 		}
 	}
 }
 
 func (s *Worker) Stop() {
-	s.stop <- true
+	s.stop()
 	slog.Info("Database worker stopped")
 }
