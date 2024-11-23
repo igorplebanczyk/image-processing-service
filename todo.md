@@ -52,11 +52,7 @@
   - [ ] Add a worker that processes the transformations concurrently
   - [ ] Add a deassembler that serializes the image and sends it back to the client via the channel
   - [ ] Test it with unit tests
-- [ ] Add a soft delete mechanism for users
-  - [ ] Add a deleted_at column to the users table
-  - [ ] Update the appropriate queries to include the deleted_at column
-  - [ ] Update the database worker to remove users with a deleted_at value after a certain period
-- [ ] Add a storage worker that removes dangling images from the blob storage
+- [ ] Delete images when user gets deleted
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews
   - [ ] Update blob names to include a preview suffix
