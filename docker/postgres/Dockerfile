@@ -10,7 +10,10 @@ ENV POSTGRES_USER=${USER}
 ENV POSTGRES_PASSWORD=${PASSWORD}
 ENV POSTGRES_DB=${DB}
 
+COPY ./config/postgres/postgresql.conf /etc/postgresql/postgresql.conf
 COPY ./sql/schema /docker-entrypoint-initdb.d/
+
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
 
 HEALTHCHECK --interval=10s --retries=5 --start-period=30s --timeout=5s \
   CMD pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
