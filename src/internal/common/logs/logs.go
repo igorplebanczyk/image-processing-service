@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func Setup() error {
+func init() {
 	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level:     slog.LevelInfo,
 		AddSource: true,
@@ -14,6 +14,4 @@ func Setup() error {
 	slog.SetDefault(logger)
 
 	slog.Info("Logger setup complete")
-
-	return nil
 }

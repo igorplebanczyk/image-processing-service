@@ -10,7 +10,7 @@ import (
 	"image-processing-service/src/internal/common/database"
 	"image-processing-service/src/internal/common/database/transactions"
 	"image-processing-service/src/internal/common/database/worker"
-	"image-processing-service/src/internal/common/logs"
+	_ "image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server"
 	"image-processing-service/src/internal/common/storage"
 	imagesApp "image-processing-service/src/internal/images/application"
@@ -83,13 +83,6 @@ func (a *application) assemble() error {
 	azureStorageAccountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
 	azureStorageAccountURL := os.Getenv("AZURE_STORAGE_ACCOUNT_URL")
 	azureStorageContainerName := os.Getenv("AZURE_STORAGE_CONTAINER_NAME")
-
-	// Setup logging
-
-	err := logs.Setup()
-	if err != nil {
-		return fmt.Errorf("error setting up logs: %w", err)
-	}
 
 	// Convert environment variables to appropriate types
 
