@@ -52,7 +52,7 @@
   - [ ] Add a worker that processes the transformations concurrently
   - [ ] Add a deassembler that serializes the image and sends it back to the client via the channel
   - [ ] Test it with unit tests
-- [ ] Delete images when user gets deleted
+- [ ] Add a storage worker for deleting dangling images
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews
   - [ ] Update blob names to include a preview suffix
