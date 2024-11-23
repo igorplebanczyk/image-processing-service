@@ -6,6 +6,17 @@ import (
 	"net/http"
 )
 
+func init() {
+	prometheus.MustRegister(HttpRequestsTotal)
+	prometheus.MustRegister(HttpDurationSeconds)
+	prometheus.MustRegister(HttpErrorsTotal)
+}
+
+func Handler() http.Handler {
+	return promhttp.Handler()
+}
+
+// HTTP metrics
 var (
 	HttpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -23,13 +34,11 @@ var (
 		},
 		[]string{"method", "status_code"},
 	)
+	HttpErrorsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_errors_total",
+			Help: "Total number of HTTP errors by status code.",
+		},
+		[]string{"status_code"},
+	)
 )
-
-func init() {
-	prometheus.MustRegister(HttpRequestsTotal)
-	prometheus.MustRegister(HttpDurationSeconds)
-}
-
-func Handler() http.Handler {
-	return promhttp.Handler()
-}

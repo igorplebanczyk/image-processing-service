@@ -32,6 +32,7 @@ func Middleware(next http.Handler) http.HandlerFunc {
 		metrics.HttpDurationSeconds.WithLabelValues(r.Method, http.StatusText(rr.statusCode)).Observe(duration)
 
 		if rr.statusCode >= 400 {
+			metrics.HttpErrorsTotal.WithLabelValues(http.StatusText(rr.statusCode)).Inc()
 			slog.Error(
 				"HTTP request failed",
 				"method", r.Method,
