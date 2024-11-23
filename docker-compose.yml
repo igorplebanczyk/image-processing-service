@@ -22,7 +22,7 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     networks:
-        - app
+      - app
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
-        - app
+      - app
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -60,9 +60,23 @@ services:
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
-        - app
+      - app
     volumes:
       - redis_data:/data
+
+  prometheus:
+    build:
+      context: .
+      dockerfile: docker/prometheus/Dockerfile
+    logging: *logging
+    ports:
+      - "9090:9090"
+    networks:
+      - app
+    volumes:
+      - prometheus_data:/prometheus
+    depends_on:
+      - app
 
   promtail:
     build:
@@ -72,7 +86,7 @@ services:
     ports:
       - "9080:9080"
     networks:
-        - app
+      - app
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -85,7 +99,7 @@ services:
     ports:
       - "3100:3100"
     networks:
-        - app
+      - app
 
   grafana:
     build:
@@ -97,7 +111,7 @@ services:
     ports:
       - "3000:3000"
     networks:
-        - app
+      - app
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
@@ -113,6 +127,9 @@ volumes:
     name: postgres_data
   redis_data:
     name: redis_data
+  prometheus_data:
+    name: prometheus_data
+    driver: local
   grafana_data:
     name: grafana_data
     driver: local
