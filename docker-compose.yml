@@ -22,7 +22,7 @@ services:
     ports:
       - "${APP_PORT}:${APP_PORT}"
     networks:
-      - app
+      - core
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
-      - app
+      - core
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -60,7 +60,7 @@ services:
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
-      - app
+      - core
     volumes:
       - redis_data:/data
 
@@ -72,7 +72,7 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - app
+      - core
     volumes:
       - prometheus_data:/prometheus
     depends_on:
@@ -86,7 +86,7 @@ services:
     ports:
       - "9080:9080"
     networks:
-      - app
+      - core
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -99,7 +99,7 @@ services:
     ports:
       - "3100:3100"
     networks:
-      - app
+      - core
 
   grafana:
     build:
@@ -111,15 +111,15 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - app
+      - core
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
 
 networks:
-  app:
-    name: network
+  core:
+    name: core
     driver: bridge
 
 volumes:

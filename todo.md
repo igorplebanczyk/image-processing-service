@@ -40,9 +40,9 @@
 - [x] Revise the Redis setup
   - [X] Revise the Redis capabilities and how to use them properly
   - [X] Rethink adding proper configurations
-- [ ] Revise the Docker setup
+- [X] Revise the Docker setup
   - [X] Streamline the Dockerfiles
-  - [ ] Revise naming conventions
+  - [X] Revise naming conventions
   - [X] Consider using a more explicit network setup
   - [X] Consider using more configurations
 - [ ] Redesign the transformation service
