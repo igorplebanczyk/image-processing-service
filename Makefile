@@ -1,10 +1,7 @@
-.PHONY: build run stop test lint sec
-
-build:
-	docker-compose build
+.PHONY: run stop test lint sec
 
 run:
-	docker-compose up
+	docker-compose up --build
 
 stop:
 	docker-compose down
