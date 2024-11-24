@@ -54,9 +54,10 @@
   - [ ] Store previews in the blob storage
   - [ ] Add preview endpoints: both singular and batch
 - [X] Add a mail service
-  - [ ] Add a registration confirmation email
-  - [ ] Add a password reset system
   - [X] Add an admin broadcast system
+- [ ] Improve security and QoL
+  - [ ] Add a forgotten password system
+  - [ ] Add an email verification system
 - [ ] Revise the project structure
   - [ ] Collect more logs
   - [ ] Set up a wrapper for DB queries to collect logs and metrics
