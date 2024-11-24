@@ -62,6 +62,8 @@
 - [ ] Revise the project structure
   - [ ] Collect more logs
   - [ ] Set up a wrapper for DB queries to collect logs and metrics
+  - [ ] Streamline the API, verify API security and semantics
+  - [ ] Verify and improve authentication and authorization
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
   - [ ] Split large files into smaller ones
