@@ -46,13 +46,7 @@
   - [X] Revise naming conventions
   - [X] Consider using a more explicit network setup
   - [X] Consider using more configurations
-- [ ] Redesign the transformation service
-  - [ ] Add an assembler that deserializes the image, combines transformations in to a linked list and assigns a channel
-  - [ ] Add a queue that holds the transformations before they are processed
-  - [ ] Add an orchestrators that manages workers and assigns transformations to them
-  - [ ] Add a worker that processes the transformations concurrently
-  - [ ] Add a deassembler that serializes the image and sends it back to the client via the channel
-  - [ ] Test it with unit tests
+- [X] Redesign the transformation service
 - [ ] Add a storage worker for deleting dangling images
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews

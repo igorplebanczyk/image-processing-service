@@ -26,7 +26,7 @@ func NewService(
 		repo:                  repo,
 		storage:               storage,
 		cache:                 cache,
-		transformationService: transformations.New(),
+		transformationService: transformations.NewService(),
 	}
 }
 
@@ -144,11 +144,9 @@ func (s *ImageService) ApplyTransformations(
 		return err
 	}
 
-	for _, transformation := range transformations {
-		imageBytes, err = s.transformationService.Apply(imageBytes, transformation)
-		if err != nil {
-			return err
-		}
+	imageBytes, err = s.transformationService.Apply(imageBytes, transformations)
+	if err != nil {
+		return err
 	}
 
 	objectName := domain.CreateObjectName(userID, imageName)
