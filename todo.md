@@ -47,7 +47,7 @@
   - [X] Consider using a more explicit network setup
   - [X] Consider using more configurations
 - [X] Redesign the transformation service
-- [ ] Add a storage worker for deleting dangling images
+- [X] Add a storage worker for deleting dangling images
 - [ ] Create and store image previews
   - [ ] Add a preview service for generating previews
   - [ ] Update blob names to include a preview suffix

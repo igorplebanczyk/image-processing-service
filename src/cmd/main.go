@@ -9,11 +9,12 @@ import (
 	"image-processing-service/src/internal/common/cache"
 	"image-processing-service/src/internal/common/database"
 	"image-processing-service/src/internal/common/database/transactions"
-	"image-processing-service/src/internal/common/database/worker"
+	dbWorker "image-processing-service/src/internal/common/database/worker"
 	"image-processing-service/src/internal/common/emails"
 	_ "image-processing-service/src/internal/common/logs"
 	"image-processing-service/src/internal/common/server"
 	"image-processing-service/src/internal/common/storage"
+	storageWorker "image-processing-service/src/internal/common/storage/worker"
 	imagesApp "image-processing-service/src/internal/images/application"
 	imagesInfra "image-processing-service/src/internal/images/infrastructure"
 	imagesInterface "image-processing-service/src/internal/images/interfaces"
@@ -31,7 +32,8 @@ import (
 type application struct {
 	serverService *server.Service
 	dbService     *database.Service
-	dbWorker      *worker.Worker
+	dbWorker      *dbWorker.Worker
+	storageWorker *storageWorker.Worker
 }
 
 func main() {
@@ -46,6 +48,7 @@ func main() {
 	defer stop()
 
 	go app.dbWorker.Start()
+	go app.storageWorker.Start()
 	go app.serverService.Start()
 
 	slog.Info("Application started")
@@ -54,6 +57,7 @@ func main() {
 	slog.Info("Received shutdown signal")
 
 	app.dbWorker.Stop()
+	app.storageWorker.Stop()
 	app.dbService.Stop()
 	app.serverService.Stop()
 
@@ -122,7 +126,6 @@ func (a *application) assemble() error {
 	}
 
 	txProvider := transactions.NewTransactionProvider(db)
-	dbWorker := worker.New(db, txProvider)
 
 	cacheService, err := cache.NewService(redisHost, redisPort, redisPassword, redisDBInt)
 	if err != nil {
@@ -174,7 +177,8 @@ func (a *application) assemble() error {
 
 	a.serverService = serverService
 	a.dbService = dbService
-	a.dbWorker = dbWorker
+	a.dbWorker = dbWorker.New(db, txProvider)
+	a.storageWorker = storageWorker.New(db, storageService)
 
 	slog.Info("Application assembled")
 
