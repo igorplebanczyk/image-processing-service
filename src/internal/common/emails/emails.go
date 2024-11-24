@@ -29,7 +29,15 @@ func NewService(host, sender, password string) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) SendText(recipient string, subject, body string) error {
+func (s *Service) SendText(recipient, subject, body string) error {
+	return s.send(recipient, subject, body, mail.TypeTextPlain)
+}
+
+func (s *Service) SendHTML(recipient, subject, body string) error {
+	return s.send(recipient, subject, body, mail.TypeTextHTML)
+}
+
+func (s *Service) send(recipient, subject, body string, contentType mail.ContentType) error {
 	message := mail.NewMsg()
 
 	err := message.From(s.sender)
@@ -43,7 +51,7 @@ func (s *Service) SendText(recipient string, subject, body string) error {
 	}
 
 	message.Subject(subject)
-	message.SetBodyString(mail.TypeTextPlain, body)
+	message.SetBodyString(contentType, body)
 
 	err = s.client.DialAndSend(message)
 	if err != nil {
