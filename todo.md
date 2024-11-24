@@ -73,9 +73,6 @@
   - [ ] Add a caching layer
   - [ ] Revise API security best practices
   - [ ] Add a simple way to manage HTTPS and domains
-- [ ] Add OpenAPI specifications
-  - [ ] Use some library to generate OpenAPI specifications from the code
-  - [ ] Serve the OpenAPI specifications via a /docs endpoint
 - [ ] Improve the Terraform setup
   - [ ] Add a setup file for the resource group and virtual network
   - [ ] Add a setup file for Azure Container Registry
