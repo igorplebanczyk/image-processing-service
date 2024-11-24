@@ -58,6 +58,7 @@
 - [ ] Improve security and QoL
   - [ ] Add a forgotten password system
   - [ ] Add an email verification system
+  - [ ] Add 2FA
 - [ ] Revise the project structure
   - [ ] Collect more logs
   - [ ] Set up a wrapper for DB queries to collect logs and metrics
