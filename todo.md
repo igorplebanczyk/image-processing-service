@@ -1,3 +1,5 @@
+# TODO
+
 - [X] Improve error handling
 - [X] Improve logging
 - [X] Add Terraform IaC
@@ -90,3 +92,39 @@
   - [ ] Add a README.md file
   - [ ] Add a SECURITY.md file
   - [ ] Add a LICENSE
+
+# Plan
+
+
+## API
+
+| **Category** | **Method** | **Endpoint**             | **Description**                                       |
+|--------------|------------|--------------------------|-------------------------------------------------------|
+| **Meta**     | ANY        | `/health`                | Check the health of the service.                      |
+|              | GET        | `/metrics`               | Retrieve service metrics (private).                   |
+| **Auth**     | POST       | `/auth/login/one`        | Provide credentials, get OTP.                         |
+|              | POST       | `/auth/login/two`        | Provide OTP, get JWT and refresh token.               |
+|              | DELETE     | `/auth/logout`           | Invalidate refresh token.                             |
+|              | POST       | `/auth/refresh`          | Provide refresh token, get new JWT and refresh token. |
+| **Users**    | POST       | `/users`                 | Register a new user.                                  |
+|              | GET        | `/users`                 | Get details of the authenticated user.                |
+|              | PUT        | `/users`                 | Update details of the authenticated user.             |
+|              | DELETE     | `/users`                 | Delete the authenticated user.                        |
+|              | POST       | `/users/verify`          | Provide email, get OTP for verification.              |
+|              | PATCH      | `/users/verify`          | Provide OTP, verify email.                            |
+|              | POST       | `/users/forgot-password` | Provide email, get OTP for password reset.            |
+|              | PATCH      | `/users/forgot-password` | Provide OTP, set a new password.                      |
+| **Images**   | POST       | `/images`                | Upload a new image.                                   |
+|              | GET        | `/images`                | Get details of a specific image.                      |
+|              | GET        | `/images/all`            | Get all images of the authenticated user.             |
+|              | PUT        | `/images`                | Apply transformations to an image.                    |
+|              | DELETE     | `/images`                | Delete a specific image.                              |
+| **Admin**    | GET        | `/admin/verify`          | Verify if the authenticated user is an admin.         |
+|              | POST       | `/admin/broadcast`       | Send a broadcast message.                             |
+|              | DELETE     | `/admin/auth/{id}`       | Logout a specific user by ID.                         |
+|              | GET        | `/admin/users/{id}`      | Get details of a specific user.                       |
+|              | GET        | `/admin/users`           | Get details of all users.                             |
+|              | PATCH      | `/admin/users/{id}`      | Update the role of a specific user.                   |
+|              | DELETE     | `/admin/users/{id}`      | Delete a specific user.                               |
+|              | GET        | `/admin/images`          | Get all images (admin view).                          |
+|              | DELETE     | `/admin/images`          | Delete an image (admin operation).                    |
