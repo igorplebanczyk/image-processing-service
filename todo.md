@@ -117,7 +117,8 @@
 | **Images**   | POST       | `/images`                | Upload a new image.                                   |
 |              | GET        | `/images`                | Get details of a specific image.                      |
 |              | GET        | `/images/all`            | Get all images of the authenticated user.             |
-|              | PUT        | `/images`                | Apply transformations to an image.                    |
+|              | PUT        | `/images`                | Update image details.                                 |
+|              | PATCH      | `/images`                | Apply transformations to an image.                    |
 |              | DELETE     | `/images`                | Delete a specific image.                              |
 | **Admin**    | GET        | `/admin/verify`          | Verify if the authenticated user is an admin.         |
 |              | POST       | `/admin/broadcast`       | Send a broadcast message.                             |
@@ -128,3 +129,120 @@
 |              | DELETE     | `/admin/users/{id}`      | Delete a specific user.                               |
 |              | GET        | `/admin/images`          | Get all images (admin view).                          |
 |              | DELETE     | `/admin/images`          | Delete an image (admin operation).                    |
+
+## Structure
+
+### Common
+
+Cache:
+- Types: Service
+
+Database:
+- Types: Service
+- Functions: Connect, CloseConnection
+- Subservices:
+  - Tx:
+    - Types: Provider
+    - Functions: Transact
+  - Worker:
+
+Emails:
+- Types: Service
+- SendText, SendHTML, send
+
+Errors:
+- Types: Error (Type)
+
+Logs:
+- Functions: init
+
+Metrics:
+- Functions: init, Handler
+
+Server:
+- Types: Service
+- Functions: Start, Stop, setup, health
+- Subservices:
+  - Respond:
+    - Functions: WithError, WithJSON, WithNoContent, applyCommonHeaders
+  - Telemetry:
+    - Types: responseRecorder
+    - Functions: Middleware, WriteHeader
+
+Storage:
+- Types: Service
+- Subservices:
+  - Worker:
+
+### Auth
+
+Domain:
+- Types: User (Role), RefreshToken, OTP
+- Repositories:
+  - UserDBRepository: GetUserByUsername, GetUserRoleByID
+  - RefreshTokenDBRepository: CreateRefreshToken, GetRefreshTokensByUserID, RevokeRefreshTokenByToken, RevokeRefreshTokensByUserID
+  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
+
+Application:
+- Types: AuthService
+- Functions: LoginOne, LoginTwo, Logout, Refresh, generateAccessToken, verifyAccessToken, generateAccessToken, verifyRefreshToken, generateOTP, verifyOTP
+
+Interfaces:
+- Types: AuthAPI
+- Functions: LoginOne, LoginTwo, Logout, Refresh, UserMiddleware, AdminMiddleware, storeTokenInCookie, extractTokenFromCookie
+
+Infrastructure:
+- Repositories:
+  - UserDBRepository: GetUserByUsername, GetUserRoleByID
+  - RefreshTokenDBRepository: CreateRefreshToken, GetRefreshTokensByUserID, RevokeRefreshTokenByToken, RevokeRefreshTokensByUserID
+  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
+
+
+### Users
+
+Domain:
+- Types: User (Role), OTP (Type)
+- Functions: ValidateUsername, ValidateEmail, ValidatePassword, DetermineUserDetailsToUpdate
+- Repositories:
+  - UserDBRepository: CreateUser, GetUserByID, GetAllUsers, UpdateUserDetails, UpdateUserRole, DeleteUser
+  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
+
+Application:
+- Types: UserService
+- Functions: Register, Get, Update, Delete, SendUserVerificationCode, VerifyUser, SendForgotPasswordCode, ResetPassword, AdminGetAll, AdminUpdateRole, hashPassword, verifyPassword, generateOTP, verifyOTP
+
+Interfaces:
+- Types: UserAPI
+- Functions: Register, Get, Update, Delete, SendUserVerificationCode, VerifyUser, SendForgotPasswordCode, ResetPassword, AdminGet, AdminGetAll, AdminUpdateRole, AdminDelete
+
+Infrastructure:
+- Repositories:
+  - UserDBRepository: CreateUser, GetUserByID, GetAllUsers, UpdateUserDetails, UpdateUserRole, DeleteUser
+  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
+
+
+### Images
+
+Domain:
+- Types: Image, Transformation (TransformationType)
+- Functions: ValidateName, ValidateRawImage, Validate Transformation, CreateImageName, CreatePreviewName
+- Repositories:
+  - ImageDBRepository: CreateImage, GetImageByUserIDandName, GetImagesByUserID, GetAllImages, UpdateImage, DeleteImageByUserIDandName, DeleteImageByID
+  - StorageRepository: UploadImage, DownloadImage, DeleteImage
+  - CacheRepository: AddImage, GetImage, DeleteImage
+
+Application:
+- Types: ImageService
+- Functions: Upload, Get, GetAll, Update, Transform, Delete, AdminGetAll, AdminDelete
+- Subservices:
+  - Transformations:
+
+Interfaces:
+- Types: ImageAPI
+- Functions: Upload, Get, GetAll, Update, Transform, Delete, AdminGetAll, AdminDelete
+
+Infrastructure:
+- Repositories:
+  - ImageDBRepository: CreateImage, GetImageByUserIDandName, GetImagesByUserID, GetAllImages, UpdateImage, DeleteImageByUserIDandName, DeleteImageByID
+  - StorageRepository: UploadImage, DownloadImage, DeleteImage
+  - CacheRepository: AddImage, GetImage, DeleteImage
