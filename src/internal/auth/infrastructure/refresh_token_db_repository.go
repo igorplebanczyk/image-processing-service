@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/domain"
-	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/database/tx"
 	"log/slog"
 	"time"
 )
 
 type RefreshTokenDBRepository struct {
 	db         *sql.DB
-	txProvider *transactions.TransactionProvider
+	txProvider *tx.Provider
 }
 
-func NewRefreshTokenDBRepository(db *sql.DB, txProvider *transactions.TransactionProvider) *RefreshTokenDBRepository {
+func NewRefreshTokenDBRepository(db *sql.DB, txProvider *tx.Provider) *RefreshTokenDBRepository {
 	return &RefreshTokenDBRepository{db: db, txProvider: txProvider}
 }
 
@@ -26,7 +26,7 @@ func (r *RefreshTokenDBRepository) CreateRefreshToken(ctx context.Context, userI
 	id := uuid.New()
 	createdAt := time.Now()
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `INSERT INTO refresh_tokens(id, user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4, $5)`,
 			id, userID, token, expiresAt, createdAt)
 		if err != nil {
@@ -57,7 +57,7 @@ func (r *RefreshTokenDBRepository) GetRefreshTokenByUserIDandToken(ctx context.C
 func (r *RefreshTokenDBRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)
 		if err != nil {
 			return fmt.Errorf("error revoking refresh tokens: %w", err)

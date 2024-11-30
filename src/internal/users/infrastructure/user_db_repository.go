@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/database/tx"
 	"image-processing-service/src/internal/users/domain"
 	"log/slog"
 	"time"
@@ -13,10 +13,10 @@ import (
 
 type UserDBRepository struct {
 	db         *sql.DB
-	txProvider *transactions.TransactionProvider
+	txProvider *tx.Provider
 }
 
-func NewUserDBRepository(db *sql.DB, txProvider *transactions.TransactionProvider) *UserDBRepository {
+func NewUserDBRepository(db *sql.DB, txProvider *tx.Provider) *UserDBRepository {
 	return &UserDBRepository{db: db, txProvider: txProvider}
 }
 
@@ -25,7 +25,7 @@ func (r *UserDBRepository) CreateUser(ctx context.Context, username, email, pass
 
 	user := domain.NewUser(username, email, password, otpSecret)
 
-	err := r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	err := r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `INSERT INTO users (id, username, email, password, role, verified, otp_secret, created_at, updated_at) 
 											VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 			user.ID, user.Username, user.Email, user.Password, user.Role, user.Verified, user.OTPSecret, user.CreatedAt, user.UpdatedAt)
@@ -104,7 +104,7 @@ func (r *UserDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]
 func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, username: %s, email: %s", id, username, email))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, updated_at = $3 WHERE id = $4`,
 			username, email, time.Now(), id)
 		if err != nil {
@@ -118,7 +118,7 @@ func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, 
 func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role domain.Role) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, role: %s", id, role))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET role = $1, updated_at = $2 WHERE id = $3`, role, time.Now(), id)
 		if err != nil {
 			return fmt.Errorf("error updating user role: %w", err)
@@ -131,7 +131,7 @@ func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, rol
 func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET verified = true, updated_at = $1 WHERE id = $2`, time.Now(), id)
 		if err != nil {
 			return fmt.Errorf("error updating user as verified: %w", err)
@@ -144,7 +144,7 @@ func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUI
 func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID, password string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET password = $1, updated_at = $2 WHERE id = $3`, password, time.Now(), id)
 		if err != nil {
 			return fmt.Errorf("error updating user password: %w", err)
@@ -157,7 +157,7 @@ func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID,
 func (r *UserDBRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 
-	return r.txProvider.WithTransaction(ctx, func(tx *sql.Tx) error {
+	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
 		if err != nil {
 			return fmt.Errorf("error deleting user: %w", err)

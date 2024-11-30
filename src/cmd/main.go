@@ -8,7 +8,7 @@ import (
 	authInterface "image-processing-service/src/internal/auth/interfaces"
 	"image-processing-service/src/internal/common/cache"
 	"image-processing-service/src/internal/common/database"
-	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/database/tx"
 	dbWorker "image-processing-service/src/internal/common/database/worker"
 	"image-processing-service/src/internal/common/emails"
 	_ "image-processing-service/src/internal/common/logs"
@@ -139,7 +139,7 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error connecting to database: %w", err)
 	}
 
-	txProvider := transactions.NewTransactionProvider(db)
+	txProvider := tx.NewProvider(db)
 
 	cacheService, err := cache.NewService(redisHost, redisPort, redisPassword, redisDBInt)
 	if err != nil {

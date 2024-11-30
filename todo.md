@@ -65,11 +65,11 @@
   - [ ] Update the workers
   - [ ] Revise the transformation service
   - [ ] Revise the mail service
-  - [ ] Revise the transaction setup
+  - [X] Revise the transaction setup
   - [ ] Review the emails setup; send them asynchronously
   - [ ] Revise the OTP expiration system
   - [ ] Review performance
-  - [ ] Consider moving query extraction to a global package
+  - [X] Consider moving query extraction to a global package
   - [ ] Collect more logs
   - [ ] Streamline the API, verify API security and semantics
   - [ ] Attempt to streamline the main package
