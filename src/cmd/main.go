@@ -14,6 +14,7 @@ import (
 	_ "image-processing-service/src/internal/common/logs"
 	_ "image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/common/server"
+	"image-processing-service/src/internal/common/server/version"
 	"image-processing-service/src/internal/common/storage"
 	storageWorker "image-processing-service/src/internal/common/storage/worker"
 	imagesApp "image-processing-service/src/internal/images/application"
@@ -69,6 +70,7 @@ func (a *application) assemble() error {
 	// Get environment variables
 
 	appPort := os.Getenv("APP_PORT")
+	appVersion := os.Getenv("APP_VERSION")
 	issuer := os.Getenv("APP_ISSUER")
 	jwtSecret := os.Getenv("APP_JWT_SECRET")
 	accessTokenExpiration := os.Getenv("APP_JWT_ACCESS_TOKEN_EXPIRATION")
@@ -203,6 +205,7 @@ func (a *application) assemble() error {
 
 	slog.Info("Init step 15: image module assembled")
 
+	version.Set(appVersion)
 	serverService := server.NewService(appPortInt, authAPI, userAPI, imageAPI)
 
 	a.serverService = serverService

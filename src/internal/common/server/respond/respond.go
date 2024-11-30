@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	commonerrors "image-processing-service/src/internal/common/errors"
+	"image-processing-service/src/internal/common/server/version"
 	"net/http"
 )
-
-const Version = "1.0.0"
 
 func WithError(w http.ResponseWriter, error error) {
 	applyCommonHeaders(w)
@@ -56,7 +55,7 @@ func WithJSON(w http.ResponseWriter, code int, payload any) {
 }
 
 func applyCommonHeaders(w http.ResponseWriter) {
-	w.Header().Set("API-Version", Version)
+	w.Header().Set("X-API-Version", version.Version())
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-Frame-Options", "deny")
 	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self';")

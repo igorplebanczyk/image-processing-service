@@ -13,20 +13,32 @@ import (
 	"time"
 )
 
+const (
+	readTimeout       = 1 * time.Minute
+	readHeaderTimeout = 5 * time.Second
+	writeTimeout      = 1 * time.Minute
+	idleTimeout       = 1 * time.Minute
+)
+
 type Service struct {
-	port     int
-	server   *http.Server
-	authAPI  *authInterface.AuthAPI
-	userAPI  *userInterface.UserAPI
-	imageAPI *imageInterface.ImageAPI
+	port      int
+	server    *http.Server
+	authAPI   *authInterface.AuthAPI
+	usersAPI  *userInterface.UserAPI
+	imagesAPI *imageInterface.ImageAPI
 }
 
-func NewService(port int, authService *authInterface.AuthAPI, usersCfg *userInterface.UserAPI, imagesCfg *imageInterface.ImageAPI) *Service {
+func NewService(
+	port int,
+	authAPI *authInterface.AuthAPI,
+	usersAPI *userInterface.UserAPI,
+	imagesAPI *imageInterface.ImageAPI,
+) *Service {
 	service := &Service{
-		port:     port,
-		authAPI:  authService,
-		userAPI:  usersCfg,
-		imageAPI: imagesCfg,
+		port:      port,
+		authAPI:   authAPI,
+		usersAPI:  usersAPI,
+		imagesAPI: imagesAPI,
 	}
 	service.setup()
 
@@ -40,8 +52,10 @@ func (s *Service) setup() {
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf(":%d", s.port),
 		Handler:           telemetry.Middleware(mux),
-		ReadTimeout:       time.Minute,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       readTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	mux.Handle("/metrics", metrics.Handler())
@@ -52,31 +66,31 @@ func (s *Service) setup() {
 	mux.HandleFunc("POST /auth/refresh", s.authAPI.Refresh)
 	mux.HandleFunc("DELETE /auth/logout", s.authAPI.UserMiddleware(s.authAPI.Logout))
 
-	mux.HandleFunc("POST /users", s.userAPI.Register)
-	mux.HandleFunc("GET /users", s.authAPI.UserMiddleware(s.userAPI.GetDetails))
-	mux.HandleFunc("PUT /users", s.authAPI.UserMiddleware(s.userAPI.UpdateDetails))
-	mux.HandleFunc("DELETE /users", s.authAPI.UserMiddleware(s.userAPI.Delete))
-	mux.HandleFunc("POST /users/verify", s.authAPI.UserMiddleware(s.userAPI.ResendVerificationCode))
-	mux.HandleFunc("PATCH  /users/verify", s.authAPI.UserMiddleware(s.userAPI.Verify))
-	mux.HandleFunc("POST /users/reset-password", s.userAPI.SendForgotPasswordCode)
-	mux.HandleFunc("PATCH /users/reset-password", s.userAPI.ResetPassword)
+	mux.HandleFunc("POST /users", s.usersAPI.Register)
+	mux.HandleFunc("GET /users", s.authAPI.UserMiddleware(s.usersAPI.GetDetails))
+	mux.HandleFunc("PUT /users", s.authAPI.UserMiddleware(s.usersAPI.UpdateDetails))
+	mux.HandleFunc("DELETE /users", s.authAPI.UserMiddleware(s.usersAPI.Delete))
+	mux.HandleFunc("POST /users/verify", s.authAPI.UserMiddleware(s.usersAPI.ResendVerificationCode))
+	mux.HandleFunc("PATCH  /users/verify", s.authAPI.UserMiddleware(s.usersAPI.Verify))
+	mux.HandleFunc("POST /users/reset-password", s.usersAPI.SendForgotPasswordCode)
+	mux.HandleFunc("PATCH /users/reset-password", s.usersAPI.ResetPassword)
 
-	mux.HandleFunc("POST /images", s.authAPI.UserMiddleware(s.imageAPI.Upload))
-	mux.HandleFunc("GET /images", s.authAPI.UserMiddleware(s.imageAPI.Get))
-	mux.HandleFunc("GET /images/all", s.authAPI.UserMiddleware(s.imageAPI.GetAll))
-	mux.HandleFunc("PUT /images", s.authAPI.UserMiddleware(s.imageAPI.UpdateDetails))
-	mux.HandleFunc("PATCH /images", s.authAPI.UserMiddleware(s.imageAPI.Transform))
-	mux.HandleFunc("DELETE /images", s.authAPI.UserMiddleware(s.imageAPI.Delete))
+	mux.HandleFunc("POST /images", s.authAPI.UserMiddleware(s.imagesAPI.Upload))
+	mux.HandleFunc("GET /images", s.authAPI.UserMiddleware(s.imagesAPI.Get))
+	mux.HandleFunc("GET /images/all", s.authAPI.UserMiddleware(s.imagesAPI.GetAll))
+	mux.HandleFunc("PUT /images", s.authAPI.UserMiddleware(s.imagesAPI.UpdateDetails))
+	mux.HandleFunc("PATCH /images", s.authAPI.UserMiddleware(s.imagesAPI.Transform))
+	mux.HandleFunc("DELETE /images", s.authAPI.UserMiddleware(s.imagesAPI.Delete))
 
-	mux.HandleFunc("POST /admin/broadcast", s.authAPI.AdminMiddleware(s.userAPI.AdminBroadcast))
+	mux.HandleFunc("POST /admin/broadcast", s.authAPI.AdminMiddleware(s.usersAPI.AdminBroadcast))
 	mux.HandleFunc("GET /admin/auth", s.authAPI.AdminMiddleware(s.authAPI.AdminAccess))
 	mux.HandleFunc("DELETE /admin/auth/{id}", s.authAPI.AdminMiddleware(s.authAPI.AdminLogoutUser))
-	mux.HandleFunc("GET /admin/users/{id}", s.authAPI.AdminMiddleware(s.userAPI.AdminGetUserDetails))
-	mux.HandleFunc("GET /admin/users", s.authAPI.AdminMiddleware(s.userAPI.AdminGetAllUsersDetails))
-	mux.HandleFunc("PATCH /admin/users/{id}", s.authAPI.AdminMiddleware(s.userAPI.AdminUpdateRole))
-	mux.HandleFunc("DELETE /admin/users/{id}", s.authAPI.AdminMiddleware(s.userAPI.AdminDeleteUser))
-	mux.HandleFunc("GET /admin/images", s.authAPI.AdminMiddleware(s.imageAPI.AdminListAllImages))
-	mux.HandleFunc("DELETE /admin/images/{id}", s.authAPI.AdminMiddleware(s.imageAPI.AdminDeleteImage))
+	mux.HandleFunc("GET /admin/users/{id}", s.authAPI.AdminMiddleware(s.usersAPI.AdminGetUserDetails))
+	mux.HandleFunc("GET /admin/users", s.authAPI.AdminMiddleware(s.usersAPI.AdminGetAllUsersDetails))
+	mux.HandleFunc("PATCH /admin/users/{id}", s.authAPI.AdminMiddleware(s.usersAPI.AdminUpdateRole))
+	mux.HandleFunc("DELETE /admin/users/{id}", s.authAPI.AdminMiddleware(s.usersAPI.AdminDeleteUser))
+	mux.HandleFunc("GET /admin/images", s.authAPI.AdminMiddleware(s.imagesAPI.AdminListAllImages))
+	mux.HandleFunc("DELETE /admin/images/{id}", s.authAPI.AdminMiddleware(s.imagesAPI.AdminDeleteImage))
 }
 
 func (s *Service) Start() {
