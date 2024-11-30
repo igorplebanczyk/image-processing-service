@@ -8,8 +8,8 @@
 - [X] Add RBAC
 - [X] Add admin endpoints
 - [ ] Add tests
-  - [X] Add domain layer unit tests
-  - [X] Add application layer unit tests
+  - [ ] Add domain layer unit tests
+  - [ ] Add application layer unit tests
     - [ ] Add unit tests for subservices of the application layer
   - [ ] Add interfaces layer unit tests
   - [ ] Add infrastructure layer integration tests
@@ -61,7 +61,7 @@
   - [X] Add a forgotten password system
   - [X] Add an email verification system
   - [X] Add 2FA
-- [ ] Revise the project structure
+- [X] Revise the project structure
   - [X] Update the workers
   - [X] Revise the transformation service
   - [X] Revise the transaction setup
@@ -77,8 +77,7 @@
   - [X] Revise the project structure
   - [X] Extract constants into variables
   - [X] Extract common functionality into helper functions
-  - [ ] Add comments where necessary
-  - [ ] Update unit tests
+  - [X] Add comments where necessary
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
   - [ ] Add rate limiting and other security features

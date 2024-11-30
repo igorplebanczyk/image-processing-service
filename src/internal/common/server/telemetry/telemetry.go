@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+// The Middleware uses responseRecorder to record the status code of the response, which is then logged and added
+// to the metrics.
+// The Middleware wraps the ServeMux directly, thus wrapping all requests.
+
 type responseRecorder struct {
 	http.ResponseWriter
 	statusCode int

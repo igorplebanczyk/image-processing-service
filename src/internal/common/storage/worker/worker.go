@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+// Worker is a storage worker that periodically deletes dangling images from the storage.
+// Dangling images are images that are stored in the storage but are not present in the database.
+// This can happen for example when a user deletes their account, in which case the images are deleted from the database
+// automatically (via ON DELETE CASCADE), but not from the storage. I could have done that, but for simplicity I decided
+// to implement this worker instead. Another benefit of this is that if a database is wiped (which I did multiple times
+// during development), there is no need to manually delete the images from the storage.
+
 const interval = 24 * time.Hour
 
 type Worker struct {

@@ -11,12 +11,12 @@ const (
 )
 
 type Error struct {
-	typ     ErrorType
-	message string
+	typ ErrorType
+	msg string
 }
 
 func (e Error) Error() string {
-	return e.message
+	return e.msg
 }
 
 func (e Error) Type() ErrorType {
@@ -25,35 +25,35 @@ func (e Error) Type() ErrorType {
 
 func New(message string) Error {
 	return Error{
-		typ:     Unknown,
-		message: message,
+		typ: Unknown,
+		msg: message,
 	}
 }
 
 func NewInvalidInput(message string) Error {
 	return Error{
-		typ:     InvalidInput,
-		message: message,
+		typ: InvalidInput,
+		msg: message,
 	}
 }
 
 func NewUnauthorized(message string) Error {
 	return Error{
-		typ:     Unauthorized,
-		message: message,
+		typ: Unauthorized,
+		msg: message,
 	}
 }
 
 func NewForbidden(message string) Error {
 	return Error{
-		typ:     Forbidden,
-		message: message,
+		typ: Forbidden,
+		msg: message,
 	}
 }
 
 func NewInternal(message string) Error {
 	return Error{
-		typ:     Internal,
-		message: message,
+		typ: Internal,
+		msg: message,
 	}
 }

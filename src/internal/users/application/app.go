@@ -283,11 +283,18 @@ func (s *UsersService) AdminBroadcast(subject, body string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// For simplicity, I simply set the page to 1 and limit to 999999;
+	// not the best way but it avoids unnecessary complexity, I don't care about efficiency here because broadcasts
+	// are not expected to be frequent.
 	users, _, err := s.usersDBRepo.GetAllUsers(ctx, 1, 999999)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}
 
+	// Again, for simplicity I simply iterate over all users and send the email in a linear way because efficiency
+	// is not a concern here.
+	// I use a channel to collect errors from each email sending operation and log them at the end. This way, if one
+	// email fails to send, the others will still be sent and the error will be logged.
 	errorChan := make(chan error, len(users))
 
 	for _, user := range users {

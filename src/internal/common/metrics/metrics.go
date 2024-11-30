@@ -7,6 +7,9 @@ import (
 	"net/http"
 )
 
+// init() gets called implicitly via an import in the main package. Metrics are registered to prometheus and
+// exposed to Prometheus via a /metrics endpoint which uses the Handler() function.
+
 func init() {
 	prometheus.MustRegister(HttpRequestsTotal)
 	prometheus.MustRegister(HttpDurationSeconds)

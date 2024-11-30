@@ -8,6 +8,9 @@ import (
 	"time"
 )
 
+// Worker is a database worker that periodically deletes expired refresh tokens from the database.
+// It is necessary because refresh tokens are otherwise only deleted upon logout or if an expired token is used.
+
 const interval = time.Hour
 
 type Worker struct {

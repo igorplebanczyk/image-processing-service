@@ -66,6 +66,10 @@ func main() {
 	slog.Info("Shutdown step 6: application shutdown")
 }
 
+// The assemble() function is quite a spaghetti code, but I feel like splitting it into smaller functions leads to
+// unnecessary complexity. I figure it's not a big deal since it involves no complex logic. Also having the whole setup
+// in a single function makes it easy to see how the application is assembled step by step.
+
 func (a *application) assemble() error {
 	// Get environment variables
 

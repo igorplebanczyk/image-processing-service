@@ -8,6 +8,10 @@ import (
 	"log/slog"
 )
 
+// Provider provides a simple and unified way to perform transactions on the database.
+// It executes the passed function in a transaction and commits it if no error occurred.
+// If an error occurred, it rolls back the transaction and returns the error.
+
 type Provider struct {
 	db *sql.DB
 }
