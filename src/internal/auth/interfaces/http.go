@@ -120,6 +120,11 @@ func (a *AuthAPI) LoginTwo(w http.ResponseWriter, r *http.Request) {
 
 func (a *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := getRefreshTokenFromCookie(r)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
 
 	accessToken, err := a.service.Refresh(refreshToken)
 	if err != nil {
