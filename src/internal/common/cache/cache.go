@@ -33,3 +33,5 @@ func NewService(host, port, password string, db int) (*Service, error) {
 func (s *Service) Client() *redis.Client {
 	return s.client
 }
+
+const Nil = redis.Nil

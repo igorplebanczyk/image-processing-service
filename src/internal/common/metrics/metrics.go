@@ -12,6 +12,9 @@ func init() {
 	prometheus.MustRegister(HttpDurationSeconds)
 	prometheus.MustRegister(HttpErrorsTotal)
 	prometheus.MustRegister(DBQueriesTotal)
+	prometheus.MustRegister(CacheOperationsTotal)
+	prometheus.MustRegister(StorageOperationsTotal)
+	prometheus.MustRegister(ImageProcessingOperationsTotal)
 
 	slog.Info("Init step 2 complete: metrics initialized")
 }

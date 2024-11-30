@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image-processing-service/src/internal/common/cache"
 	"image-processing-service/src/internal/common/metrics"
@@ -35,7 +36,10 @@ func (r *ImageCacheRepository) GetImage(ctx context.Context, key string) ([]byte
 
 	val, err := r.cache.Client().Get(ctx, key).Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get value of key: %w", err)
+		if errors.Is(err, cache.Nil) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get key: %w", err)
 	}
 
 	return []byte(val), nil

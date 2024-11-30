@@ -95,16 +95,23 @@ func (a *ImageAPI) Get(userID uuid.UUID, w http.ResponseWriter, r *http.Request)
 }
 
 func (a *ImageAPI) GetAll(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
-	type responseItem struct {
-		Metadata     domain.ImageMetadata `json:"metadata"`
-		ImagePreview string               `json:"image_preview"`
+	type imagesMetadata struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		UpdatedAt   string `json:"updated_at"`
+		CreatedAt   string `json:"created_at"`
+	}
+
+	type images struct {
+		Metadata     imagesMetadata `json:"metadata"`
+		ImagePreview string         `json:"image_preview"`
 	}
 
 	type response struct {
-		Images     []responseItem `json:"images"`
-		TotalCount int            `json:"total_count"`
-		Page       int            `json:"page"`
-		Limit      int            `json:"limit"`
+		Images     []images `json:"images"`
+		TotalCount int      `json:"total_count"`
+		Page       int      `json:"page"`
+		Limit      int      `json:"limit"`
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -128,11 +135,16 @@ func (a *ImageAPI) GetAll(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var respImages []responseItem
+	var respImages []images
 	for i, m := range metadata {
 		encodedPreview := base64.StdEncoding.EncodeToString(previews[i])
-		respImages = append(respImages, responseItem{
-			Metadata:     *m,
+		respImages = append(respImages, images{
+			Metadata: imagesMetadata{
+				Name:        m.Name,
+				Description: m.Description,
+				UpdatedAt:   m.UpdatedAt.String(),
+				CreatedAt:   m.CreatedAt.String(),
+			},
 			ImagePreview: encodedPreview,
 		})
 	}
