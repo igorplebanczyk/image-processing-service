@@ -62,15 +62,15 @@
   - [X] Add an email verification system
   - [X] Add 2FA
 - [ ] Revise the project structure
-  - [ ] Update the workers
+  - [X] Update the workers
   - [X] Revise the transformation service
   - [X] Revise the transaction setup
   - [X] Review the emails setup; send them asynchronously
   - [X] Revise the OTP expiration system
-  - [ ] Review performance
+  - [X] Review performance
   - [X] Consider moving query extraction to a global package
   - [ ] Collect more logs
-  - [ ] Streamline the API, verify API security and semantics
+  - [X] Streamline the API, verify API security and semantics
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
   - [ ] Split large files into smaller ones

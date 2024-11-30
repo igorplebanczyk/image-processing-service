@@ -12,7 +12,7 @@ import (
 const interval = 24 * time.Hour
 
 type Worker struct {
-	repo     imagesRepository
+	repo     imagesDBRepository
 	storage  imagesStorageRepository
 	ctx      context.Context
 	stop     context.CancelFunc
@@ -22,7 +22,7 @@ type Worker struct {
 func New(db *sql.DB, storage *storage.Service) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
-		repo:     newImagesRepository(db),
+		repo:     newImagesDBRepository(db),
 		storage:  newImagesStorageRepository(storage),
 		ctx:      ctx,
 		interval: interval,
@@ -40,7 +40,7 @@ func (s *Worker) Start() {
 		case <-ticker.C:
 			ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
 
-			err := s.DeleteDanglingImages(ctx)
+			err := s.deleteDanglingImages(ctx)
 			if err != nil {
 				slog.Error("error deleting dangling images", "error", err)
 			} else {
@@ -59,7 +59,7 @@ func (s *Worker) Stop() {
 	slog.Info("Storage worker stopped")
 }
 
-func (s *Worker) DeleteDanglingImages(ctx context.Context) error {
+func (s *Worker) deleteDanglingImages(ctx context.Context) error {
 	imagesNamesStorage, err := s.storage.getAllImagesNames()
 	if err != nil {
 		return fmt.Errorf("failed to get images names from storage: %w", err)

@@ -47,8 +47,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	//go app.dbWorker.Start()
-	//go app.storageWorker.Start()
+	go app.dbWorker.Start()
+	go app.storageWorker.Start()
 	go app.serverService.Start()
 
 	slog.Info("Application started")

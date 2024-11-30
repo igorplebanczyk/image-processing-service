@@ -1,17 +1,20 @@
 package worker
 
-import "fmt"
+import (
+	"github.com/google/uuid"
+	"image-processing-service/src/internal/images/domain"
+)
 
-func getAllDanglingImagesNames(imagesNamesStorage []string, imagesDB []image) ([]string, error) {
-	var danglingImages []string
-	for _, imageName := range imagesNamesStorage {
-		for _, imageDB := range imagesDB {
-			if imageName == fmt.Sprintf("%s-%s", imageDB.userID, imageDB.name) {
+func getAllDanglingImagesNames(imagesNamesStorage []string, imagesIDs []uuid.UUID) ([]string, error) {
+	var danglingImagesIDs []string
+	for _, imageNameStorage := range imagesNamesStorage {
+		for _, imageID := range imagesIDs {
+			if domain.CreateFullImageObjectName(imageID) == imageNameStorage || domain.CreatePreviewImageObjectName(imageID) == imageNameStorage {
 				continue
 			}
-			danglingImages = append(danglingImages, imageName)
+			danglingImagesIDs = append(danglingImagesIDs, imageNameStorage)
 		}
 	}
 
-	return danglingImages, nil
+	return danglingImagesIDs, nil
 }
