@@ -8,37 +8,33 @@ import (
 	"image-processing-service/src/internal/common/server/respond"
 	"log/slog"
 	"net/http"
-	"strings"
+	"time"
 )
 
 type AuthAPI struct {
-	service *application.AuthService
+	service            *application.AuthService
+	accessTokenExpiry  time.Duration
+	refreshTokenExpiry time.Duration
 }
 
-func NewServer(authService *application.AuthService) *AuthAPI {
+func NewAPI(authService *application.AuthService, accessTokenExpiry, refreshTokenExpiry time.Duration) *AuthAPI {
 	return &AuthAPI{
-		service: authService,
+		service:            authService,
+		accessTokenExpiry:  accessTokenExpiry,
+		refreshTokenExpiry: refreshTokenExpiry,
 	}
 }
 
-func extractTokenFromHeader(r *http.Request) (string, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return "", commonerrors.NewInvalidInput("missing or invalid Authorization header")
-	}
-	return strings.TrimPrefix(authHeader, "Bearer "), nil
-}
-
-func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (a *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := extractTokenFromHeader(r)
+		token, err := getAccessTokenFromCookie(r)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, err)
 			return
 		}
 
-		userID, err := s.service.Authenticate(token)
+		userID, err := a.service.Authenticate(token)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, err)
@@ -49,16 +45,16 @@ func (s *AuthAPI) UserMiddleware(handler func(uuid.UUID, http.ResponseWriter, *h
 	}
 }
 
-func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+func (a *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := extractTokenFromHeader(r)
+		token, err := getAccessTokenFromCookie(r)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, err)
 			return
 		}
 
-		_, err = s.service.AuthenticateAdmin(token)
+		_, err = a.service.AuthenticateAdmin(token)
 		if err != nil {
 			slog.Error("HTTP request error", "error", err)
 			respond.WithError(w, err)
@@ -69,17 +65,12 @@ func (s *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Reques
 	}
 }
 
-func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
+func (a *AuthAPI) LoginOne(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 
-	type response struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-	}
-
 	var p parameters
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&p)
@@ -89,51 +80,7 @@ func (s *AuthAPI) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, refreshToken, err := s.service.Login(p.Username, p.Password)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
-		return
-	}
-
-	respond.WithJSON(w, http.StatusOK, response{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	})
-}
-
-func (s *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	type response struct {
-		AccessToken string `json:"access_token"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
-		return
-	}
-
-	accessToken, err := s.service.Refresh(p.RefreshToken)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
-		return
-	}
-
-	respond.WithJSON(w, http.StatusOK, response{
-		AccessToken: accessToken,
-	})
-}
-
-func (s *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
-	err := s.service.Logout(userID)
+	err = a.service.LoginOne(p.Username, p.Password)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -143,9 +90,10 @@ func (s *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Reques
 	respond.WithoutContent(w, http.StatusOK)
 }
 
-func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
+func (a *AuthAPI) LoginTwo(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		UserID uuid.UUID `json:"user_id"`
+		Username string `json:"username"`
+		OTP      string `json:"otp"`
 	}
 
 	var p parameters
@@ -157,16 +105,67 @@ func (s *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.service.AdminLogoutUser(p.UserID)
+	accessToken, refreshToken, err := a.service.LoginTwo(p.Username, p.OTP)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
 
+	setAccessTokenInCookie(w, accessToken, a.accessTokenExpiry)
+	setRefreshTokenInCookie(w, refreshToken, a.refreshTokenExpiry)
+
 	respond.WithoutContent(w, http.StatusOK)
 }
 
-func (s *AuthAPI) AdminAccess(w http.ResponseWriter, _ *http.Request) {
+func (a *AuthAPI) Refresh(w http.ResponseWriter, r *http.Request) {
+	refreshToken, err := getRefreshTokenFromCookie(r)
+
+	accessToken, err := a.service.Refresh(refreshToken)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	setAccessTokenInCookie(w, accessToken, a.accessTokenExpiry)
+
+	respond.WithoutContent(w, http.StatusOK)
+}
+
+func (a *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+	err := a.service.Logout(userID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	setAccessTokenInCookie(w, "", -time.Hour)
+	setRefreshTokenInCookie(w, "", -time.Hour)
+
+	respond.WithoutContent(w, http.StatusOK)
+}
+
+func (a *AuthAPI) AdminAccess(w http.ResponseWriter, _ *http.Request) {
+	respond.WithoutContent(w, http.StatusOK)
+}
+
+func (a *AuthAPI) AdminLogoutUser(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.PathValue("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid user ID"))
+		return
+	}
+
+	err = a.service.AdminLogoutUser(userID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
 	respond.WithoutContent(w, http.StatusOK)
 }

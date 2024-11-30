@@ -4,51 +4,86 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 	"image-processing-service/src/internal/auth/domain"
+	"image-processing-service/src/internal/common/emails"
 	commonerrors "image-processing-service/src/internal/common/errors"
 	"time"
 )
 
 type AuthService struct {
-	userRepo         domain.UserRepository
-	refreshTokenRepo domain.RefreshTokenRepository
-	secret           string
-	issuer           string
-	accessExpiry     time.Duration
-	refreshExpiry    time.Duration
+	userDBRepo         domain.UserDBRepository
+	refreshTokenDBRepo domain.RefreshTokenDBRepository
+	mailService        *emails.Service
+	secret             string
+	issuer             string
+	accessExpiry       time.Duration
+	refreshExpiry      time.Duration
+	otpExpiry          uint
 }
 
 func NewService(
-	userRepo domain.UserRepository,
-	refreshTokenRepo domain.RefreshTokenRepository,
+	userRepo domain.UserDBRepository,
+	refreshTokenRepo domain.RefreshTokenDBRepository,
+	mailService *emails.Service,
 	secret string,
 	issuer string,
 	accessExpiry time.Duration,
 	refreshExpiry time.Duration,
+	otpExpiry uint,
 ) *AuthService {
 	return &AuthService{
-		userRepo:         userRepo,
-		refreshTokenRepo: refreshTokenRepo,
-		secret:           secret,
-		issuer:           issuer,
-		accessExpiry:     accessExpiry,
-		refreshExpiry:    refreshExpiry,
+		userDBRepo:         userRepo,
+		refreshTokenDBRepo: refreshTokenRepo,
+		mailService:        mailService,
+		secret:             secret,
+		issuer:             issuer,
+		accessExpiry:       accessExpiry,
+		refreshExpiry:      refreshExpiry,
+		otpExpiry:          otpExpiry,
 	}
 }
 
-func (s *AuthService) Login(username, password string) (string, string, error) {
+func (s *AuthService) LoginOne(username, password string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.userRepo.GetUserByUsername(ctx, username)
+	user, err := s.userDBRepo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return "", "", commonerrors.NewUnauthorized("invalid username or password")
+		return commonerrors.NewUnauthorized("invalid username or password")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
+		return commonerrors.NewUnauthorized("invalid username or password")
+	}
+
+	otp, err := totp.GenerateCode(user.OTPSecret, time.Now())
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("error generating OTP code: %v", err))
+	}
+
+	err = s.mailService.SendText(user.Email, "OTP code", fmt.Sprintf("Your 2FA code is: %s", otp))
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("error sending OTP code: %v", err))
+	}
+
+	return nil
+}
+
+func (s *AuthService) LoginTwo(username, otp string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	user, err := s.userDBRepo.GetUserByUsername(ctx, username)
+	if err != nil {
 		return "", "", commonerrors.NewUnauthorized("invalid username or password")
+	}
+
+	ok := totp.Validate(otp, user.OTPSecret)
+	if !ok {
+		return "", "", commonerrors.NewUnauthorized("invalid OTP code")
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, user.ID.String(), s.accessExpiry)
@@ -61,7 +96,7 @@ func (s *AuthService) Login(username, password string) (string, string, error) {
 		return "", "", commonerrors.NewInternal(fmt.Sprintf("error generating refresh token: %v", err))
 	}
 
-	err = s.refreshTokenRepo.CreateRefreshToken(ctx, user.ID, refreshToken, time.Now().Add(s.refreshExpiry))
+	err = s.refreshTokenDBRepo.CreateRefreshToken(ctx, user.ID, refreshToken, time.Now().Add(s.refreshExpiry))
 	if err != nil {
 		return "", "", commonerrors.NewInternal(fmt.Sprintf("error saving refresh token: %v", err))
 	}
@@ -78,20 +113,13 @@ func (s *AuthService) Refresh(rawRefreshToken string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	storedTokens, err := s.refreshTokenRepo.GetRefreshTokensByUserID(ctx, id)
+	storedToken, err := s.refreshTokenDBRepo.GetRefreshTokenByUserIDandToken(ctx, id, rawRefreshToken)
 	if err != nil {
-		return "", commonerrors.NewInternal(fmt.Sprintf("error reading refresh tokens from database: %v", err))
-	}
-
-	found := false
-	for _, t := range storedTokens {
-		if t.Token == rawRefreshToken {
-			found = true
-			break
-		}
-	}
-	if !found {
 		return "", commonerrors.NewUnauthorized("invalid refresh token")
+	}
+	if storedToken.ExpiresAt.Before(time.Now()) {
+		_ = s.refreshTokenDBRepo.RevokeAllUserRefreshTokens(ctx, id) // Optionally log or track revoked tokens
+		return "", commonerrors.NewUnauthorized("refresh token expired or revoked")
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, id.String(), s.accessExpiry)
@@ -120,7 +148,7 @@ func (s *AuthService) AuthenticateAdmin(accessToken string) (uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	role, err := s.userRepo.GetUserRoleByID(ctx, id)
+	role, err := s.userDBRepo.GetUserRoleByID(ctx, id)
 	if err != nil {
 		return uuid.Nil, commonerrors.NewInternal(fmt.Sprintf("error reading user role from database: %v", err))
 	}
@@ -136,7 +164,7 @@ func (s *AuthService) Logout(userID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := s.refreshTokenRepo.RevokeRefreshToken(ctx, userID)
+	err := s.refreshTokenDBRepo.RevokeAllUserRefreshTokens(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to revoke refresh token: %v", err))
 	}

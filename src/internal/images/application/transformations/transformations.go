@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"github.com/disintegration/imaging"
 	"image"
+	"image-processing-service/src/internal/images/domain"
 	"image/color"
 	"math"
 )
 
-func resize(img image.Image, options map[string]float64) (image.Image, error) {
-	width, ok := options["width"]
+func resize(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	width, ok := options[domain.Width]
 	if !ok {
 		return nil, fmt.Errorf("resize option 'width' is required and must be a number")
 	}
 
-	height, ok := options["height"]
+	height, ok := options[domain.Height]
 	if !ok {
 		return nil, fmt.Errorf("resize option 'height' is required and must be a number")
 	}
@@ -22,13 +23,13 @@ func resize(img image.Image, options map[string]float64) (image.Image, error) {
 	return imaging.Resize(img, int(width), int(height), imaging.Lanczos), nil
 }
 
-func crop(img image.Image, options map[string]float64) (image.Image, error) {
-	width, ok := options["width"]
+func crop(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	width, ok := options[domain.Width]
 	if !ok {
 		return nil, fmt.Errorf("crop option 'width' is required and must be a number")
 	}
 
-	height, ok := options["height"]
+	height, ok := options[domain.Height]
 	if !ok {
 		return nil, fmt.Errorf("crop option 'height' is required and must be a number")
 	}
@@ -36,8 +37,8 @@ func crop(img image.Image, options map[string]float64) (image.Image, error) {
 	return imaging.CropCenter(img, int(width), int(height)), nil
 }
 
-func rotate(img image.Image, options map[string]float64) (image.Image, error) {
-	angle, ok := options["angle"]
+func rotate(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	angle, ok := options[domain.Angle]
 	if !ok {
 		return nil, fmt.Errorf("rotate option 'angle' is required and must be a number")
 	}
@@ -67,8 +68,8 @@ func sepia(img image.Image) image.Image {
 	})
 }
 
-func adjustBrightness(img image.Image, options map[string]float64) (image.Image, error) {
-	factor, ok := options["factor"]
+func adjustBrightness(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	factor, ok := options[domain.Factor]
 	if !ok {
 		return nil, fmt.Errorf("adjust_brightness option 'factor' is required and must be a number")
 	}
@@ -76,8 +77,8 @@ func adjustBrightness(img image.Image, options map[string]float64) (image.Image,
 	return imaging.AdjustBrightness(img, factor), nil
 }
 
-func adjustContrast(img image.Image, options map[string]float64) (image.Image, error) {
-	factor, ok := options["factor"]
+func adjustContrast(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	factor, ok := options[domain.Factor]
 	if !ok {
 		return nil, fmt.Errorf("adjust_contrast option 'factor' is required and must be a number")
 	}
@@ -85,8 +86,8 @@ func adjustContrast(img image.Image, options map[string]float64) (image.Image, e
 	return imaging.AdjustContrast(img, factor), nil
 }
 
-func adjustSaturation(img image.Image, options map[string]float64) (image.Image, error) {
-	factor, ok := options["factor"]
+func adjustSaturation(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	factor, ok := options[domain.Factor]
 	if !ok {
 		return nil, fmt.Errorf("adjust_saturation option 'factor' is required and must be a number")
 	}
@@ -94,8 +95,8 @@ func adjustSaturation(img image.Image, options map[string]float64) (image.Image,
 	return imaging.AdjustSaturation(img, factor), nil
 }
 
-func blur(img image.Image, options map[string]float64) (image.Image, error) {
-	factor, ok := options["factor"]
+func blur(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	factor, ok := options[domain.Factor]
 	if !ok {
 		return nil, fmt.Errorf("blur option 'sigma' is required and must be a number")
 	}
@@ -103,8 +104,8 @@ func blur(img image.Image, options map[string]float64) (image.Image, error) {
 	return imaging.Blur(img, factor), nil
 }
 
-func sharpen(img image.Image, options map[string]float64) (image.Image, error) {
-	factor, ok := options["factor"]
+func sharpen(img image.Image, options map[domain.TransformationOptionType]float64) (image.Image, error) {
+	factor, ok := options[domain.Factor]
 	if !ok {
 		return nil, fmt.Errorf("sharpen option 'sigma' is required and must be a number")
 	}

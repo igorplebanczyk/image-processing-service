@@ -16,10 +16,10 @@ func NewImageCacheRepository(cache *cache.Service) *ImageCacheRepository {
 	return &ImageCacheRepository{cache: cache}
 }
 
-func (r *ImageCacheRepository) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {
+func (r *ImageCacheRepository) CacheImage(ctx context.Context, key string, bytes []byte, expiry time.Duration) error {
 	slog.Info("Setting key in cache", "key", key)
 
-	err := r.cache.Client().Set(ctx, key, value, expiration).Err()
+	err := r.cache.Client().Set(ctx, key, bytes, expiry).Err()
 	if err != nil {
 		return fmt.Errorf("failed to set key: %w", err)
 	}
@@ -27,7 +27,7 @@ func (r *ImageCacheRepository) Set(ctx context.Context, key string, value []byte
 	return nil
 }
 
-func (r *ImageCacheRepository) Get(ctx context.Context, key string) ([]byte, error) {
+func (r *ImageCacheRepository) GetImage(ctx context.Context, key string) ([]byte, error) {
 	slog.Info("Getting key from cache", "key", key)
 
 	val, err := r.cache.Client().Get(ctx, key).Result()
@@ -38,7 +38,7 @@ func (r *ImageCacheRepository) Get(ctx context.Context, key string) ([]byte, err
 	return []byte(val), nil
 }
 
-func (r *ImageCacheRepository) Delete(ctx context.Context, key string) error {
+func (r *ImageCacheRepository) DeleteImage(ctx context.Context, key string) error {
 	slog.Info("Deleting key from cache", "key", key)
 
 	err := r.cache.Client().Del(ctx, key).Err()

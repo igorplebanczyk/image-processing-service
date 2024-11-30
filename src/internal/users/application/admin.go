@@ -10,11 +10,11 @@ import (
 	"time"
 )
 
-func (s *UserService) AdminGetAllUsers() ([]domain.User, error) {
+func (s *UserService) AdminGetAllUsers(page, limit int) ([]domain.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	users, err := s.repo.GetAllUsers(ctx)
+	users, err := s.repo.GetAllUsers(ctx, page, limit)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}
@@ -25,6 +25,10 @@ func (s *UserService) AdminGetAllUsers() ([]domain.User, error) {
 func (s *UserService) AdminUpdateUserRole(userID uuid.UUID, role domain.Role) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	if role != domain.RoleAdmin && role != domain.RoleUser {
+		return commonerrors.NewInvalidInput(fmt.Sprintf("invalid role: %s", role))
+	}
 
 	err := s.repo.UpdateUserRole(ctx, userID, role)
 	if err != nil {
@@ -38,7 +42,7 @@ func (s *UserService) AdminBroadcast(subject, body string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	users, err := s.repo.GetAllUsers(ctx)
+	users, err := s.repo.GetAllUsers(ctx, 1, 10000)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}

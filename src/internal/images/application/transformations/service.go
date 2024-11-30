@@ -13,20 +13,29 @@ const (
 )
 
 type Service struct {
-	orchestrator *Orchestrator
+	workerCoordinator *workerCoordinator
 }
 
 func NewService() *Service {
 	return &Service{
-		orchestrator: NewOrchestrator(workerCount, queueSize),
+		workerCoordinator: newWorkerCoordinator(workerCount, queueSize),
 	}
 }
 
-type transformationPacket struct {
-	img             image.Image
-	transformations []domain.Transformation
-	responseChan    chan image.Image
-	errChan         chan error
+func (s *Service) CreatePreview(bytes []byte) ([]byte, error) {
+	return s.Apply(bytes, []domain.Transformation{
+		{
+			Type: domain.Resize,
+			Options: map[domain.TransformationOptionType]float64{
+				domain.Width:  200,
+				domain.Height: 200,
+			},
+		},
+	})
+}
+
+func (s *Service) Wait() {
+	s.workerCoordinator.wait()
 }
 
 func (s *Service) Apply(imageBytes []byte, transformations []domain.Transformation) ([]byte, error) {
@@ -35,42 +44,51 @@ func (s *Service) Apply(imageBytes []byte, transformations []domain.Transformati
 		return nil, err
 	}
 
-	s.orchestrator.Process(packet)
+	s.workerCoordinator.process(packet)
 
-	select {
-	case resultImg := <-packet.responseChan:
-		return deassemble(resultImg)
-	case err := <-packet.errChan:
-		return nil, err
-	}
+	return deassemble(packet)
+}
+
+type transformationPacket struct {
+	img             image.Image
+	format          string
+	transformations []domain.Transformation
+	responseChan    chan image.Image
+	errChan         chan error
 }
 
 func assemble(imageBytes []byte, transformations []domain.Transformation) (*transformationPacket, error) {
-	img, _, err := deserialize(imageBytes)
+	img, format, err := deserialize(imageBytes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to deserialize image: %w", err)
 	}
 
 	return &transformationPacket{
 		img:             img,
+		format:          format,
 		transformations: transformations,
 		responseChan:    make(chan image.Image, 1),
 		errChan:         make(chan error, 1),
 	}, nil
 }
 
-func deassemble(img image.Image) ([]byte, error) {
-	return serialize(img, "png")
+func deassemble(packet *transformationPacket) ([]byte, error) {
+	select {
+	case resultImg := <-packet.responseChan:
+		return serialize(resultImg, packet.format)
+	case err := <-packet.errChan:
+		return nil, err
+	}
 }
 
-type Orchestrator struct {
+type workerCoordinator struct {
 	workers  []*worker
 	jobQueue chan *transformationPacket
 	wg       sync.WaitGroup
 }
 
-func NewOrchestrator(workerCount, queueSize int) *Orchestrator {
-	o := &Orchestrator{
+func newWorkerCoordinator(workerCount, queueSize int) *workerCoordinator {
+	o := &workerCoordinator{
 		workers:  make([]*worker, workerCount),
 		jobQueue: make(chan *transformationPacket, queueSize),
 	}
@@ -83,13 +101,13 @@ func NewOrchestrator(workerCount, queueSize int) *Orchestrator {
 	return o
 }
 
-func (o *Orchestrator) Process(packet *transformationPacket) {
-	o.wg.Add(1)
-	o.jobQueue <- packet
+func (c *workerCoordinator) process(packet *transformationPacket) {
+	c.wg.Add(1)
+	c.jobQueue <- packet
 }
 
-func (o *Orchestrator) Wait() {
-	o.wg.Wait()
+func (c *workerCoordinator) wait() {
+	c.wg.Wait()
 }
 
 type worker struct {

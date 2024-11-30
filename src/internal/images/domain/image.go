@@ -9,21 +9,23 @@ import (
 
 const MaxImageSize = 10 * 1024 * 1024
 
-type Image struct {
-	ID        uuid.UUID
-	UserID    uuid.UUID
-	Name      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type ImageMetadata struct {
+	ID          uuid.UUID
+	UserID      uuid.UUID
+	Name        string
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func NewImage(userID uuid.UUID, name string) *Image {
-	return &Image{
-		ID:        uuid.New(),
-		UserID:    userID,
-		Name:      name,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+func NewImageMetadata(userID uuid.UUID, name, description string) *ImageMetadata {
+	return &ImageMetadata{
+		ID:          uuid.New(),
+		UserID:      userID,
+		Name:        name,
+		Description: description,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 }
 
@@ -39,14 +41,42 @@ func ValidateName(name string) error {
 	return nil
 }
 
-func ValidateRawImage(imageBytes []byte) error {
-	if len(imageBytes) > MaxImageSize {
+func ValidateDescription(description string) error {
+	if len(description) > 1024 {
+		return fmt.Errorf("description cannot exceed 1024 characters")
+	}
+
+	return nil
+}
+
+func ValidateImage(bytes []byte) error {
+	if len(bytes) > MaxImageSize {
 		return fmt.Errorf("image size cannot exceed %d bytes", MaxImageSize)
 	}
 
 	return nil
 }
 
-func CreateObjectName(userID uuid.UUID, imageName string) string {
-	return fmt.Sprintf("%s-%s", userID, imageName)
+func DetermineImageMetadataToUpdate(existingImageMetadata *ImageMetadata, newName, newDescription string) (string, string, error) {
+	if newName == "" && newDescription == "" {
+		return "", "", fmt.Errorf("no fields to update")
+	}
+
+	if newName == "" {
+		newName = existingImageMetadata.Name
+	}
+
+	if newDescription == "" {
+		newDescription = existingImageMetadata.Description
+	}
+
+	return newName, newDescription, nil
+}
+
+func CreateFullImageObjectName(id uuid.UUID) string {
+	return fmt.Sprintf("full-%s", id)
+}
+
+func CreatePreviewImageObjectName(id uuid.UUID) string {
+	return fmt.Sprintf("prev-%s", id)
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserRepository interface {
+type UserDBRepository interface {
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
 	GetUserRoleByID(ctx context.Context, id uuid.UUID) (Role, error)
 }

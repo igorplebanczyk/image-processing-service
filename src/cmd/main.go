@@ -47,8 +47,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go app.dbWorker.Start()
-	go app.storageWorker.Start()
+	//go app.dbWorker.Start()
+	//go app.storageWorker.Start()
 	go app.serverService.Start()
 
 	slog.Info("Application started")
@@ -72,6 +72,8 @@ func (a *application) assemble() error {
 	jwtSecret := os.Getenv("APP_JWT_SECRET")
 	accessTokenExpiration := os.Getenv("APP_JWT_ACCESS_TOKEN_EXPIRATION")
 	refreshTokenExpiration := os.Getenv("APP_JWT_REFRESH_TOKEN_EXPIRATION")
+	otpExpiration := os.Getenv("APP_OTP_EXPIRATION")
+	cacheExpiration := os.Getenv("APP_CACHE_EXPIRATION")
 
 	postgresUser := os.Getenv("POSTGRES_USER")
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
@@ -112,6 +114,18 @@ func (a *application) assemble() error {
 	}
 	refreshTokenExpirationTime := time.Duration(refreshTokenExpirationInt) * time.Hour
 
+	otpExpirationInt, err := strconv.Atoi(otpExpiration)
+	if err != nil {
+		return fmt.Errorf("error converting otp expiration to integer: %w", err)
+	}
+	otpExpirationUint := uint(otpExpirationInt)
+
+	cacheExpirationInt, err := strconv.Atoi(cacheExpiration)
+	if err != nil {
+		return fmt.Errorf("error converting cache expiration to integer: %w", err)
+	}
+	cacheExpirationTime := time.Duration(cacheExpirationInt) * time.Minute
+
 	redisDBInt, err := strconv.Atoi(redisDB)
 	if err != nil {
 		return fmt.Errorf("error converting redis db to integer: %w", err)
@@ -151,27 +165,29 @@ func (a *application) assemble() error {
 
 	// Assemble the application
 
-	authUserRepo := authInfra.NewUserRepository(db)
-	authRefreshTokenRepo := authInfra.NewRefreshTokenRepository(db, txProvider)
+	authUserDBRepo := authInfra.NewUserDBRepository(db)
+	authRefreshTokenDBRepo := authInfra.NewRefreshTokenDBRepository(db, txProvider)
 	authService := authApp.NewService(
-		authUserRepo,
-		authRefreshTokenRepo,
+		authUserDBRepo,
+		authRefreshTokenDBRepo,
+		mailService,
 		jwtSecret,
 		issuer,
 		accessTokenExpirationTime,
 		refreshTokenExpirationTime,
+		otpExpirationUint,
 	)
-	authAPI := authInterface.NewServer(authService)
+	authAPI := authInterface.NewAPI(authService, accessTokenExpirationTime, refreshTokenExpirationTime)
 
-	userRepo := usersInfra.NewUserRepository(db, txProvider)
-	userService := usersApp.NewService(userRepo, mailService)
-	userAPI := usersInterface.NewServer(userService)
+	userDBRepo := usersInfra.NewUserDBRepository(db, txProvider)
+	userService := usersApp.NewService(userDBRepo, mailService, issuer, otpExpirationUint)
+	userAPI := usersInterface.NewAPI(userService)
 
-	imageRepo := imagesInfra.NewImageRepository(db, txProvider)
+	imageDBRepo := imagesInfra.NewImageDBRepository(db, txProvider)
 	imageStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
 	imageCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
-	imageService := imagesApp.NewService(imageRepo, imageStorageRepo, imageCacheRepo)
-	imageAPI := imagesInterface.NewServer(imageService)
+	imageService := imagesApp.NewService(imageDBRepo, imageStorageRepo, imageCacheRepo, cacheExpirationTime)
+	imageAPI := imagesInterface.NewAPI(imageService)
 
 	serverService := server.NewService(appPortInt, authAPI, userAPI, imageAPI)
 

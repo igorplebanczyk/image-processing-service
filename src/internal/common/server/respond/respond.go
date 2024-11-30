@@ -3,7 +3,6 @@ package respond
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	commonerrors "image-processing-service/src/internal/common/errors"
 	"net/http"
 )
@@ -16,8 +15,7 @@ func WithError(w http.ResponseWriter, error error) {
 	var commonError commonerrors.Error
 	ok := errors.As(error, &commonError)
 	if !ok {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
+		commonError = commonerrors.New(error.Error())
 	}
 
 	switch commonError.Type() {
@@ -53,21 +51,6 @@ func WithJSON(w http.ResponseWriter, code int, payload any) {
 	_, err = w.Write(response)
 	if err != nil {
 		WithError(w, commonerrors.NewInternal("error sending response"))
-		return
-	}
-}
-
-func WithImage(w http.ResponseWriter, code int, imageBytes []byte, imageName string) {
-	contentType := http.DetectContentType(imageBytes)
-
-	applyCommonHeaders(w)
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", imageName))
-	w.WriteHeader(code)
-
-	_, err := w.Write(imageBytes)
-	if err != nil {
-		WithError(w, commonerrors.NewInternal("error sending image"))
 		return
 	}
 }

@@ -9,24 +9,24 @@ import (
 	"log/slog"
 )
 
-type UserRepository struct {
+type UserDBRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserDBRepository(db *sql.DB) *UserDBRepository {
+	return &UserDBRepository{db: db}
 }
 
-func (r *UserRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
+func (r *UserDBRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("username: %s", username))
 
 	var user domain.User
 
 	err := r.db.QueryRowContext(
 		ctx,
-		`SELECT id, username, password, role FROM users WHERE username = $1`,
+		`SELECT id, username, email, password, role, otp_secret FROM users WHERE username = $1`,
 		username,
-	).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
+	).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.OTPSecret)
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by username: %w", err)
 	}
@@ -34,7 +34,7 @@ func (r *UserRepository) GetUserByUsername(ctx context.Context, username string)
 	return &user, nil
 }
 
-func (r *UserRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
+func (r *UserDBRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 
 	var role domain.Role

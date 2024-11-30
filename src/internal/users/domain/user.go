@@ -16,8 +16,8 @@ func (r Role) String() string {
 }
 
 const (
-	AdminRole Role = "admin"
-	UserRole  Role = "user"
+	RoleAdmin Role = "admin"
+	RoleUser  Role = "user"
 )
 
 type User struct {
@@ -26,17 +26,21 @@ type User struct {
 	Email     string
 	Password  string
 	Role      Role
+	OTPSecret string
+	Verified  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-func NewUser(username, email, password string) *User {
+func NewUser(username, email, password, otpSecret string) *User {
 	return &User{
 		ID:        uuid.New(),
 		Username:  username,
 		Email:     email,
 		Password:  password,
-		Role:      UserRole,
+		Role:      RoleUser,
+		OTPSecret: otpSecret,
+		Verified:  false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -90,7 +94,7 @@ func ValidatePassword(password string) error {
 
 func DetermineUserDetailsToUpdate(existingUser *User, newUsername, newEmail string) (string, string, error) {
 	if newUsername == "" && newEmail == "" {
-		return "", "", fmt.Errorf("username or email must be provided")
+		return "", "", fmt.Errorf("no fields to update")
 	}
 
 	if newUsername == "" {

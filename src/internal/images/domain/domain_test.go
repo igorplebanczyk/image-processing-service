@@ -69,7 +69,7 @@ func TestValidateRawImage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateRawImage(tt.args.imageBytes)
+			err := ValidateImage(tt.args.imageBytes)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("ValidateRawImage() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -98,7 +98,7 @@ func TestCreateObjectName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := CreateObjectName(tt.args.userID, tt.args.imageName)
+			got := CreateFullImageObjectName(tt.args.userID, tt.args.imageName)
 			if got != tt.want {
 				t.Fatalf("CreateObjectName() = %v, want %v", got, tt.want)
 			}

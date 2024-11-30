@@ -1,6 +1,7 @@
 package interfaces
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -19,18 +20,13 @@ type ImageAPI struct {
 	ImagesService *application.ImageService
 }
 
-func NewServer(imagesService *application.ImageService) *ImageAPI {
+func NewAPI(imagesService *application.ImageService) *ImageAPI {
 	return &ImageAPI{ImagesService: imagesService}
 }
 
-func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
-	type response struct {
-		Name      string `json:"name"`
-		Size      int64  `json:"size"`
-		CreatedAt string `json:"created_at"`
-	}
-
+func (a *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
+	description := r.FormValue("description")
 
 	err := r.ParseMultipartForm(domain.MaxImageSize)
 	if err != nil {
@@ -39,91 +35,116 @@ func (s *ImageAPI) Upload(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	imageFile, _, err := r.FormFile("image")
+	file, _, err := r.FormFile("image")
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("image file not found"))
 		return
 	}
-	defer imageFile.Close()
+	defer file.Close()
 
-	imageBytes, err := io.ReadAll(imageFile)
+	bytes, err := io.ReadAll(file)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, commonerrors.NewInvalidInput("invalid image file"))
 		return
 	}
 
-	image, err := s.ImagesService.UploadImage(userID, name, imageBytes)
+	err = a.ImagesService.Upload(userID, name, description, bytes)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
 
-	respond.WithJSON(w, http.StatusCreated, response{
-		Name:      image.Name,
-		Size:      int64(len(imageBytes)),
-		CreatedAt: image.CreatedAt.String(),
+	respond.WithoutContent(w, http.StatusCreated)
+}
+
+func (a *ImageAPI) Get(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Name string `json:"name"`
+	}
+
+	type response struct {
+		Metadata domain.ImageMetadata `json:"metadata"`
+		Image    string               `json:"image"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	metadata, bytes, err := a.ImagesService.Get(userID, p.Name)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	encodedImage := base64.StdEncoding.EncodeToString(bytes)
+
+	respond.WithJSON(w, http.StatusOK, response{
+		Metadata: *metadata,
+		Image:    encodedImage,
 	})
 }
 
-func (s *ImageAPI) GetDataAll(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (a *ImageAPI) GetAll(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
-		Name      string    `json:"name"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		Metadata     domain.ImageMetadata `json:"metadata"`
+		ImagePreview string               `json:"image_preview"`
 	}
 
 	type response struct {
 		Images     []responseItem `json:"images"`
+		TotalCount int            `json:"total_count"`
 		Page       int            `json:"page"`
 		Limit      int            `json:"limit"`
-		TotalCount int            `json:"total_count"`
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil || limit < 1 {
-		limit = 10
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid page"))
+		return
 	}
 
-	images, total, err := s.ImagesService.ListUserImages(userID, &page, &limit)
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid limit"))
+		return
+	}
+
+	metadata, previews, totalCount, err := a.ImagesService.GetAll(userID, page, limit)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
 
-	var responseImages []responseItem
-	for _, img := range images {
-		responseImages = append(responseImages, responseItem{
-			Name:      img.Name,
-			CreatedAt: img.CreatedAt,
-			UpdatedAt: img.UpdatedAt,
+	var respImages []responseItem
+	for i, m := range metadata {
+		encodedPreview := base64.StdEncoding.EncodeToString(previews[i])
+		respImages = append(respImages, responseItem{
+			Metadata:     *m,
+			ImagePreview: encodedPreview,
 		})
 	}
 
-	respond.WithJSON(w, http.StatusOK, response{
-		Images:     responseImages,
-		Page:       page,
-		Limit:      limit,
-		TotalCount: total,
-	})
+	respond.WithJSON(w, http.StatusOK, response{Images: respImages, TotalCount: totalCount, Page: page, Limit: limit})
 }
 
-func (s *ImageAPI) GetData(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (a *ImageAPI) UpdateDetails(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Name string `json:"name"`
-	}
-
-	type response struct {
-		Name      string    `json:"name"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		OldName        string `json:"old_name"`
+		NewName        string `json:"new_name"`
+		NewDescription string `json:"new_description"`
 	}
 
 	var p parameters
@@ -135,59 +156,7 @@ func (s *ImageAPI) GetData(userID uuid.UUID, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	imageData, err := s.ImagesService.GetImageData(userID, p.Name)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
-		return
-	}
-
-	respond.WithJSON(w, http.StatusOK, response{
-		Name:      imageData.Name,
-		CreatedAt: imageData.CreatedAt,
-		UpdatedAt: imageData.UpdatedAt,
-	})
-}
-
-func (s *ImageAPI) Download(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Name string `json:"name"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
-		return
-	}
-
-	imageBytes, err := s.ImagesService.DownloadImage(userID, p.Name)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
-		return
-	}
-
-	respond.WithImage(w, http.StatusOK, imageBytes, p.Name)
-}
-
-func (s *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		Name string `json:"name"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
-	if err != nil {
-		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
-		return
-	}
-
-	err = s.ImagesService.DeleteImage(userID, p.Name)
+	err = a.ImagesService.UpdateDetails(userID, p.OldName, p.NewName, p.NewDescription)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -197,7 +166,7 @@ func (s *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (a *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Name            string                  `json:"name"`
 		Transformations []domain.Transformation `json:"transformations"`
@@ -212,7 +181,7 @@ func (s *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = s.ImagesService.ApplyTransformations(userID, p.Name, p.Transformations)
+	err = a.ImagesService.Transform(userID, p.Name, p.Transformations)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -222,11 +191,36 @@ func (s *ImageAPI) Transform(userID uuid.UUID, w http.ResponseWriter, r *http.Re
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
+func (a *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Name string `json:"name"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	err = a.ImagesService.Delete(userID, p.Name)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (a *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 	type responseItem struct {
-		Name      string    `json:"name"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
+		Name        string    `json:"name"`
+		Description string    `json:"description"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
 	}
 
 	type response struct {
@@ -237,15 +231,20 @@ func (s *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil || page < 1 {
-		page = 1
-	}
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil || limit < 1 {
-		limit = 10
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid page"))
+		return
 	}
 
-	images, total, err := s.ImagesService.AdminListAllImages(&page, &limit)
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid limit"))
+		return
+	}
+
+	images, total, err := a.ImagesService.AdminListAllImages(page, limit)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -269,21 +268,16 @@ func (s *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *ImageAPI) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		ID uuid.UUID `json:"id"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
+func (a *ImageAPI) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := uuid.Parse(idStr)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid image ID"))
 		return
 	}
 
-	err = s.ImagesService.AdminDeleteImage(p.ID)
+	err = a.ImagesService.AdminDeleteImage(id)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)

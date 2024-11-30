@@ -50,27 +50,33 @@
   - [X] Consider using more configurations
 - [X] Redesign the transformation service
 - [X] Add a storage worker for deleting dangling images
-- [ ] Create and store image previews
-  - [ ] Add a preview service for generating previews
-  - [ ] Update blob names to include a preview suffix
-  - [ ] Store previews in the blob storage
-  - [ ] Add preview endpoints: both singular and batch
+- [X] Create and store image previews
+  - [X] Add a preview service for generating previews
+  - [X] Update blob names to include a preview suffix
+  - [X] Store previews in the blob storage
+  - [X] Add a preview endpoint
 - [X] Add a mail service
   - [X] Add an admin broadcast system
-- [ ] Improve security and QoL
-  - [ ] Add a forgotten password system
-  - [ ] Add an email verification system
-  - [ ] Add 2FA
+- [X] Improve security and QoL
+  - [X] Add a forgotten password system
+  - [X] Add an email verification system
+  - [X] Add 2FA
 - [ ] Revise the project structure
+  - [ ] Update the workers
+  - [ ] Revise the transformation service
+  - [ ] Revise the mail service
+  - [ ] Revise the transaction setup
+  - [ ] Review the emails setup; send them asynchronously
+  - [ ] Revise the OTP expiration system
+  - [ ] Review performance
+  - [ ] Consider moving query extraction to a global package
   - [ ] Collect more logs
-  - [ ] Set up a wrapper for DB queries to collect logs and metrics
   - [ ] Streamline the API, verify API security and semantics
-  - [ ] Verify and improve authentication and authorization
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
   - [ ] Split large files into smaller ones
   - [ ] Extract common functionality into helper functions
-  - [ ] Unit test the helper functions
+  - [ ] Update unit tests, add infrastructure integration tests
   - [ ] Add comments where necessary
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
@@ -93,156 +99,36 @@
   - [ ] Add a SECURITY.md file
   - [ ] Add a LICENSE
 
-# Plan
-
-
 ## API
 
-| **Category** | **Method** | **Endpoint**             | **Description**                                       |
-|--------------|------------|--------------------------|-------------------------------------------------------|
-| **Meta**     | ANY        | `/health`                | Check the health of the service.                      |
-|              | GET        | `/metrics`               | Retrieve service metrics (private).                   |
-| **Auth**     | POST       | `/auth/login/one`        | Provide credentials, get OTP.                         |
-|              | POST       | `/auth/login/two`        | Provide OTP, get JWT and refresh token.               |
-|              | DELETE     | `/auth/logout`           | Invalidate refresh token.                             |
-|              | POST       | `/auth/refresh`          | Provide refresh token, get new JWT and refresh token. |
-| **Users**    | POST       | `/users`                 | Register a new user.                                  |
-|              | GET        | `/users`                 | Get details of the authenticated user.                |
-|              | PUT        | `/users`                 | Update details of the authenticated user.             |
-|              | DELETE     | `/users`                 | Delete the authenticated user.                        |
-|              | POST       | `/users/verify`          | Provide email, get OTP for verification.              |
-|              | PATCH      | `/users/verify`          | Provide OTP, verify email.                            |
-|              | POST       | `/users/forgot-password` | Provide email, get OTP for password reset.            |
-|              | PATCH      | `/users/forgot-password` | Provide OTP, set a new password.                      |
-| **Images**   | POST       | `/images`                | Upload a new image.                                   |
-|              | GET        | `/images`                | Get details of a specific image.                      |
-|              | GET        | `/images/all`            | Get all images of the authenticated user.             |
-|              | PUT        | `/images`                | Update image details.                                 |
-|              | PATCH      | `/images`                | Apply transformations to an image.                    |
-|              | DELETE     | `/images`                | Delete a specific image.                              |
-| **Admin**    | GET        | `/admin/verify`          | Verify if the authenticated user is an admin.         |
-|              | POST       | `/admin/broadcast`       | Send a broadcast message.                             |
-|              | DELETE     | `/admin/auth/{id}`       | Logout a specific user by ID.                         |
-|              | GET        | `/admin/users/{id}`      | Get details of a specific user.                       |
-|              | GET        | `/admin/users`           | Get details of all users.                             |
-|              | PATCH      | `/admin/users/{id}`      | Update the role of a specific user.                   |
-|              | DELETE     | `/admin/users/{id}`      | Delete a specific user.                               |
-|              | GET        | `/admin/images`          | Get all images (admin view).                          |
-|              | DELETE     | `/admin/images`          | Delete an image (admin operation).                    |
-
-## Structure
-
-### Common
-
-Cache:
-- Types: Service
-
-Database:
-- Types: Service
-- Functions: Connect, CloseConnection
-- Subservices:
-  - Tx:
-    - Types: Provider
-    - Functions: Transact
-  - Worker:
-
-Emails:
-- Types: Service
-- SendText, SendHTML, send
-
-Errors:
-- Types: Error (Type)
-
-Logs:
-- Functions: init
-
-Metrics:
-- Functions: init, Handler
-
-Server:
-- Types: Service
-- Functions: Start, Stop, setup, health
-- Subservices:
-  - Respond:
-    - Functions: WithError, WithJSON, WithNoContent, applyCommonHeaders
-  - Telemetry:
-    - Types: responseRecorder
-    - Functions: Middleware, WriteHeader
-
-Storage:
-- Types: Service
-- Subservices:
-  - Worker:
-
-### Auth
-
-Domain:
-- Types: User (Role), RefreshToken, OTP
-- Repositories:
-  - UserDBRepository: GetUserByUsername, GetUserRoleByID
-  - RefreshTokenDBRepository: CreateRefreshToken, GetRefreshTokensByUserID, RevokeRefreshTokenByToken, RevokeRefreshTokensByUserID
-  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
-
-Application:
-- Types: AuthService
-- Functions: LoginOne, LoginTwo, Logout, Refresh, generateAccessToken, verifyAccessToken, generateAccessToken, verifyRefreshToken, generateOTP, verifyOTP
-
-Interfaces:
-- Types: AuthAPI
-- Functions: LoginOne, LoginTwo, Logout, Refresh, UserMiddleware, AdminMiddleware, storeTokenInCookie, extractTokenFromCookie
-
-Infrastructure:
-- Repositories:
-  - UserDBRepository: GetUserByUsername, GetUserRoleByID
-  - RefreshTokenDBRepository: CreateRefreshToken, GetRefreshTokensByUserID, RevokeRefreshTokenByToken, RevokeRefreshTokensByUserID
-  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
-
-
-### Users
-
-Domain:
-- Types: User (Role), OTP (Type)
-- Functions: ValidateUsername, ValidateEmail, ValidatePassword, DetermineUserDetailsToUpdate
-- Repositories:
-  - UserDBRepository: CreateUser, GetUserByID, GetAllUsers, UpdateUserDetails, UpdateUserRole, DeleteUser
-  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
-
-Application:
-- Types: UserService
-- Functions: Register, Get, Update, Delete, SendUserVerificationCode, VerifyUser, SendForgotPasswordCode, ResetPassword, AdminGetAll, AdminUpdateRole, hashPassword, verifyPassword, generateOTP, verifyOTP
-
-Interfaces:
-- Types: UserAPI
-- Functions: Register, Get, Update, Delete, SendUserVerificationCode, VerifyUser, SendForgotPasswordCode, ResetPassword, AdminGet, AdminGetAll, AdminUpdateRole, AdminDelete
-
-Infrastructure:
-- Repositories:
-  - UserDBRepository: CreateUser, GetUserByID, GetAllUsers, UpdateUserDetails, UpdateUserRole, DeleteUser
-  - OTPCacheRepository: AddOTP, GetOTP, DeleteOTP
-
-
-### Images
-
-Domain:
-- Types: Image, Transformation (TransformationType)
-- Functions: ValidateName, ValidateRawImage, Validate Transformation, CreateImageName, CreatePreviewName
-- Repositories:
-  - ImageDBRepository: CreateImage, GetImageByUserIDandName, GetImagesByUserID, GetAllImages, UpdateImage, DeleteImageByUserIDandName, DeleteImageByID
-  - StorageRepository: UploadImage, DownloadImage, DeleteImage
-  - CacheRepository: AddImage, GetImage, DeleteImage
-
-Application:
-- Types: ImageService
-- Functions: Upload, Get, GetAll, Update, Transform, Delete, AdminGetAll, AdminDelete
-- Subservices:
-  - Transformations:
-
-Interfaces:
-- Types: ImageAPI
-- Functions: Upload, Get, GetAll, Update, Transform, Delete, AdminGetAll, AdminDelete
-
-Infrastructure:
-- Repositories:
-  - ImageDBRepository: CreateImage, GetImageByUserIDandName, GetImagesByUserID, GetAllImages, UpdateImage, DeleteImageByUserIDandName, DeleteImageByID
-  - StorageRepository: UploadImage, DownloadImage, DeleteImage
-  - CacheRepository: AddImage, GetImage, DeleteImage
+| **Category** | **Method** | **Endpoint**                       | **Description**                                       |
+|--------------|------------|------------------------------------|-------------------------------------------------------|
+| **Meta**     | ANY        | `/health`                          | Check the health of the service.                      |
+|              | GET        | `/metrics`                         | Retrieve service metrics (private).                   |
+| **Auth**     | POST       | `/auth/login/one`                  | Provide credentials, get OTP.                         |
+|              | POST       | `/auth/login/two`                  | Provide OTP, get JWT and refresh token.               |
+|              | DELETE     | `/auth/logout`                     | Invalidate refresh token.                             |
+|              | POST       | `/auth/refresh`                    | Provide refresh token, get new JWT and refresh token. |
+| **Users**    | POST       | `/users`                           | Register a new user.                                  |
+|              | GET        | `/users`                           | Get details of the authenticated user.                |
+|              | PUT        | `/users`                           | Update details of the authenticated user.             |
+|              | DELETE     | `/users`                           | Delete the authenticated user.                        |
+|              | POST       | `/users/verify`                    | Provide email, get OTP for verification.              |
+|              | PATCH      | `/users/verify`                    | Provide OTP, verify email.                            |
+|              | POST       | `/users/reset-password`            | Provide email, get OTP for password reset.            |
+|              | PATCH      | `/users/reset-password`            | Provide OTP, set a new password.                      |
+| **Images**   | POST       | `/images`                          | Upload a new image.                                   |
+|              | GET        | `/images`                          | Get details of a specific image.                      |
+|              | GET        | `/images/all?page=int&limit=int`   | Get all images of the authenticated user.             |
+|              | PUT        | `/images`                          | Update image details.                                 |
+|              | PATCH      | `/images`                          | Apply transformations to an image.                    |
+|              | DELETE     | `/images`                          | Delete a specific image.                              |
+| **Admin**    | POST       | `/admin/broadcast`                 | Send a broadcast message.                             |
+|              | GET        | `/admin/auth`                      | Verify if the authenticated user is an admin.         |
+|              | DELETE     | `/admin/auth/{id}`                 | Logout a specific user by ID.                         |
+|              | GET        | `/admin/users/{id}`                | Get details of a specific user.                       |
+|              | GET        | `/admin/users?page=int&limit=int`  | Get details of all users.                             |
+|              | PATCH      | `/admin/users/{id}?role=role`      | Update the role of a specific user.                   |
+|              | DELETE     | `/admin/users/{id}`                | Delete a specific user.                               |
+|              | GET        | `/admin/images?page=int&limit=int` | Get all images (admin view).                          |
+|              | DELETE     | `/admin/images`                    | Delete an image (admin operation).                    |

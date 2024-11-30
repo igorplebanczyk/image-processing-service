@@ -9,17 +9,18 @@ import (
 	"image-processing-service/src/internal/users/domain"
 	"log/slog"
 	"net/http"
+	"strconv"
 )
 
 type UserAPI struct {
 	service *application.UserService
 }
 
-func NewServer(service *application.UserService) *UserAPI {
+func NewAPI(service *application.UserService) *UserAPI {
 	return &UserAPI{service: service}
 }
 
-func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
+func (a *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -41,7 +42,7 @@ func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := s.service.Register(p.Username, p.Email, p.Password)
+	user, err := a.service.Register(p.Username, p.Email, p.Password)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -55,15 +56,17 @@ func (s *UserAPI) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *UserAPI) GetData(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+func (a *UserAPI) GetDetails(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
 	type response struct {
 		Username  string `json:"username"`
 		Email     string `json:"email"`
+		Role      string `json:"role"`
+		Verified  string `json:"verified"`
 		CreatedAt string `json:"created_at"`
 		UpdatedAt string `json:"updated_at"`
 	}
 
-	user, err := s.service.GetUser(userID)
+	user, err := a.service.GetDetails(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -73,12 +76,14 @@ func (s *UserAPI) GetData(userID uuid.UUID, w http.ResponseWriter, _ *http.Reque
 	respond.WithJSON(w, http.StatusOK, response{
 		Username:  user.Username,
 		Email:     user.Email,
+		Role:      user.Role.String(),
+		Verified:  strconv.FormatBool(user.Verified),
 		CreatedAt: user.CreatedAt.String(),
 		UpdatedAt: user.UpdatedAt.String(),
 	})
 }
 
-func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+func (a *UserAPI) UpdateDetails(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -93,7 +98,7 @@ func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = s.service.UpdateUser(userID, p.Username, p.Email)
+	err = a.service.UpdateDetails(userID, p.Username, p.Email)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -103,8 +108,8 @@ func (s *UserAPI) Update(userID uuid.UUID, w http.ResponseWriter, r *http.Reques
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserAPI) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
-	err := s.service.DeleteUser(userID)
+func (a *UserAPI) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+	err := a.service.Delete(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -114,17 +119,153 @@ func (s *UserAPI) Delete(userID uuid.UUID, w http.ResponseWriter, _ *http.Reques
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserAPI) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
+func (a *UserAPI) ResendVerificationCode(userID uuid.UUID, w http.ResponseWriter, _ *http.Request) {
+	err := a.service.ResendVerificationCode(userID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (a *UserAPI) Verify(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		OTP string `json:"otp"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	err = a.service.Verify(userID, p.OTP)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (a *UserAPI) SendForgotPasswordCode(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email string `json:"email"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	err = a.service.SendForgotPasswordCode(p.Email)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (a *UserAPI) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	type parameters struct {
+		Email       string `json:"email"`
+		OTP         string `json:"otp"`
+		NewPassword string `json:"new_password"`
+	}
+
+	var p parameters
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&p)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		return
+	}
+
+	err = a.service.ResetPassword(p.Email, p.OTP, p.NewPassword)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func (a *UserAPI) AdminGetUserDetails(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		ID        string `json:"id"`
 		Username  string `json:"username"`
 		Email     string `json:"email"`
 		Role      string `json:"role"`
+		Verified  string `json:"verified"`
 		CreatedAt string `json:"created_at"`
 		UpdatedAt string `json:"updated_at"`
 	}
 
-	users, err := s.service.AdminGetAllUsers()
+	userID, err := getUserIDFromPath(r)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	user, err := a.service.GetDetails(userID)
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, err)
+		return
+	}
+
+	respond.WithJSON(w, http.StatusOK, response{
+		ID:        user.ID.String(),
+		Username:  user.Username,
+		Email:     user.Email,
+		Role:      user.Role.String(),
+		Verified:  strconv.FormatBool(user.Verified),
+		CreatedAt: user.CreatedAt.String(),
+		UpdatedAt: user.UpdatedAt.String(),
+	})
+}
+
+func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		ID        string `json:"id"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Role      string `json:"role"`
+		Verified  string `json:"verified"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid page"))
+		return
+	}
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		slog.Error("HTTP request error", "error", err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid limit"))
+		return
+	}
+
+	users, err := a.service.AdminGetAllUsers(page, limit)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -138,6 +279,7 @@ func (s *UserAPI) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 			Username:  user.Username,
 			Email:     user.Email,
 			Role:      user.Role.String(),
+			Verified:  strconv.FormatBool(user.Verified),
 			CreatedAt: user.CreatedAt.String(),
 			UpdatedAt: user.UpdatedAt.String(),
 		})
@@ -146,22 +288,18 @@ func (s *UserAPI) AdminListAllUsers(w http.ResponseWriter, _ *http.Request) {
 	respond.WithJSON(w, http.StatusOK, resp)
 }
 
-func (s *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		UserID uuid.UUID   `json:"user_id"`
-		Role   domain.Role `json:"role"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
+func (a *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromPath(r)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		respond.WithError(w, err)
 		return
 	}
 
-	err = s.service.AdminUpdateUserRole(p.UserID, p.Role)
+	roleStr := r.URL.Query().Get("role")
+	role := domain.Role(roleStr)
+
+	err = a.service.AdminUpdateUserRole(userID, role)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -171,21 +309,15 @@ func (s *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
-	type parameters struct {
-		UserID uuid.UUID `json:"user_id"`
-	}
-
-	var p parameters
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&p)
+func (a *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromPath(r)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid body"))
+		respond.WithError(w, err)
 		return
 	}
 
-	err = s.service.DeleteUser(p.UserID)
+	err = a.service.Delete(userID)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -195,7 +327,7 @@ func (s *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	respond.WithoutContent(w, http.StatusNoContent)
 }
 
-func (s *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
+func (a *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Subject string `json:"subject"`
 		Body    string `json:"body"`
@@ -210,7 +342,7 @@ func (s *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.service.AdminBroadcast(p.Subject, p.Body)
+	err = a.service.AdminBroadcast(p.Subject, p.Body)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
@@ -218,4 +350,14 @@ func (s *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond.WithoutContent(w, http.StatusNoContent)
+}
+
+func getUserIDFromPath(r *http.Request) (uuid.UUID, error) {
+	userIDStr := r.PathValue("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return uuid.UUID{}, commonerrors.NewInvalidInput("invalid user ID")
+	}
+
+	return userID, nil
 }
