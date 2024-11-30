@@ -73,7 +73,6 @@
 - [ ] Add tests
   - [X] Add domain layer unit tests
   - [X] Add application layer unit tests
-  - [ ] Add interfaces layer unit tests
   - [ ] Add infrastructure layer integration tests
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
