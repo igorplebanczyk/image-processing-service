@@ -31,7 +31,8 @@ func New(db *sql.DB, storage *storage.Service) *Worker {
 }
 
 func (s *Worker) Start() {
-	slog.Info("Starting storage worker")
+	slog.Info("Init step 19: storage worker started")
+
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
@@ -56,7 +57,7 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop()
-	slog.Info("Storage worker stopped")
+	slog.Info("Shutdown step 3: worker stopped")
 }
 
 func (s *Worker) deleteDanglingImages(ctx context.Context) error {

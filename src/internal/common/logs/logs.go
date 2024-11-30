@@ -13,5 +13,5 @@ func init() {
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 
-	slog.Info("Logger setup complete")
+	slog.Info("Init step 1 complete: logs initialized")
 }

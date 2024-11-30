@@ -24,6 +24,8 @@ func NewService(host, sender, password string) (*Service, error) {
 		return nil, fmt.Errorf("failed to create email client: %v", err)
 	}
 
+	slog.Info("Init step 11: email client created")
+
 	return &Service{
 		sender: sender,
 		client: client,

@@ -29,6 +29,9 @@ func NewService(port int, authService *authInterface.AuthAPI, usersCfg *userInte
 		imageAPI: imagesCfg,
 	}
 	service.setup()
+
+	slog.Info("Init step 16: server set up")
+
 	return service
 }
 
@@ -77,7 +80,8 @@ func (s *Service) setup() {
 }
 
 func (s *Service) Start() {
-	slog.Info("Starting server", "port", s.port)
+	slog.Info("Init step 19: starting server")
+
 	err := s.server.ListenAndServe()
 	if err != nil {
 		slog.Error("Init error: error starting server", "error", err)
@@ -90,5 +94,5 @@ func (s *Service) Stop() {
 	if err != nil {
 		slog.Error("Shutdown error: error shutting down server", "error", err)
 	}
-	slog.Info("Server stopped")
+	slog.Info("Shutdown step 5: server stopped")
 }

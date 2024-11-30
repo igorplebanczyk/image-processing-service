@@ -16,7 +16,7 @@ func NewService() *Service {
 }
 
 func (s *Service) Connect(user, password, host, port, dbName string) (*sql.DB, error) {
-	slog.Info("Connecting to database...", "user", user, "host", host, "port", port, "db", dbName)
+	slog.Info("Init step 5: connecting to database...", "user", user, "host", host, "port", port, "db", dbName)
 	url := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbName)
 
 	db, err := sql.Open("postgres", url)
@@ -31,7 +31,7 @@ func (s *Service) Connect(user, password, host, port, dbName string) (*sql.DB, e
 
 	s.db = db
 
-	slog.Info("Connected to database")
+	slog.Info("Init step 6: connected to database")
 	return db, nil
 }
 
@@ -40,5 +40,5 @@ func (s *Service) Stop() {
 	if err != nil {
 		slog.Error("Shutdown error: error closing database", "error", err)
 	}
-	slog.Info("Database connection closed")
+	slog.Info("Shutdown step 4: database connection closed")
 }

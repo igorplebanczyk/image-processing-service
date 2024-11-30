@@ -12,6 +12,7 @@ import (
 	dbWorker "image-processing-service/src/internal/common/database/worker"
 	"image-processing-service/src/internal/common/emails"
 	_ "image-processing-service/src/internal/common/logs"
+	_ "image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/common/server"
 	"image-processing-service/src/internal/common/storage"
 	storageWorker "image-processing-service/src/internal/common/storage/worker"
@@ -47,28 +48,28 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	slog.Info("Init step 18: starting application")
+
 	go app.dbWorker.Start()
 	go app.storageWorker.Start()
 	go app.serverService.Start()
 
-	slog.Info("Application started")
-
 	<-ctx.Done()
-	slog.Info("Received shutdown signal")
+	slog.Info("Shutdown step 1: received signal to shutdown")
 
 	app.dbWorker.Stop()
 	app.storageWorker.Stop()
 	app.dbService.Stop()
 	app.serverService.Stop()
 
-	slog.Info("Application shutdown")
+	slog.Info("Shutdown step 6: application shutdown")
 }
 
 func (a *application) assemble() error {
 	// Get environment variables
 
 	appPort := os.Getenv("APP_PORT")
-	issuer := os.Getenv("APP_JWT_ISSUER")
+	issuer := os.Getenv("APP_ISSUER")
 	jwtSecret := os.Getenv("APP_JWT_SECRET")
 	accessTokenExpiration := os.Getenv("APP_JWT_ACCESS_TOKEN_EXPIRATION")
 	refreshTokenExpiration := os.Getenv("APP_JWT_REFRESH_TOKEN_EXPIRATION")
@@ -94,6 +95,8 @@ func (a *application) assemble() error {
 	mailHost := os.Getenv("MAIL_HOST")
 	mailSenderEmail := os.Getenv("MAIL_SENDER_EMAIL")
 	mailSenderPassword := os.Getenv("MAIL_SENDER_PASSWORD")
+
+	slog.Info("Init step 3: environment variables loaded")
 
 	// Convert environment variables to appropriate types
 
@@ -134,6 +137,8 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error converting redis db to integer: %w", err)
 	}
 
+	slog.Info("Init step 4: environment variables converted")
+
 	// Setup common services
 
 	dbService := database.NewService()
@@ -164,7 +169,7 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating email service: %w", err)
 	}
 
-	slog.Info("External services configured")
+	slog.Info("Init step 12: all common services configured")
 
 	// Assemble the application
 
@@ -182,15 +187,21 @@ func (a *application) assemble() error {
 	)
 	authAPI := authInterface.NewAPI(authService, accessTokenExpirationTime, refreshTokenExpirationTime)
 
+	slog.Info("Init step 13: auth module assembled")
+
 	userDBRepo := usersInfra.NewUserDBRepository(db, txProvider)
 	userService := usersApp.NewService(userDBRepo, mailService, issuer, otpExpirationUint)
 	userAPI := usersInterface.NewAPI(userService)
+
+	slog.Info("Init step 14: user module assembled")
 
 	imageDBRepo := imagesInfra.NewImageDBRepository(db, txProvider)
 	imageStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
 	imageCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
 	imageService := imagesApp.NewService(imageDBRepo, imageStorageRepo, imageCacheRepo, cacheExpirationTime)
 	imageAPI := imagesInterface.NewAPI(imageService)
+
+	slog.Info("Init step 15: image module assembled")
 
 	serverService := server.NewService(appPortInt, authAPI, userAPI, imageAPI)
 
@@ -199,7 +210,7 @@ func (a *application) assemble() error {
 	a.dbWorker = dbWorker.New(db, txProvider)
 	a.storageWorker = storageWorker.New(db, storageService)
 
-	slog.Info("Application assembled")
+	slog.Info("Init step 17: application assembled")
 
 	return nil
 }

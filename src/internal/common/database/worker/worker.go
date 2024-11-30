@@ -28,7 +28,8 @@ func New(db *sql.DB, txProvider *tx.Provider) *Worker {
 }
 
 func (s *Worker) Start() {
-	slog.Info("Starting database worker")
+	slog.Info("Init step 19: database worker started")
+
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
 
@@ -53,5 +54,5 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop()
-	slog.Info("Database worker stopped")
+	slog.Info("Shutdown step 2: database worker stopped")
 }

@@ -12,6 +12,7 @@ type Service struct {
 }
 
 func NewService(accountName, accountKey, serviceURL, containerName string) (*Service, error) {
+	slog.Info("Init step 9: connecting to storage...", "account", accountName, "container", containerName)
 	key, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
 		return nil, fmt.Errorf("error creating shared key credential: %w", err)
@@ -22,7 +23,7 @@ func NewService(accountName, accountKey, serviceURL, containerName string) (*Ser
 		return nil, fmt.Errorf("error creating client: %w", err)
 	}
 
-	slog.Info("Connected to storage", "account", accountName, "container", containerName)
+	slog.Info("Init step 10: connected to storage")
 
 	return &Service{
 		client:        client,

@@ -12,7 +12,7 @@ type Service struct {
 }
 
 func NewService(host, port, password string, db int) (*Service, error) {
-	slog.Info("Connecting to cache...", "host", host, "port", port, "db", db)
+	slog.Info("Init step 7: connecting to cache...", "host", host, "port", port, "db", db)
 	addr := fmt.Sprintf("%s:%s", host, port)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -24,7 +24,7 @@ func NewService(host, port, password string, db int) (*Service, error) {
 		return nil, fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
-	slog.Info("Connected to cache")
+	slog.Info("Init step 8: connected to cache")
 	return &Service{
 		client: client,
 	}, nil

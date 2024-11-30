@@ -3,6 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log/slog"
 	"net/http"
 )
 
@@ -10,6 +11,8 @@ func init() {
 	prometheus.MustRegister(HttpRequestsTotal)
 	prometheus.MustRegister(HttpDurationSeconds)
 	prometheus.MustRegister(HttpErrorsTotal)
+
+	slog.Info("Init step 2 complete: metrics initialized")
 }
 
 func Handler() http.Handler {
