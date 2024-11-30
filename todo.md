@@ -71,7 +71,7 @@
   - [X] Extract common functionality into helper functions
   - [X] Add comments where necessary
 - [ ] Add tests
-  - [ ] Add domain layer unit tests
+  - [X] Add domain layer unit tests
   - [ ] Add application layer unit tests
     - [ ] Add unit tests for subservices of the application layer
   - [ ] Add interfaces layer unit tests
