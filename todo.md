@@ -73,7 +73,8 @@
   - [X] Streamline the API, verify API security and semantics
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
-  - [ ] Split large files into smaller ones
+  - [ ] Revise the project structure
+  - [ ] Extract constants into variables
   - [ ] Extract common functionality into helper functions
   - [ ] Update unit tests, add infrastructure integration tests
   - [ ] Add comments where necessary
