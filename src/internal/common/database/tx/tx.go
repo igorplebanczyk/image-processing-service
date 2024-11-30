@@ -1,4 +1,4 @@
-package transactions
+package tx
 
 import (
 	"context"
@@ -8,15 +8,15 @@ import (
 	"log/slog"
 )
 
-type TransactionProvider struct {
+type Provider struct {
 	db *sql.DB
 }
 
-func NewTransactionProvider(db *sql.DB) *TransactionProvider {
-	return &TransactionProvider{db: db}
+func NewProvider(db *sql.DB) *Provider {
+	return &Provider{db: db}
 }
 
-func (p *TransactionProvider) WithTransaction(ctx context.Context, fn func(tx *sql.Tx) error) error {
+func (p *Provider) Transact(ctx context.Context, fn func(tx *sql.Tx) error) error {
 	tx, err := p.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error beginning transaction: %w", err)

@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 	"database/sql"
-	"image-processing-service/src/internal/common/database/transactions"
+	"image-processing-service/src/internal/common/database/tx"
 	"log/slog"
 	"time"
 )
@@ -17,7 +17,7 @@ type Worker struct {
 	interval time.Duration
 }
 
-func New(db *sql.DB, txProvider *transactions.TransactionProvider) *Worker {
+func New(db *sql.DB, txProvider *tx.Provider) *Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Worker{
 		repo:     newRepository(db, txProvider),
