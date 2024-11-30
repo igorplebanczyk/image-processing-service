@@ -40,5 +40,5 @@ func (s *Service) Stop() {
 	if err != nil {
 		slog.Error("Shutdown error: error closing database", "error", err)
 	}
-	slog.Info("Shutdown step 4: database connection closed")
+	slog.Info("Shutdown step 5: database connection closed")
 }

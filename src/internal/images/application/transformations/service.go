@@ -5,6 +5,7 @@ import (
 	"image"
 	"image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/images/domain"
+	"log/slog"
 	"sync"
 )
 
@@ -23,6 +24,11 @@ func NewService() *Service {
 	}
 }
 
+func (s *Service) Wait() {
+	slog.Info("Shutdown step 2: waiting for all transformations to finish")
+	s.workerCoordinator.wait()
+}
+
 func (s *Service) CreatePreview(bytes []byte) ([]byte, error) {
 	return s.Apply(bytes, []domain.Transformation{
 		{
@@ -33,10 +39,6 @@ func (s *Service) CreatePreview(bytes []byte) ([]byte, error) {
 			},
 		},
 	})
-}
-
-func (s *Service) Wait() {
-	s.workerCoordinator.wait()
 }
 
 func (s *Service) Apply(imageBytes []byte, transformations []domain.Transformation) ([]byte, error) {

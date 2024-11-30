@@ -108,5 +108,5 @@ func (s *Service) Stop() {
 	if err != nil {
 		slog.Error("Shutdown error: error shutting down server", "error", err)
 	}
-	slog.Info("Shutdown step 5: server stopped")
+	slog.Info("Shutdown step 6: server stopped")
 }

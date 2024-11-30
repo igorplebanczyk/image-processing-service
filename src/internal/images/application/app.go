@@ -22,13 +22,14 @@ func NewService(
 	imagesDBRepo domain.ImagesDBRepository,
 	imagesStorageRepo domain.ImagesStorageRepository,
 	imagesCacheRepo domain.ImagesCacheRepository,
+	transformationsService *transformations.Service,
 	cacheExpiry time.Duration,
 ) *ImagesService {
 	return &ImagesService{
 		imagesDBRepo:           imagesDBRepo,
 		imagesStorageRepo:      imagesStorageRepo,
 		imagesCacheRepo:        imagesCacheRepo,
-		transformationsService: transformations.NewService(),
+		transformationsService: transformationsService,
 		cacheExpiry:            cacheExpiry,
 	}
 }

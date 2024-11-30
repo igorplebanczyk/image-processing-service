@@ -64,7 +64,7 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop()
-	slog.Info("Shutdown step 3: worker stopped")
+	slog.Info("Shutdown step 4: worker stopped")
 }
 
 func (s *Worker) deleteDanglingImages(ctx context.Context) error {

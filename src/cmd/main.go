@@ -18,6 +18,7 @@ import (
 	"image-processing-service/src/internal/common/storage"
 	storageWorker "image-processing-service/src/internal/common/storage/worker"
 	imagesApplication "image-processing-service/src/internal/images/application"
+	"image-processing-service/src/internal/images/application/transformations"
 	imagesInfrastructure "image-processing-service/src/internal/images/infrastructure"
 	imagesInterfaces "image-processing-service/src/internal/images/interfaces"
 	usersApplication "image-processing-service/src/internal/users/application"
@@ -32,10 +33,11 @@ import (
 )
 
 type application struct {
-	serverService *server.Service
-	dbService     *database.Service
-	dbWorker      *dbWorker.Worker
-	storageWorker *storageWorker.Worker
+	serverService          *server.Service
+	dbService              *database.Service
+	dbWorker               *dbWorker.Worker
+	storageWorker          *storageWorker.Worker
+	transformationsService *transformations.Service
 }
 
 func main() {
@@ -58,12 +60,13 @@ func main() {
 	<-ctx.Done()
 	slog.Info("Shutdown step 1: received signal to shutdown")
 
+	app.transformationsService.Wait()
 	app.dbWorker.Stop()
 	app.storageWorker.Stop()
 	app.dbService.Stop()
 	app.serverService.Stop()
 
-	slog.Info("Shutdown step 6: application shutdown")
+	slog.Info("Shutdown step 7: application shutdown")
 }
 
 // The assemble() function is quite a spaghetti code, but I feel like splitting it into smaller functions leads to
@@ -175,6 +178,8 @@ func (a *application) assemble() error {
 		return fmt.Errorf("error creating email service: %w", err)
 	}
 
+	transformationsService := transformations.NewService()
+
 	slog.Info("Init step 12: all common services configured")
 
 	// Assemble the application
@@ -204,7 +209,13 @@ func (a *application) assemble() error {
 	imagesDBRepo := imagesInfrastructure.NewImagesDBRepository(db, txProvider)
 	imagesStorageRepo := imagesInfrastructure.NewImagesStorageRepository(storageService)
 	imagesCacheRepo := imagesInfrastructure.NewImagesCacheRepository(cacheService)
-	imagesService := imagesApplication.NewService(imagesDBRepo, imagesStorageRepo, imagesCacheRepo, cacheExpirationTime)
+	imagesService := imagesApplication.NewService(
+		imagesDBRepo,
+		imagesStorageRepo,
+		imagesCacheRepo,
+		transformationsService,
+		cacheExpirationTime,
+	)
 	imagesAPI := imagesInterfaces.NewAPI(imagesService)
 
 	slog.Info("Init step 15: image module assembled")
@@ -216,6 +227,7 @@ func (a *application) assemble() error {
 	a.dbService = dbService
 	a.dbWorker = dbWorker.New(db, txProvider)
 	a.storageWorker = storageWorker.New(db, storageService)
+	a.transformationsService = transformationsService
 
 	slog.Info("Init step 17: application assembled")
 

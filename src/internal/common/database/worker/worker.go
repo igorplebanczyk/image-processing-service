@@ -57,5 +57,5 @@ func (s *Worker) Start() {
 
 func (s *Worker) Stop() {
 	s.stop()
-	slog.Info("Shutdown step 2: database worker stopped")
+	slog.Info("Shutdown step 3: database worker stopped")
 }
