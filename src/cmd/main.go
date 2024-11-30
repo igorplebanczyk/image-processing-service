@@ -118,6 +118,9 @@ func (a *application) assemble() error {
 	if err != nil {
 		return fmt.Errorf("error converting otp expiration to integer: %w", err)
 	}
+	if otpExpirationInt < 0 {
+		return fmt.Errorf("otp expiration must be greater than 0")
+	}
 	otpExpirationUint := uint(otpExpirationInt)
 
 	cacheExpirationInt, err := strconv.Atoi(cacheExpiration)
