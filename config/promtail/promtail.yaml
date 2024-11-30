@@ -47,6 +47,10 @@ scrape_configs:
             # Storage Logs
             name: name
 
+            # Email Logs
+            recipient: recipient
+            subject: subject
+
       - json:
           expressions:
             function:
@@ -67,6 +71,8 @@ scrape_configs:
           parameters:
           key:
           name:
+          recipient:
+          subject:
 
       - timestamp:
           source: time

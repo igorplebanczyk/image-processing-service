@@ -45,6 +45,8 @@ func (s *Service) SendOTP(recipient, subject, issuer, code string) error {
 }
 
 func (s *Service) send(recipient, subject, body string, contentType mail.ContentType) error {
+	slog.Info("Sending email", "recipient", recipient, "subject", subject)
+
 	message := mail.NewMsg()
 
 	err := message.From(s.sender)

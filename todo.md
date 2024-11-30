@@ -69,7 +69,7 @@
   - [X] Revise the OTP expiration system
   - [X] Review performance
   - [X] Consider moving query extraction to a global package
-  - [ ] Collect more logs
+  - [X] Collect more logs
   - [X] Streamline the API, verify API security and semantics
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions
