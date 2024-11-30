@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/domain"
 	"image-processing-service/src/internal/common/database/tx"
+	"image-processing-service/src/internal/common/metrics"
 	"log/slog"
 	"time"
 )
@@ -22,6 +23,7 @@ func NewRefreshTokenDBRepository(db *sql.DB, txProvider *tx.Provider) *RefreshTo
 
 func (r *RefreshTokenDBRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
 	slog.Info("DB query", "operation", "INSERT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s, token: %s, expires_at: %s", userID, token, expiresAt))
+	metrics.DBQueriesTotal.WithLabelValues("INSERT").Inc()
 
 	id := uuid.New()
 	createdAt := time.Now()
@@ -39,6 +41,7 @@ func (r *RefreshTokenDBRepository) CreateRefreshToken(ctx context.Context, userI
 
 func (r *RefreshTokenDBRepository) GetRefreshTokenByUserIDandToken(ctx context.Context, userID uuid.UUID, token string) (*domain.RefreshToken, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s, token: %s", userID, token))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var refreshToken domain.RefreshToken
 
@@ -56,6 +59,7 @@ func (r *RefreshTokenDBRepository) GetRefreshTokenByUserIDandToken(ctx context.C
 
 func (r *RefreshTokenDBRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
+	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, userID)

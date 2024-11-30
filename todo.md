@@ -70,6 +70,7 @@
   - [X] Review performance
   - [X] Consider moving query extraction to a global package
   - [X] Collect more logs
+  - [X] Collect more metrics
   - [X] Streamline the API, verify API security and semantics
   - [ ] Attempt to streamline the main package
   - [ ] Standardize naming conventions

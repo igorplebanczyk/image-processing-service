@@ -3,6 +3,7 @@ package transformations
 import (
 	"fmt"
 	"image"
+	"image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/images/domain"
 	"sync"
 )
@@ -43,6 +44,12 @@ func (s *Service) Apply(imageBytes []byte, transformations []domain.Transformati
 	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		for _, t := range packet.transformations {
+			metrics.ImageProcessingOperationsTotal.WithLabelValues(string(t.Type)).Inc()
+		}
+	}()
 
 	s.workerCoordinator.process(packet)
 

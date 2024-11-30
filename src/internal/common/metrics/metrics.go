@@ -54,10 +54,26 @@ var (
 		[]string{"operation"},
 	)
 
-	DBQueryDurationSeconds = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "db_query_duration_seconds",
-			Help: "Histogram of database query durations.",
+	CacheOperationsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cache_operations_total",
+			Help: "Total number of cache operations processed, partitioned by operation.",
+		},
+		[]string{"operation"},
+	)
+
+	StorageOperationsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "storage_operations_total",
+			Help: "Total number of storage operations processed, partitioned by operation.",
+		},
+		[]string{"operation"},
+	)
+
+	ImageProcessingOperationsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "image_processing_operations_total",
+			Help: "Total number of image processing operations processed, partitioned by operation.",
 		},
 		[]string{"operation"},
 	)
