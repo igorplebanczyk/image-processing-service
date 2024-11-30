@@ -11,6 +11,7 @@ func init() {
 	prometheus.MustRegister(HttpRequestsTotal)
 	prometheus.MustRegister(HttpDurationSeconds)
 	prometheus.MustRegister(HttpErrorsTotal)
+	prometheus.MustRegister(DBQueriesTotal)
 
 	slog.Info("Init step 2 complete: metrics initialized")
 }
@@ -19,7 +20,6 @@ func Handler() http.Handler {
 	return promhttp.Handler()
 }
 
-// HTTP metrics
 var (
 	HttpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -37,11 +37,28 @@ var (
 		},
 		[]string{"method", "status_code"},
 	)
+
 	HttpErrorsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_errors_total",
 			Help: "Total number of HTTP errors by status code.",
 		},
 		[]string{"status_code"},
+	)
+
+	DBQueriesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "db_queries_total",
+			Help: "Total number of database queries processed, partitioned by operation.",
+		},
+		[]string{"operation"},
+	)
+
+	DBQueryDurationSeconds = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "db_query_duration_seconds",
+			Help: "Histogram of database query durations.",
+		},
+		[]string{"operation"},
 	)
 )

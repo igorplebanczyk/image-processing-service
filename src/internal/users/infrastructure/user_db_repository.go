@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/common/database/tx"
+	"image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/users/domain"
 	"log/slog"
 	"time"
@@ -22,6 +23,7 @@ func NewUserDBRepository(db *sql.DB, txProvider *tx.Provider) *UserDBRepository 
 
 func (r *UserDBRepository) CreateUser(ctx context.Context, username, email, password, otpSecret string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "INSERT", "table", "users", "parameters", fmt.Sprintf("username: %s, email: %s, password: %s", username, email, password))
+	metrics.DBQueriesTotal.WithLabelValues("INSERT").Inc()
 
 	user := domain.NewUser(username, email, password, otpSecret)
 
@@ -44,6 +46,7 @@ func (r *UserDBRepository) CreateUser(ctx context.Context, username, email, pass
 
 func (r *UserDBRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var user domain.User
 
@@ -58,6 +61,7 @@ func (r *UserDBRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*doma
 
 func (r *UserDBRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("email: %s", email))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var user domain.User
 
@@ -71,9 +75,10 @@ func (r *UserDBRepository) GetUserByEmail(ctx context.Context, email string) (*d
 }
 
 func (r *UserDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]domain.User, error) {
-	offset := (page - 1) * limit
+	slog.Info("DB query", "operation", "SELECT", "table", "users")
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
-	slog.Info("DB query", "operation", "SELECT", "table", "users", "limit", limit, "offset", offset)
+	offset := (page - 1) * limit
 
 	query := `SELECT * FROM users LIMIT $1 OFFSET $2`
 
@@ -103,6 +108,7 @@ func (r *UserDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]
 
 func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, username: %s, email: %s", id, username, email))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET username = $1, email = $2, updated_at = $3 WHERE id = $4`,
@@ -117,6 +123,7 @@ func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, 
 
 func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role domain.Role) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, role: %s", id, role))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET role = $1, updated_at = $2 WHERE id = $3`, role, time.Now(), id)
@@ -130,6 +137,7 @@ func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, rol
 
 func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET verified = true, updated_at = $1 WHERE id = $2`, time.Now(), id)
@@ -143,6 +151,7 @@ func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUI
 
 func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID, password string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE users SET password = $1, updated_at = $2 WHERE id = $3`, password, time.Now(), id)
@@ -156,6 +165,7 @@ func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID,
 
 func (r *UserDBRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 
 	return r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)

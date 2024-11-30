@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/common/database/tx"
+	"image-processing-service/src/internal/common/metrics"
 	"image-processing-service/src/internal/images/domain"
 	"log/slog"
 	"time"
@@ -27,6 +28,7 @@ func (r *ImageDBRepository) CreateImageMetadata(
 	description string,
 ) (*domain.ImageMetadata, error) {
 	slog.Info("DB query", "operation", "INSERT", "table", "images_metadata", "parameters", fmt.Sprintf("userID: %s, name: %s, description: %s", userID, name, description))
+	metrics.DBQueriesTotal.WithLabelValues("INSERT").Inc()
 
 	imageMetadata := domain.NewImageMetadata(userID, name, description)
 	err := r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
@@ -48,6 +50,7 @@ func (r *ImageDBRepository) CreateImageMetadata(
 
 func (r *ImageDBRepository) GetImageMetadataByUserIDAndName(ctx context.Context, userID uuid.UUID, name string) (*domain.ImageMetadata, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("userID: %s, name: %s", userID, name))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var imageMetadata domain.ImageMetadata
 	row := r.db.QueryRowContext(ctx, `SELECT id, user_id, name, description, created_at, updated_at 
@@ -63,6 +66,7 @@ func (r *ImageDBRepository) GetImageMetadataByUserIDAndName(ctx context.Context,
 
 func (r *ImageDBRepository) GetImagesMetadataByUserID(ctx context.Context, userID uuid.UUID, page, limit int) ([]*domain.ImageMetadata, int, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("userID: %s, page: %d, limit: %d", userID, page, limit))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	offset := (page - 1) * limit
 
@@ -99,6 +103,7 @@ func (r *ImageDBRepository) GetImagesMetadataByUserID(ctx context.Context, userI
 
 func (r *ImageDBRepository) GetAllImagesMetadata(ctx context.Context, page, limit int) ([]*domain.ImageMetadata, int, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("page: %d, limit: %d", page, limit))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	offset := (page - 1) * limit
 
@@ -134,6 +139,7 @@ func (r *ImageDBRepository) GetAllImagesMetadata(ctx context.Context, page, limi
 
 func (r *ImageDBRepository) UpdateImageMetadataDetails(ctx context.Context, id uuid.UUID, newName, newDescription string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s, newName: %s, newDescription: %s", id, newName, newDescription))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	err := r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE images_metadata 
@@ -154,6 +160,7 @@ func (r *ImageDBRepository) UpdateImageMetadataDetails(ctx context.Context, id u
 
 func (r *ImageDBRepository) UpdateImageMetadataUpdatedAt(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
 	err := r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `UPDATE images_metadata SET updated_at = $1 WHERE id = $2`, time.Now(), id)
@@ -172,6 +179,7 @@ func (r *ImageDBRepository) UpdateImageMetadataUpdatedAt(ctx context.Context, id
 
 func (r *ImageDBRepository) DeleteImageMetadata(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 
 	err := r.txProvider.Transact(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `DELETE FROM images_metadata WHERE id = $1`, id)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"image-processing-service/src/internal/auth/domain"
+	"image-processing-service/src/internal/common/metrics"
 	"log/slog"
 )
 
@@ -19,6 +20,7 @@ func NewUserDBRepository(db *sql.DB) *UserDBRepository {
 
 func (r *UserDBRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("username: %s", username))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var user domain.User
 
@@ -36,6 +38,7 @@ func (r *UserDBRepository) GetUserByUsername(ctx context.Context, username strin
 
 func (r *UserDBRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
+	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	var role domain.Role
 
