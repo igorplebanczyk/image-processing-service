@@ -174,7 +174,7 @@ func TestDetermineUserDetailsToUpdate(t *testing.T) {
 		{
 			name: "Both username and email need to be updated",
 			args: args{
-				existingUser: NewUser("oldUsername", "old@example.com", "password123"),
+				existingUser: NewUser("oldUsername", "old@example.com", "password123", ""),
 				newUsername:  "newUsername",
 				newEmail:     "new@example.com",
 			},
@@ -185,7 +185,7 @@ func TestDetermineUserDetailsToUpdate(t *testing.T) {
 		{
 			name: "Only username needs to be updated",
 			args: args{
-				existingUser: NewUser("oldUsername", "old@example.com", "password123"),
+				existingUser: NewUser("oldUsername", "old@example.com", "password123", ""),
 				newUsername:  "newUsername",
 				newEmail:     "",
 			},
@@ -196,7 +196,7 @@ func TestDetermineUserDetailsToUpdate(t *testing.T) {
 		{
 			name: "Only email needs to be updated",
 			args: args{
-				existingUser: NewUser("oldUsername", "old@example.com", "password123"),
+				existingUser: NewUser("oldUsername", "old@example.com", "password123", ""),
 				newUsername:  "",
 				newEmail:     "new@example.com",
 			},
@@ -207,7 +207,7 @@ func TestDetermineUserDetailsToUpdate(t *testing.T) {
 		{
 			name: "No values provided",
 			args: args{
-				existingUser: NewUser("oldUsername", "old@example.com", "password123"),
+				existingUser: NewUser("oldUsername", "old@example.com", "password123", ""),
 				newUsername:  "",
 				newEmail:     "",
 			},
