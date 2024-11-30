@@ -66,7 +66,7 @@
   - [X] Revise the transformation service
   - [X] Revise the transaction setup
   - [X] Review the emails setup; send them asynchronously
-  - [ ] Revise the OTP expiration system
+  - [X] Revise the OTP expiration system
   - [ ] Review performance
   - [X] Consider moving query extraction to a global package
   - [ ] Collect more logs

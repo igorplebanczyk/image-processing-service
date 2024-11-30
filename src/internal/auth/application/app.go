@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 	"image-processing-service/src/internal/auth/domain"
 	"image-processing-service/src/internal/common/emails"
 	commonerrors "image-processing-service/src/internal/common/errors"
+	"image-processing-service/src/internal/common/otp"
 	"time"
 )
 
@@ -59,20 +59,25 @@ func (s *AuthService) LoginOne(username, password string) error {
 		return commonerrors.NewUnauthorized("invalid username or password")
 	}
 
-	otp, err := totp.GenerateCode(user.OTPSecret, time.Now())
+	code, err := otp.GenerateOTP(user.OTPSecret, s.otpExpiry)
 	if err != nil {
-		return commonerrors.NewInternal(fmt.Sprintf("error generating OTP code: %v", err))
+		return commonerrors.NewInternal(fmt.Sprintf("failed to generate otp: %v", err))
 	}
 
-	err = s.mailService.SendText(user.Email, "OTP code", fmt.Sprintf("Your 2FA code is: %s", otp))
+	err = s.mailService.SendOTP(
+		user.Email,
+		fmt.Sprintf("%s - Two Factor Authentication", s.issuer),
+		s.issuer,
+		code,
+	)
 	if err != nil {
-		return commonerrors.NewInternal(fmt.Sprintf("error sending OTP code: %v", err))
+		return commonerrors.NewInternal(fmt.Sprintf("failed to send otp: %v", err))
 	}
 
 	return nil
 }
 
-func (s *AuthService) LoginTwo(username, otp string) (string, string, error) {
+func (s *AuthService) LoginTwo(username, code string) (string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -81,9 +86,12 @@ func (s *AuthService) LoginTwo(username, otp string) (string, string, error) {
 		return "", "", commonerrors.NewUnauthorized("invalid username or password")
 	}
 
-	ok := totp.Validate(otp, user.OTPSecret)
+	ok, err := otp.ValidateOTP(user.OTPSecret, code, s.otpExpiry)
+	if err != nil {
+		return "", "", commonerrors.NewInternal(fmt.Sprintf("failed to validate otp: %v", err))
+	}
 	if !ok {
-		return "", "", commonerrors.NewUnauthorized("invalid OTP code")
+		return "", "", commonerrors.NewInvalidInput("invalid otp")
 	}
 
 	accessToken, err := generateAccessToken(s.secret, s.issuer, user.ID.String(), s.accessExpiry)

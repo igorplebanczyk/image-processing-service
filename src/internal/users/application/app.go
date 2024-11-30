@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 	"image-processing-service/src/internal/common/emails"
 	commonerrors "image-processing-service/src/internal/common/errors"
+	"image-processing-service/src/internal/common/otp"
 	"image-processing-service/src/internal/users/domain"
 	"time"
 )
@@ -49,12 +49,7 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to hash password: %v", err))
 	}
 
-	otpSecret, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      s.issuer,
-		AccountName: username,
-		SecretSize:  32,
-		Digits:      6,
-	})
+	otpSecret, err := otp.GenerateSecret(s.issuer, username)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to generate otp secret: %v", err))
 	}
@@ -62,12 +57,22 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.CreateUser(ctx, username, email, string(hashedPassword), otpSecret.Secret())
+	user, err := s.repo.CreateUser(ctx, username, email, string(hashedPassword), otpSecret)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to create user: %v", err))
 	}
 
-	err = s.generateAndSendOTP(user.Username, user.Email, user.OTPSecret)
+	code, err := otp.GenerateOTP(otpSecret, s.otpExpiry)
+	if err != nil {
+		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to generate otp: %v", err))
+	}
+
+	err = s.mailService.SendOTP(
+		user.Email,
+		fmt.Sprintf("%s - Verification Code", s.issuer),
+		s.issuer,
+		code,
+	)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to send otp: %v", err))
 	}
@@ -140,10 +145,25 @@ func (s *UserService) ResendVerificationCode(userID uuid.UUID) error {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
 
-	return s.generateAndSendOTP(user.Username, user.Email, user.OTPSecret)
+	code, err := otp.GenerateOTP(user.OTPSecret, s.otpExpiry)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("failed to generate otp: %v", err))
+	}
+
+	err = s.mailService.SendOTP(
+		user.Email,
+		fmt.Sprintf("%s - Verification Code", s.issuer),
+		s.issuer,
+		code,
+	)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("failed to send otp: %v", err))
+	}
+
+	return nil
 }
 
-func (s *UserService) Verify(userID uuid.UUID, otp string) error {
+func (s *UserService) Verify(userID uuid.UUID, code string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -152,7 +172,10 @@ func (s *UserService) Verify(userID uuid.UUID, otp string) error {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
 
-	ok := totp.Validate(otp, user.OTPSecret)
+	ok, err := otp.ValidateOTP(user.OTPSecret, code, s.otpExpiry)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("failed to validate otp: %v", err))
+	}
 	if !ok {
 		return commonerrors.NewInvalidInput("invalid otp")
 	}
@@ -174,7 +197,17 @@ func (s *UserService) SendForgotPasswordCode(email string) error {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
 
-	err = s.generateAndSendOTP(user.Username, user.Email, user.OTPSecret)
+	code, err := otp.GenerateOTP(user.OTPSecret, s.otpExpiry)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("failed to generate otp: %v", err))
+	}
+
+	err = s.mailService.SendOTP(
+		user.Email,
+		fmt.Sprintf("%s - Forgot Password Code", s.issuer),
+		s.issuer,
+		code,
+	)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to send otp: %v", err))
 	}
@@ -182,7 +215,7 @@ func (s *UserService) SendForgotPasswordCode(email string) error {
 	return nil
 }
 
-func (s *UserService) ResetPassword(email, otp, newPassword string) error {
+func (s *UserService) ResetPassword(email, code, newPassword string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -191,7 +224,10 @@ func (s *UserService) ResetPassword(email, otp, newPassword string) error {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
 
-	ok := totp.Validate(otp, user.OTPSecret)
+	ok, err := otp.ValidateOTP(user.OTPSecret, code, s.otpExpiry)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("failed to validate otp: %v", err))
+	}
 	if !ok {
 		return commonerrors.NewInvalidInput("invalid otp")
 	}
