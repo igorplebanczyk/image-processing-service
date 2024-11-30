@@ -3,6 +3,7 @@ package emails
 import (
 	"fmt"
 	"github.com/wneessen/go-mail"
+	"log/slog"
 )
 
 type Service struct {
@@ -53,10 +54,12 @@ func (s *Service) send(recipient, subject, body string, contentType mail.Content
 	message.Subject(subject)
 	message.SetBodyString(contentType, body)
 
-	err = s.client.DialAndSend(message)
-	if err != nil {
-		return fmt.Errorf("failed to send email: %v", err)
-	}
+	go func() {
+		err = s.client.DialAndSend(message)
+		if err != nil {
+			slog.Error("Failed to send email", "error", err)
+		}
+	}()
 
 	return nil
 }

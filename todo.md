@@ -63,10 +63,9 @@
   - [X] Add 2FA
 - [ ] Revise the project structure
   - [ ] Update the workers
-  - [ ] Revise the transformation service
-  - [ ] Revise the mail service
+  - [X] Revise the transformation service
   - [X] Revise the transaction setup
-  - [ ] Review the emails setup; send them asynchronously
+  - [X] Review the emails setup; send them asynchronously
   - [ ] Revise the OTP expiration system
   - [ ] Review performance
   - [X] Consider moving query extraction to a global package
