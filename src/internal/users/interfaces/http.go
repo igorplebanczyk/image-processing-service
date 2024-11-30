@@ -215,10 +215,10 @@ func (a *UserAPI) AdminGetUserDetails(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt string `json:"updated_at"`
 	}
 
-	userID, err := getUserIDFromPath(r)
+	userID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid user ID"))
 		return
 	}
 
@@ -289,10 +289,10 @@ func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request
 }
 
 func (a *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
-	userID, err := getUserIDFromPath(r)
+	userID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid user ID"))
 		return
 	}
 
@@ -310,10 +310,10 @@ func (a *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *UserAPI) AdminDeleteUser(w http.ResponseWriter, r *http.Request) {
-	userID, err := getUserIDFromPath(r)
+	userID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, err)
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid user ID"))
 		return
 	}
 
@@ -350,14 +350,4 @@ func (a *UserAPI) AdminBroadcast(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respond.WithoutContent(w, http.StatusNoContent)
-}
-
-func getUserIDFromPath(r *http.Request) (uuid.UUID, error) {
-	userIDStr := r.PathValue("id")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return uuid.UUID{}, commonerrors.NewInvalidInput("invalid user ID")
-	}
-
-	return userID, nil
 }

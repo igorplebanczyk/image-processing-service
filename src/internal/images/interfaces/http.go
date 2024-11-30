@@ -269,11 +269,10 @@ func (a *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *ImageAPI) AdminDeleteImage(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
-		respond.WithError(w, commonerrors.NewInvalidInput("invalid image ID"))
+		respond.WithError(w, commonerrors.NewInvalidInput("invalid user ID"))
 		return
 	}
 
