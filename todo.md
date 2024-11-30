@@ -72,8 +72,7 @@
   - [X] Add comments where necessary
 - [ ] Add tests
   - [X] Add domain layer unit tests
-  - [ ] Add application layer unit tests
-    - [ ] Add unit tests for subservices of the application layer
+  - [X] Add application layer unit tests
   - [ ] Add interfaces layer unit tests
   - [ ] Add infrastructure layer integration tests
 - [ ] Add a reverse proxy
