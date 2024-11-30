@@ -10,15 +10,15 @@ import (
 	"log/slog"
 )
 
-type UserDBRepository struct {
+type UsersDBRepository struct {
 	db *sql.DB
 }
 
-func NewUserDBRepository(db *sql.DB) *UserDBRepository {
-	return &UserDBRepository{db: db}
+func NewUsersDBRepository(db *sql.DB) *UsersDBRepository {
+	return &UsersDBRepository{db: db}
 }
 
-func (r *UserDBRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
+func (r *UsersDBRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("username: %s", username))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -36,7 +36,7 @@ func (r *UserDBRepository) GetUserByUsername(ctx context.Context, username strin
 	return &user, nil
 }
 
-func (r *UserDBRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
+func (r *UsersDBRepository) GetUserRoleByID(ctx context.Context, id uuid.UUID) (domain.Role, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 

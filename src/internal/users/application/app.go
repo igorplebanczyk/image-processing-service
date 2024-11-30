@@ -9,26 +9,32 @@ import (
 	commonerrors "image-processing-service/src/internal/common/errors"
 	"image-processing-service/src/internal/common/otp"
 	"image-processing-service/src/internal/users/domain"
+	"log/slog"
 	"time"
 )
 
-type UserService struct {
-	repo        domain.UserDBRepository
+type UsersService struct {
+	usersDBRepo domain.UsersDBRepository
 	mailService *emails.Service
 	issuer      string
 	otpExpiry   uint
 }
 
-func NewService(repo domain.UserDBRepository, mailService *emails.Service, issuer string, otpExpiry uint) *UserService {
-	return &UserService{
-		repo:        repo,
+func NewService(
+	imagesDBRepo domain.UsersDBRepository,
+	mailService *emails.Service,
+	issuer string,
+	otpExpiry uint,
+) *UsersService {
+	return &UsersService{
+		usersDBRepo: imagesDBRepo,
 		mailService: mailService,
 		issuer:      issuer,
 		otpExpiry:   otpExpiry,
 	}
 }
 
-func (s *UserService) Register(username, email, password string) (*domain.User, error) {
+func (s *UsersService) Register(username, email, password string) (*domain.User, error) {
 	err := domain.ValidateUsername(username)
 	if err != nil {
 		return nil, commonerrors.NewInvalidInput(fmt.Sprintf("invalid username: %v", err))
@@ -57,7 +63,7 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.CreateUser(ctx, username, email, string(hashedPassword), otpSecret)
+	user, err := s.usersDBRepo.CreateUser(ctx, username, email, string(hashedPassword), otpSecret)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to create user: %v", err))
 	}
@@ -80,11 +86,11 @@ func (s *UserService) Register(username, email, password string) (*domain.User, 
 	return user, nil
 }
 
-func (s *UserService) GetDetails(userID uuid.UUID) (*domain.User, error) {
+func (s *UsersService) GetDetails(userID uuid.UUID) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := s.usersDBRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -92,11 +98,11 @@ func (s *UserService) GetDetails(userID uuid.UUID) (*domain.User, error) {
 	return user, nil
 }
 
-func (s *UserService) UpdateDetails(userID uuid.UUID, username, email string) error {
+func (s *UsersService) UpdateDetails(userID uuid.UUID, username, email string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := s.usersDBRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -116,7 +122,7 @@ func (s *UserService) UpdateDetails(userID uuid.UUID, username, email string) er
 		return commonerrors.NewInvalidInput(fmt.Sprintf("invalid email: %v", err))
 	}
 
-	err = s.repo.UpdateUserDetails(ctx, userID, newUsername, newEmail)
+	err = s.usersDBRepo.UpdateUserDetails(ctx, userID, newUsername, newEmail)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to update user details: %v", err))
 	}
@@ -124,11 +130,11 @@ func (s *UserService) UpdateDetails(userID uuid.UUID, username, email string) er
 	return nil
 }
 
-func (s *UserService) Delete(userID uuid.UUID) error {
+func (s *UsersService) Delete(userID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	err := s.repo.DeleteUser(ctx, userID)
+	err := s.usersDBRepo.DeleteUser(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to delete user: %v", err))
 	}
@@ -136,11 +142,11 @@ func (s *UserService) Delete(userID uuid.UUID) error {
 	return nil
 }
 
-func (s *UserService) ResendVerificationCode(userID uuid.UUID) error {
+func (s *UsersService) ResendVerificationCode(userID uuid.UUID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := s.usersDBRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -163,11 +169,11 @@ func (s *UserService) ResendVerificationCode(userID uuid.UUID) error {
 	return nil
 }
 
-func (s *UserService) Verify(userID uuid.UUID, code string) error {
+func (s *UsersService) Verify(userID uuid.UUID, code string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := s.usersDBRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -180,7 +186,7 @@ func (s *UserService) Verify(userID uuid.UUID, code string) error {
 		return commonerrors.NewInvalidInput("invalid otp")
 	}
 
-	err = s.repo.UpdateUserAsVerified(ctx, userID)
+	err = s.usersDBRepo.UpdateUserAsVerified(ctx, userID)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to update user as verified: %v", err))
 	}
@@ -188,11 +194,11 @@ func (s *UserService) Verify(userID uuid.UUID, code string) error {
 	return nil
 }
 
-func (s *UserService) SendForgotPasswordCode(email string) error {
+func (s *UsersService) SendForgotPasswordCode(email string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByEmail(ctx, email)
+	user, err := s.usersDBRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -215,11 +221,11 @@ func (s *UserService) SendForgotPasswordCode(email string) error {
 	return nil
 }
 
-func (s *UserService) ResetPassword(email, code, newPassword string) error {
+func (s *UsersService) ResetPassword(email, code, newPassword string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user, err := s.repo.GetUserByEmail(ctx, email)
+	user, err := s.usersDBRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to get user from database: %v", err))
 	}
@@ -237,9 +243,65 @@ func (s *UserService) ResetPassword(email, code, newPassword string) error {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to hash password: %v", err))
 	}
 
-	err = s.repo.UpdateUserPassword(ctx, user.ID, string(hashedPassword))
+	err = s.usersDBRepo.UpdateUserPassword(ctx, user.ID, string(hashedPassword))
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("failed to update user password: %v", err))
+	}
+
+	return nil
+}
+
+func (s *UsersService) AdminGetAllUsers(page, limit int) ([]domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	users, err := s.usersDBRepo.GetAllUsers(ctx, page, limit)
+	if err != nil {
+		return nil, commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
+	}
+
+	return users, nil
+}
+
+func (s *UsersService) AdminUpdateUserRole(userID uuid.UUID, role domain.Role) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if role != domain.RoleAdmin && role != domain.RoleUser {
+		return commonerrors.NewInvalidInput(fmt.Sprintf("invalid role: %s", role))
+	}
+
+	err := s.usersDBRepo.UpdateUserRole(ctx, userID, role)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("error updating user role in database: %v", err))
+	}
+
+	return nil
+}
+
+func (s *UsersService) AdminBroadcast(subject, body string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	users, err := s.usersDBRepo.GetAllUsers(ctx, 1, 10000)
+	if err != nil {
+		return commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
+	}
+
+	errorChan := make(chan error, len(users))
+
+	for _, user := range users {
+		err = s.mailService.SendText(user.Email, subject, body)
+		if err != nil {
+			errorChan <- commonerrors.NewInternal(fmt.Sprintf("error sending email to user %s: %v", user.Email, err))
+		}
+	}
+
+	close(errorChan)
+	for err := range errorChan {
+		if err != nil {
+			slog.Error("Failed to send email", "error", err)
+		}
 	}
 
 	return nil

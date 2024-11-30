@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-type RefreshTokenDBRepository struct {
+type RefreshTokensDBRepository struct {
 	db         *sql.DB
 	txProvider *tx.Provider
 }
 
-func NewRefreshTokenDBRepository(db *sql.DB, txProvider *tx.Provider) *RefreshTokenDBRepository {
-	return &RefreshTokenDBRepository{db: db, txProvider: txProvider}
+func NewRefreshTokensDBRepository(db *sql.DB, txProvider *tx.Provider) *RefreshTokensDBRepository {
+	return &RefreshTokensDBRepository{db: db, txProvider: txProvider}
 }
 
-func (r *RefreshTokenDBRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+func (r *RefreshTokensDBRepository) CreateRefreshToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
 	slog.Info("DB query", "operation", "INSERT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s, token: %s, expires_at: %s", userID, token, expiresAt))
 	metrics.DBQueriesTotal.WithLabelValues("INSERT").Inc()
 
@@ -39,7 +39,7 @@ func (r *RefreshTokenDBRepository) CreateRefreshToken(ctx context.Context, userI
 	})
 }
 
-func (r *RefreshTokenDBRepository) GetRefreshTokenByUserIDandToken(ctx context.Context, userID uuid.UUID, token string) (*domain.RefreshToken, error) {
+func (r *RefreshTokensDBRepository) GetRefreshTokenByUserIDandToken(ctx context.Context, userID uuid.UUID, token string) (*domain.RefreshToken, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s, token: %s", userID, token))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -57,7 +57,7 @@ func (r *RefreshTokenDBRepository) GetRefreshTokenByUserIDandToken(ctx context.C
 	return &refreshToken, nil
 }
 
-func (r *RefreshTokenDBRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
+func (r *RefreshTokensDBRepository) RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "refresh_tokens", "parameters", fmt.Sprintf("user_id: %s", userID))
 	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type RefreshTokenDBRepository interface {
+type RefreshTokensDBRepository interface {
 	CreateRefreshToken(
 		ctx context.Context,
 		userID uuid.UUID,

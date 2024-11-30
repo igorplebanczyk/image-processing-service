@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserDBRepository interface {
+type UsersDBRepository interface {
 	CreateUser(
 		ctx context.Context,
 		username,

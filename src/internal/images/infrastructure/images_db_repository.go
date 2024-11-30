@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-type ImageDBRepository struct {
+type ImagesDBRepository struct {
 	db         *sql.DB
 	txProvider *tx.Provider
 }
 
-func NewImageDBRepository(db *sql.DB, txProvider *tx.Provider) *ImageDBRepository {
-	return &ImageDBRepository{db: db, txProvider: txProvider}
+func NewImagesDBRepository(db *sql.DB, txProvider *tx.Provider) *ImagesDBRepository {
+	return &ImagesDBRepository{db: db, txProvider: txProvider}
 }
 
-func (r *ImageDBRepository) CreateImageMetadata(
+func (r *ImagesDBRepository) CreateImageMetadata(
 	ctx context.Context,
 	userID uuid.UUID,
 	name,
@@ -48,7 +48,7 @@ func (r *ImageDBRepository) CreateImageMetadata(
 	return imageMetadata, nil
 }
 
-func (r *ImageDBRepository) GetImageMetadataByUserIDAndName(ctx context.Context, userID uuid.UUID, name string) (*domain.ImageMetadata, error) {
+func (r *ImagesDBRepository) GetImageMetadataByUserIDAndName(ctx context.Context, userID uuid.UUID, name string) (*domain.ImageMetadata, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("userID: %s, name: %s", userID, name))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -64,7 +64,7 @@ func (r *ImageDBRepository) GetImageMetadataByUserIDAndName(ctx context.Context,
 	return &imageMetadata, nil
 }
 
-func (r *ImageDBRepository) GetImagesMetadataByUserID(ctx context.Context, userID uuid.UUID, page, limit int) ([]*domain.ImageMetadata, int, error) {
+func (r *ImagesDBRepository) GetImagesMetadataByUserID(ctx context.Context, userID uuid.UUID, page, limit int) ([]*domain.ImageMetadata, int, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("userID: %s, page: %d, limit: %d", userID, page, limit))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -101,7 +101,7 @@ func (r *ImageDBRepository) GetImagesMetadataByUserID(ctx context.Context, userI
 	return imagesMetadata, total, nil
 }
 
-func (r *ImageDBRepository) GetAllImagesMetadata(ctx context.Context, page, limit int) ([]*domain.ImageMetadata, int, error) {
+func (r *ImagesDBRepository) GetAllImagesMetadata(ctx context.Context, page, limit int) ([]*domain.ImageMetadata, int, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "images_metadata", "parameters", fmt.Sprintf("page: %d, limit: %d", page, limit))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -137,7 +137,7 @@ func (r *ImageDBRepository) GetAllImagesMetadata(ctx context.Context, page, limi
 	return imagesMetadata, total, nil
 }
 
-func (r *ImageDBRepository) UpdateImageMetadataDetails(ctx context.Context, id uuid.UUID, newName, newDescription string) error {
+func (r *ImagesDBRepository) UpdateImageMetadataDetails(ctx context.Context, id uuid.UUID, newName, newDescription string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s, newName: %s, newDescription: %s", id, newName, newDescription))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -158,7 +158,7 @@ func (r *ImageDBRepository) UpdateImageMetadataDetails(ctx context.Context, id u
 	return nil
 }
 
-func (r *ImageDBRepository) UpdateImageMetadataUpdatedAt(ctx context.Context, id uuid.UUID) error {
+func (r *ImagesDBRepository) UpdateImageMetadataUpdatedAt(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -177,7 +177,7 @@ func (r *ImageDBRepository) UpdateImageMetadataUpdatedAt(ctx context.Context, id
 	return nil
 }
 
-func (r *ImageDBRepository) DeleteImageMetadata(ctx context.Context, id uuid.UUID) error {
+func (r *ImagesDBRepository) DeleteImageMetadata(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "images_metadata", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 

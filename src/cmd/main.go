@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	authApp "image-processing-service/src/internal/auth/application"
-	authInfra "image-processing-service/src/internal/auth/infrastructure"
-	authInterface "image-processing-service/src/internal/auth/interfaces"
+	authApplication "image-processing-service/src/internal/auth/application"
+	authInfrastructure "image-processing-service/src/internal/auth/infrastructure"
+	authInterfaces "image-processing-service/src/internal/auth/interfaces"
 	"image-processing-service/src/internal/common/cache"
 	"image-processing-service/src/internal/common/database"
 	"image-processing-service/src/internal/common/database/tx"
@@ -17,12 +17,12 @@ import (
 	"image-processing-service/src/internal/common/server/version"
 	"image-processing-service/src/internal/common/storage"
 	storageWorker "image-processing-service/src/internal/common/storage/worker"
-	imagesApp "image-processing-service/src/internal/images/application"
-	imagesInfra "image-processing-service/src/internal/images/infrastructure"
-	imagesInterface "image-processing-service/src/internal/images/interfaces"
-	usersApp "image-processing-service/src/internal/users/application"
-	usersInfra "image-processing-service/src/internal/users/infrastructure"
-	usersInterface "image-processing-service/src/internal/users/interfaces"
+	imagesApplication "image-processing-service/src/internal/images/application"
+	imagesInfrastructure "image-processing-service/src/internal/images/infrastructure"
+	imagesInterfaces "image-processing-service/src/internal/images/interfaces"
+	usersApplication "image-processing-service/src/internal/users/application"
+	usersInfrastructure "image-processing-service/src/internal/users/infrastructure"
+	usersInterfaces "image-processing-service/src/internal/users/interfaces"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -175,11 +175,11 @@ func (a *application) assemble() error {
 
 	// Assemble the application
 
-	authUserDBRepo := authInfra.NewUserDBRepository(db)
-	authRefreshTokenDBRepo := authInfra.NewRefreshTokenDBRepository(db, txProvider)
-	authService := authApp.NewService(
-		authUserDBRepo,
-		authRefreshTokenDBRepo,
+	authUsersDBRepo := authInfrastructure.NewUsersDBRepository(db)
+	authRefreshTokensDBRepo := authInfrastructure.NewRefreshTokensDBRepository(db, txProvider)
+	authService := authApplication.NewService(
+		authUsersDBRepo,
+		authRefreshTokensDBRepo,
 		mailService,
 		jwtSecret,
 		issuer,
@@ -187,26 +187,26 @@ func (a *application) assemble() error {
 		refreshTokenExpirationTime,
 		otpExpirationUint,
 	)
-	authAPI := authInterface.NewAPI(authService, accessTokenExpirationTime, refreshTokenExpirationTime)
+	authAPI := authInterfaces.NewAPI(authService, accessTokenExpirationTime, refreshTokenExpirationTime)
 
 	slog.Info("Init step 13: auth module assembled")
 
-	userDBRepo := usersInfra.NewUserDBRepository(db, txProvider)
-	userService := usersApp.NewService(userDBRepo, mailService, issuer, otpExpirationUint)
-	userAPI := usersInterface.NewAPI(userService)
+	usersDBRepo := usersInfrastructure.NewUsersDBRepository(db, txProvider)
+	usersService := usersApplication.NewService(usersDBRepo, mailService, issuer, otpExpirationUint)
+	usersAPI := usersInterfaces.NewAPI(usersService)
 
 	slog.Info("Init step 14: user module assembled")
 
-	imageDBRepo := imagesInfra.NewImageDBRepository(db, txProvider)
-	imageStorageRepo := imagesInfra.NewImageStorageRepository(storageService)
-	imageCacheRepo := imagesInfra.NewImageCacheRepository(cacheService)
-	imageService := imagesApp.NewService(imageDBRepo, imageStorageRepo, imageCacheRepo, cacheExpirationTime)
-	imageAPI := imagesInterface.NewAPI(imageService)
+	imagesDBRepo := imagesInfrastructure.NewImagesDBRepository(db, txProvider)
+	imagesStorageRepo := imagesInfrastructure.NewImagesStorageRepository(storageService)
+	imagesCacheRepo := imagesInfrastructure.NewImagesCacheRepository(cacheService)
+	imagesService := imagesApplication.NewService(imagesDBRepo, imagesStorageRepo, imagesCacheRepo, cacheExpirationTime)
+	imagesAPI := imagesInterfaces.NewAPI(imagesService)
 
 	slog.Info("Init step 15: image module assembled")
 
 	version.Set(appVersion)
-	serverService := server.NewService(appPortInt, authAPI, userAPI, imageAPI)
+	serverService := server.NewService(appPortInt, authAPI, usersAPI, imagesAPI)
 
 	a.serverService = serverService
 	a.dbService = dbService

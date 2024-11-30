@@ -13,10 +13,10 @@ import (
 )
 
 type UserAPI struct {
-	service *application.UserService
+	service *application.UsersService
 }
 
-func NewAPI(service *application.UserService) *UserAPI {
+func NewAPI(service *application.UsersService) *UserAPI {
 	return &UserAPI{service: service}
 }
 

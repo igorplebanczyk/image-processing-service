@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-type ImageCacheRepository struct {
+type ImagesCacheRepository struct {
 	cache *cache.Service
 }
 
-func NewImageCacheRepository(cache *cache.Service) *ImageCacheRepository {
-	return &ImageCacheRepository{cache: cache}
+func NewImagesCacheRepository(cache *cache.Service) *ImagesCacheRepository {
+	return &ImagesCacheRepository{cache: cache}
 }
 
-func (r *ImageCacheRepository) CacheImage(ctx context.Context, key string, bytes []byte, expiry time.Duration) error {
+func (r *ImagesCacheRepository) CacheImage(ctx context.Context, key string, bytes []byte, expiry time.Duration) error {
 	slog.Info("Setting key in cache", "key", key)
 	metrics.CacheOperationsTotal.WithLabelValues("set").Inc()
 
@@ -30,7 +30,7 @@ func (r *ImageCacheRepository) CacheImage(ctx context.Context, key string, bytes
 	return nil
 }
 
-func (r *ImageCacheRepository) GetImage(ctx context.Context, key string) ([]byte, error) {
+func (r *ImagesCacheRepository) GetImage(ctx context.Context, key string) ([]byte, error) {
 	slog.Info("Getting key from cache", "key", key)
 	metrics.CacheOperationsTotal.WithLabelValues("get").Inc()
 
@@ -45,7 +45,7 @@ func (r *ImageCacheRepository) GetImage(ctx context.Context, key string) ([]byte
 	return []byte(val), nil
 }
 
-func (r *ImageCacheRepository) DeleteImage(ctx context.Context, key string) error {
+func (r *ImagesCacheRepository) DeleteImage(ctx context.Context, key string) error {
 	slog.Info("Deleting key from cache", "key", key)
 	metrics.CacheOperationsTotal.WithLabelValues("delete").Inc()
 

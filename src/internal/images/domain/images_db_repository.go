@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type ImageDBRepository interface {
+type ImagesDBRepository interface {
 	CreateImageMetadata(
 		ctx context.Context,
 		userID uuid.UUID,

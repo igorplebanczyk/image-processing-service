@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-type UserDBRepository struct {
+type UsersDBRepository struct {
 	db         *sql.DB
 	txProvider *tx.Provider
 }
 
-func NewUserDBRepository(db *sql.DB, txProvider *tx.Provider) *UserDBRepository {
-	return &UserDBRepository{db: db, txProvider: txProvider}
+func NewUsersDBRepository(db *sql.DB, txProvider *tx.Provider) *UsersDBRepository {
+	return &UsersDBRepository{db: db, txProvider: txProvider}
 }
 
-func (r *UserDBRepository) CreateUser(ctx context.Context, username, email, password, otpSecret string) (*domain.User, error) {
+func (r *UsersDBRepository) CreateUser(ctx context.Context, username, email, password, otpSecret string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "INSERT", "table", "users", "parameters", fmt.Sprintf("username: %s, email: %s, password: %s", username, email, password))
 	metrics.DBQueriesTotal.WithLabelValues("INSERT").Inc()
 
@@ -44,7 +44,7 @@ func (r *UserDBRepository) CreateUser(ctx context.Context, username, email, pass
 	return user, nil
 }
 
-func (r *UserDBRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
+func (r *UsersDBRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -59,7 +59,7 @@ func (r *UserDBRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*doma
 	return &user, nil
 }
 
-func (r *UserDBRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *UsersDBRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users", "parameters", fmt.Sprintf("email: %s", email))
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -74,7 +74,7 @@ func (r *UserDBRepository) GetUserByEmail(ctx context.Context, email string) (*d
 	return &user, nil
 }
 
-func (r *UserDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]domain.User, error) {
+func (r *UsersDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]domain.User, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users")
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
@@ -106,7 +106,7 @@ func (r *UserDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]
 	return users, nil
 }
 
-func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {
+func (r *UsersDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, username: %s, email: %s", id, username, email))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -121,7 +121,7 @@ func (r *UserDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, 
 	})
 }
 
-func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role domain.Role) error {
+func (r *UsersDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, role domain.Role) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s, role: %s", id, role))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -135,7 +135,7 @@ func (r *UserDBRepository) UpdateUserRole(ctx context.Context, id uuid.UUID, rol
 	})
 }
 
-func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUID) error {
+func (r *UsersDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -149,7 +149,7 @@ func (r *UserDBRepository) UpdateUserAsVerified(ctx context.Context, id uuid.UUI
 	})
 }
 
-func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID, password string) error {
+func (r *UsersDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID, password string) error {
 	slog.Info("DB query", "operation", "UPDATE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("UPDATE").Inc()
 
@@ -163,7 +163,7 @@ func (r *UserDBRepository) UpdateUserPassword(ctx context.Context, id uuid.UUID,
 	})
 }
 
-func (r *UserDBRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (r *UsersDBRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	slog.Info("DB query", "operation", "DELETE", "table", "users", "parameters", fmt.Sprintf("id: %s", id))
 	metrics.DBQueriesTotal.WithLabelValues("DELETE").Inc()
 

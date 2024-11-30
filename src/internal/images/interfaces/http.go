@@ -17,10 +17,10 @@ import (
 )
 
 type ImageAPI struct {
-	ImagesService *application.ImageService
+	ImagesService *application.ImagesService
 }
 
-func NewAPI(imagesService *application.ImageService) *ImageAPI {
+func NewAPI(imagesService *application.ImagesService) *ImageAPI {
 	return &ImageAPI{ImagesService: imagesService}
 }
 

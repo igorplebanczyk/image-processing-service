@@ -72,11 +72,11 @@
   - [X] Collect more logs
   - [X] Collect more metrics
   - [X] Streamline the API, verify API security and semantics
-  - [ ] Attempt to streamline the main package
-  - [ ] Standardize naming conventions
-  - [ ] Revise the project structure
-  - [ ] Extract constants into variables
-  - [ ] Extract common functionality into helper functions
+  - [X] Attempt to streamline the main package
+  - [X] Standardize naming conventions
+  - [X] Revise the project structure
+  - [X] Extract constants into variables
+  - [X] Extract common functionality into helper functions
   - [ ] Update unit tests, add infrastructure integration tests
   - [ ] Add comments where necessary
 - [ ] Add a reverse proxy

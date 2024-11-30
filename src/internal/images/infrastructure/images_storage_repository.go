@@ -9,15 +9,15 @@ import (
 	"log/slog"
 )
 
-type ImageStorageRepository struct {
+type ImagesStorageRepository struct {
 	storage *storage.Service
 }
 
-func NewImageStorageRepository(storage *storage.Service) *ImageStorageRepository {
-	return &ImageStorageRepository{storage: storage}
+func NewImagesStorageRepository(storage *storage.Service) *ImagesStorageRepository {
+	return &ImagesStorageRepository{storage: storage}
 }
 
-func (r *ImageStorageRepository) UploadImage(ctx context.Context, name string, bytes []byte) error {
+func (r *ImagesStorageRepository) UploadImage(ctx context.Context, name string, bytes []byte) error {
 	slog.Info("Uploading file to storage", "blob_name", name)
 	metrics.StorageOperationsTotal.WithLabelValues("upload").Inc()
 
@@ -29,7 +29,7 @@ func (r *ImageStorageRepository) UploadImage(ctx context.Context, name string, b
 	return nil
 }
 
-func (r *ImageStorageRepository) DownloadImage(ctx context.Context, name string) ([]byte, error) {
+func (r *ImagesStorageRepository) DownloadImage(ctx context.Context, name string) ([]byte, error) {
 	slog.Info("Downloading file from storage", "blob_name", name)
 	metrics.StorageOperationsTotal.WithLabelValues("download").Inc()
 
@@ -42,7 +42,7 @@ func (r *ImageStorageRepository) DownloadImage(ctx context.Context, name string)
 	return data, nil
 }
 
-func (r *ImageStorageRepository) DeleteImage(ctx context.Context, name string) error {
+func (r *ImagesStorageRepository) DeleteImage(ctx context.Context, name string) error {
 	slog.Info("Deleting file from storage", "blob_name", name)
 	metrics.StorageOperationsTotal.WithLabelValues("delete").Inc()
 
