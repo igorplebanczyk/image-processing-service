@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -52,6 +53,11 @@ func ValidateDescription(description string) error {
 func ValidateImage(bytes []byte) error {
 	if len(bytes) > MaxImageSize {
 		return fmt.Errorf("image size cannot exceed %d bytes", MaxImageSize)
+	}
+
+	mimeType := http.DetectContentType(bytes)
+	if mimeType != "image/jpeg" && mimeType != "image/png" {
+		return fmt.Errorf("invalid image format: %s", mimeType)
 	}
 
 	return nil
