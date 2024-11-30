@@ -15,7 +15,7 @@ type UsersDBRepository interface {
 	) (*User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
-	GetAllUsers(ctx context.Context, page, limit int) ([]User, error)
+	GetAllUsers(ctx context.Context, page, limit int) ([]User, int, error)
 	UpdateUserDetails(
 		ctx context.Context,
 		id uuid.UUID,

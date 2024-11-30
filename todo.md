@@ -77,8 +77,8 @@
   - [X] Revise the project structure
   - [X] Extract constants into variables
   - [X] Extract common functionality into helper functions
-  - [ ] Update unit tests, add infrastructure integration tests
   - [ ] Add comments where necessary
+  - [ ] Update unit tests
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
   - [ ] Add rate limiting and other security features

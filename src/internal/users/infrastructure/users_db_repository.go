@@ -74,36 +74,37 @@ func (r *UsersDBRepository) GetUserByEmail(ctx context.Context, email string) (*
 	return &user, nil
 }
 
-func (r *UsersDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]domain.User, error) {
+func (r *UsersDBRepository) GetAllUsers(ctx context.Context, page, limit int) ([]domain.User, int, error) {
 	slog.Info("DB query", "operation", "SELECT", "table", "users")
 	metrics.DBQueriesTotal.WithLabelValues("SELECT").Inc()
 
 	offset := (page - 1) * limit
 
-	query := `SELECT * FROM users LIMIT $1 OFFSET $2`
+	var total int
+	var users []domain.User
 
-	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	rows, err := r.db.QueryContext(ctx, `SELECT * FROM users LIMIT $1 OFFSET $2`, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("error getting users: %w", err)
+		return nil, -1, fmt.Errorf("error getting users: %w", err)
 	}
 	defer rows.Close()
 
-	var users []domain.User
 	for rows.Next() {
 		var user domain.User
 		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Role, &user.OTPSecret, &user.Verified, &user.UpdatedAt, &user.CreatedAt)
 		if err != nil {
-			return nil, fmt.Errorf("error scanning user: %w", err)
+			return nil, -1, fmt.Errorf("error scanning user: %w", err)
 		}
 
 		users = append(users, user)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %w", err)
+	err = r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&total)
+	if err != nil {
+		return nil, -1, fmt.Errorf("error getting total users: %w", err)
 	}
 
-	return users, nil
+	return users, total, nil
 }
 
 func (r *UsersDBRepository) UpdateUserDetails(ctx context.Context, id uuid.UUID, username, email string) error {

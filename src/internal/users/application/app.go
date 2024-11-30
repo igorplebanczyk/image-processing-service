@@ -251,16 +251,16 @@ func (s *UsersService) ResetPassword(email, code, newPassword string) error {
 	return nil
 }
 
-func (s *UsersService) AdminGetAllUsers(page, limit int) ([]domain.User, error) {
+func (s *UsersService) AdminGetAllUsers(page, limit int) ([]domain.User, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	users, err := s.usersDBRepo.GetAllUsers(ctx, page, limit)
+	users, total, err := s.usersDBRepo.GetAllUsers(ctx, page, limit)
 	if err != nil {
-		return nil, commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
+		return nil, -1, commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}
 
-	return users, nil
+	return users, total, nil
 }
 
 func (s *UsersService) AdminUpdateUserRole(userID uuid.UUID, role domain.Role) error {
@@ -283,7 +283,7 @@ func (s *UsersService) AdminBroadcast(subject, body string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	users, err := s.usersDBRepo.GetAllUsers(ctx, 1, 10000)
+	users, _, err := s.usersDBRepo.GetAllUsers(ctx, 1, 999999)
 	if err != nil {
 		return commonerrors.NewInternal(fmt.Sprintf("error fetching users from database: %v", err))
 	}

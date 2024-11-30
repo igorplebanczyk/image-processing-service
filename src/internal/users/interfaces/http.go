@@ -241,7 +241,7 @@ func (a *UserAPI) AdminGetUserDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request) {
-	type response struct {
+	type responseItem struct {
 		ID        string `json:"id"`
 		Username  string `json:"username"`
 		Email     string `json:"email"`
@@ -249,6 +249,11 @@ func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request
 		Verified  string `json:"verified"`
 		CreatedAt string `json:"created_at"`
 		UpdatedAt string `json:"updated_at"`
+	}
+
+	type response struct {
+		Users []responseItem `json:"users"`
+		Total int            `json:"total"`
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -265,16 +270,16 @@ func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	users, err := a.service.AdminGetAllUsers(page, limit)
+	users, total, err := a.service.AdminGetAllUsers(page, limit)
 	if err != nil {
 		slog.Error("HTTP request error", "error", err)
 		respond.WithError(w, err)
 		return
 	}
 
-	var resp []response
+	var respItems []responseItem
 	for _, user := range users {
-		resp = append(resp, response{
+		respItems = append(respItems, responseItem{
 			ID:        user.ID.String(),
 			Username:  user.Username,
 			Email:     user.Email,
@@ -285,7 +290,10 @@ func (a *UserAPI) AdminGetAllUsersDetails(w http.ResponseWriter, r *http.Request
 		})
 	}
 
-	respond.WithJSON(w, http.StatusOK, resp)
+	respond.WithJSON(w, http.StatusOK, response{
+		Users: respItems,
+		Total: total,
+	})
 }
 
 func (a *UserAPI) AdminUpdateRole(w http.ResponseWriter, r *http.Request) {
