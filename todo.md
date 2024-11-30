@@ -7,14 +7,6 @@
 - [X] Add dependabot configuration
 - [X] Add RBAC
 - [X] Add admin endpoints
-- [ ] Add tests
-  - [ ] Add domain layer unit tests
-  - [ ] Add application layer unit tests
-    - [ ] Add unit tests for subservices of the application layer
-  - [ ] Add interfaces layer unit tests
-  - [ ] Add infrastructure layer integration tests
-  - [ ] Add component tests
-  - [ ] Add end-to-end tests
 - [X] Revise the API setup
   - [X] Add an endpoint for verifying whether a user is an admin
   - [X] Add a versioning system
@@ -78,9 +70,18 @@
   - [X] Extract constants into variables
   - [X] Extract common functionality into helper functions
   - [X] Add comments where necessary
+- [ ] Add tests
+  - [ ] Add domain layer unit tests
+  - [ ] Add application layer unit tests
+    - [ ] Add unit tests for subservices of the application layer
+  - [ ] Add interfaces layer unit tests
+  - [ ] Add infrastructure layer integration tests
 - [ ] Add a reverse proxy
   - [ ] Add Traefik to the Docker Compose setup
   - [ ] Add rate limiting and other security features
+  - [ ] Make metrics a private endpoint
+  - [ ] Introduce login rate limiting and jailing
+  - [ ] Expose Grafana
   - [ ] Add a caching layer
   - [ ] Revise API security best practices
   - [ ] Add a simple way to manage HTTPS and domains
