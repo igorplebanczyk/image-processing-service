@@ -78,27 +78,28 @@
   - [X] Add rate limiting and other security features
   - [X] Expose Grafana
   - [X] Revise API security best practices
-  - [ ] Add a simple way to manage HTTPS and domains
-- [ ] Improve the Terraform setup
-  - [ ] Add a setup file for the resource group and virtual network
-  - [ ] Add a setup file for Azure Container Registry
-  - [ ] Add a setup file for Azure Container Apps
-  - [ ] Improve the setup file for Azure Blob Storage
-  - [ ] Improve the overall setup (Makefile, variables, etc.)
-- [ ] Add a deployment pipeline
-  - [ ] Add a CD workflow
-  - [ ] Figure out how to handle environment variables
+- [X] Improve the Terraform setup
+  - [X] Add a setup file for the resource group and virtual network
+  - [X] Add a setup file for Azure Container Registry
+  - [X] Add a setup file for Azure Container Apps
+  - [X] Improve the setup file for Azure Blob Storage
+  - [X] Improve the overall setup (Makefile, variables, etc.)
 - [ ] Add documentation
   - [ ] Add a .env template
-  - [ ] Add a README.md file
-  - [ ] Add a SECURITY.md file
   - [ ] Add a LICENSE
+  - [ ] Add a SECURITY.md file
+  - [ ] Add a README.md file
+  - [ ] Add API documentation (Postman)
 
 FUTURE
-- [ ] Add infrastructure integration tests
 - [ ] Add max retry and jailing features to login endpoints
 - [ ] Make metrics a private endpoint
 - [ ] Setup logging and metrics for all services
+- [ ] Revise the terraform setup
+- [ ] Modify docker-compose to work in Azure Container Apps (images, environment variables, etc.)
+- [ ] Handle HTTPS and domains with Traefik and Azure Container Apps
+- [ ] Add a deployment pipeline
+- [ ] Add infrastructure integration tests
 
 ## API
 

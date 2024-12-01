@@ -1,4 +1,5 @@
 .idea/
 .env
-terraform/.env
 config/certificates/
+terraform/.terraform/
+terraform/.terraform.lock.hcl
