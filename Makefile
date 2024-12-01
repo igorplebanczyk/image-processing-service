@@ -1,29 +1,40 @@
-.PHONY: run stop tidy test lint sec tfinit tfplan tfapply
+.PHONY: build up down restart logs tidy test lint sec tf
+.DEFAULT_GOAL := up
 
-run:
-	docker-compose up --build
+SRC_DIR := src
+TF_DIR := terraform
 
-stop:
+# Docker Compose commands
+
+build:
+	docker-compose build
+
+up:
+	docker-compose up -d
+
+down:
 	docker-compose down
 
+restart: down up
+
+logs:
+	docker-compose logs -f
+
+# Go commands
+
 tidy:
-	cd src && go mod tidy
+	cd $(SRC_DIR); go mod tidy
 
 test:
-	cd src && go test -v -cover ./...
+	cd $(SRC_DIR); go test -v -cover ./...
 
 lint:
-	cd src && staticcheck ./...
+	cd $(SRC_DIR); staticcheck ./...
 
 sec:
-	cd src && gosec ./...
+	cd $(SRC_DIR); gosec ./...
 
-tfinit:
-	cd terraform && terraform init
+# Terraform commands; usage: make tf <command> (e.g. make tf apply)
 
-tfplan:
-	cd terraform && terraform plan
-
-tfapply:
-	cd terraform && terraform apply
-
+tf:
+	cd $(TF_DIR); terraform $(filter-out $@,$(MAKECMDGOALS))
