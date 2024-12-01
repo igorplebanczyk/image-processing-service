@@ -84,12 +84,12 @@
   - [X] Add a setup file for Azure Container Apps
   - [X] Improve the setup file for Azure Blob Storage
   - [X] Improve the overall setup (Makefile, variables, etc.)
-- [ ] Add documentation
+- [X] Add documentation
   - [X] Add a .env template
-  - [ ] Add API documentation (Postman)
+  - [X] Add API documentation (Postman)
   - [X] Add a LICENSE
   - [X] Add a SECURITY.md file
-  - [ ] Add a README.md file
+  - [X] Add a README.md file
 
 FUTURE
 - [ ] Add max retry and jailing features to login endpoints
