@@ -95,23 +95,23 @@ func (a *ImageAPI) Get(userID uuid.UUID, w http.ResponseWriter, r *http.Request)
 }
 
 func (a *ImageAPI) GetAll(userID uuid.UUID, w http.ResponseWriter, r *http.Request) {
-	type imagesMetadata struct {
+	type responseImageMetadata struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
 		UpdatedAt   string `json:"updated_at"`
 		CreatedAt   string `json:"created_at"`
 	}
 
-	type images struct {
-		Metadata     imagesMetadata `json:"metadata"`
-		ImagePreview string         `json:"image_preview"`
+	type responseImage struct {
+		Metadata     responseImageMetadata `json:"metadata"`
+		ImagePreview string                `json:"image_preview"`
 	}
 
 	type response struct {
-		Images     []images `json:"images"`
-		TotalCount int      `json:"total_count"`
-		Page       int      `json:"page"`
-		Limit      int      `json:"limit"`
+		Images     []responseImage `json:"images"`
+		TotalCount int             `json:"total_count"`
+		Page       int             `json:"page"`
+		Limit      int             `json:"limit"`
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -135,11 +135,11 @@ func (a *ImageAPI) GetAll(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var respImages []images
+	var respImages []responseImage
 	for i, m := range metadata {
 		encodedPreview := base64.StdEncoding.EncodeToString(previews[i])
-		respImages = append(respImages, images{
-			Metadata: imagesMetadata{
+		respImages = append(respImages, responseImage{
+			Metadata: responseImageMetadata{
 				Name:        m.Name,
 				Description: m.Description,
 				UpdatedAt:   m.UpdatedAt.String(),
@@ -228,7 +228,7 @@ func (a *ImageAPI) Delete(userID uuid.UUID, w http.ResponseWriter, r *http.Reque
 }
 
 func (a *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
-	type responseItem struct {
+	type responseImage struct {
 		Name        string    `json:"name"`
 		Description string    `json:"description"`
 		CreatedAt   time.Time `json:"created_at"`
@@ -236,10 +236,10 @@ func (a *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		Images     []responseItem `json:"images"`
-		Page       int            `json:"page"`
-		Limit      int            `json:"limit"`
-		TotalCount int            `json:"total_count"`
+		Images     []responseImage `json:"images"`
+		Page       int             `json:"page"`
+		Limit      int             `json:"limit"`
+		TotalCount int             `json:"total_count"`
 	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -263,9 +263,9 @@ func (a *ImageAPI) AdminListAllImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var responseImages []responseItem
+	var responseImages []responseImage
 	for _, img := range images {
-		responseImages = append(responseImages, responseItem{
+		responseImages = append(responseImages, responseImage{
 			Name:      img.Name,
 			CreatedAt: img.CreatedAt,
 			UpdatedAt: img.UpdatedAt,

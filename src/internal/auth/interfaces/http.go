@@ -65,6 +65,7 @@ func (a *AuthAPI) AdminMiddleware(handler func(http.ResponseWriter, *http.Reques
 	}
 }
 
+// LoginOne will verify user credentials and send an OTP to the user's email; it is the first step of 2FA
 func (a *AuthAPI) LoginOne(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
@@ -90,6 +91,7 @@ func (a *AuthAPI) LoginOne(w http.ResponseWriter, r *http.Request) {
 	respond.WithoutContent(w, http.StatusOK)
 }
 
+// LoginTwo will verify the OTP and issue access and refresh tokens; it is the second step of 2FA
 func (a *AuthAPI) LoginTwo(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Username string `json:"username"`
@@ -152,6 +154,7 @@ func (a *AuthAPI) Logout(userID uuid.UUID, w http.ResponseWriter, _ *http.Reques
 	respond.WithoutContent(w, http.StatusOK)
 }
 
+// AdminAccess does nothing on its own, it is an empty handler that is supposed to be called through the AdminMiddleware
 func (a *AuthAPI) AdminAccess(w http.ResponseWriter, _ *http.Request) {
 	respond.WithoutContent(w, http.StatusOK)
 }
