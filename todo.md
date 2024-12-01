@@ -88,7 +88,7 @@
   - [X] Add a .env template
   - [ ] Add API documentation (Postman)
   - [X] Add a LICENSE
-  - [ ] Add a SECURITY.md file
+  - [X] Add a SECURITY.md file
   - [ ] Add a README.md file
 
 FUTURE
