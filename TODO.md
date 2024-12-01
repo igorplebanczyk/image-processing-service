@@ -1,0 +1,8 @@
+- [ ] Add max retry and jailing features to login endpoints
+- [ ] Make metrics a private endpoint
+- [ ] Setup logging and metrics for all services
+- [ ] Revise the terraform setup
+- [ ] Modify docker-compose to work in Azure Container Apps (images, environment variables, etc.)
+- [ ] Handle HTTPS and domains with Traefik and Azure Container Apps
+- [ ] Add a deployment pipeline
+- [ ] Add infrastructure integration tests
