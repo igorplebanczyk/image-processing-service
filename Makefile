@@ -1,10 +1,13 @@
-.PHONY: run stop test lint sec tfinit tfplan tfapply
+.PHONY: run stop tidy test lint sec tfinit tfplan tfapply
 
 run:
 	docker-compose up --build
 
 stop:
 	docker-compose down
+
+tidy:
+	cd src && go mod tidy
 
 test:
 	cd src && go test -v -cover ./...
@@ -23,3 +26,4 @@ tfplan:
 
 tfapply:
 	cd terraform && terraform apply
+
