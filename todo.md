@@ -74,14 +74,14 @@
   - [X] Add domain layer unit tests
   - [X] Add application layer unit tests
   - [ ] Add infrastructure layer integration tests
-- [ ] Add a reverse proxy
-  - [ ] Add Traefik to the Docker Compose setup
-  - [ ] Add rate limiting and other security features
+- [X] Add a reverse proxy
+  - [X] Add Traefik to the Docker Compose setup
+  - [X] Add rate limiting and other security features
   - [ ] Make metrics a private endpoint
   - [ ] Introduce login rate limiting and jailing
-  - [ ] Expose Grafana
+  - [X] Expose Grafana
   - [ ] Add a caching layer
-  - [ ] Revise API security best practices
+  - [X] Revise API security best practices
   - [ ] Add a simple way to manage HTTPS and domains
 - [ ] Improve the Terraform setup
   - [ ] Add a setup file for the resource group and virtual network

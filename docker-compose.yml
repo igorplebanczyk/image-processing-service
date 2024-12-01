@@ -20,7 +20,8 @@ services:
       traefik.http.routers.app.rule: Host(`localhost`)
       traefik.http.middlewares.ratelimiter.rateLimit.average: 100
       traefik.http.middlewares.ratelimiter.rateLimit.burst: 200
-      traefik.http.routers.app.middlewares: ratelimiter
+      traefik.http.middlewares.payloadLimiter.buffering.maxRequestBodyBytes: 10485760
+      traefik.http.routers.app.middlewares: ratelimiter, payloadLimiter
     logging: *logging
     env_file:
       - .env
