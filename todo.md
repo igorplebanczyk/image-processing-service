@@ -87,7 +87,7 @@
 - [ ] Add documentation
   - [X] Add a .env template
   - [ ] Add API documentation (Postman)
-  - [ ] Add a LICENSE
+  - [X] Add a LICENSE
   - [ ] Add a SECURITY.md file
   - [ ] Add a README.md file
 
