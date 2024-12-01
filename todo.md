@@ -85,11 +85,11 @@
   - [X] Improve the setup file for Azure Blob Storage
   - [X] Improve the overall setup (Makefile, variables, etc.)
 - [ ] Add documentation
-  - [ ] Add a .env template
+  - [X] Add a .env template
+  - [ ] Add API documentation (Postman)
   - [ ] Add a LICENSE
   - [ ] Add a SECURITY.md file
   - [ ] Add a README.md file
-  - [ ] Add API documentation (Postman)
 
 FUTURE
 - [ ] Add max retry and jailing features to login endpoints
