@@ -1,4 +1,4 @@
-.PHONY: run stop test lint sec
+.PHONY: run stop test lint sec tfinit tfplan tfapply
 
 run:
 	docker-compose up --build
@@ -14,3 +14,12 @@ lint:
 
 sec:
 	cd src && gosec ./...
+
+tfinit:
+	cd terraform && terraform init
+
+tfplan:
+	cd terraform && terraform plan
+
+tfapply:
+	cd terraform && terraform apply
