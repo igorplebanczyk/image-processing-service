@@ -65,9 +65,16 @@ func (a *ImageAPI) Get(userID uuid.UUID, w http.ResponseWriter, r *http.Request)
 		Name string `json:"name"`
 	}
 
+	type responseImageMetadata struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		UpdatedAt   string `json:"updated_at"`
+		CreatedAt   string `json:"created_at"`
+	}
+
 	type response struct {
-		Metadata domain.ImageMetadata `json:"metadata"`
-		Image    string               `json:"image"`
+		Metadata responseImageMetadata `json:"metadata"`
+		Image    string                `json:"image"`
 	}
 
 	var p parameters
@@ -87,9 +94,15 @@ func (a *ImageAPI) Get(userID uuid.UUID, w http.ResponseWriter, r *http.Request)
 	}
 
 	encodedImage := base64.StdEncoding.EncodeToString(bytes)
+	imageMetadata := responseImageMetadata{
+		Name:        metadata.Name,
+		Description: metadata.Description,
+		UpdatedAt:   metadata.UpdatedAt.String(),
+		CreatedAt:   metadata.CreatedAt.String(),
+	}
 
 	respond.WithJSON(w, http.StatusOK, response{
-		Metadata: *metadata,
+		Metadata: imageMetadata,
 		Image:    encodedImage,
 	})
 }

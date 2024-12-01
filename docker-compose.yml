@@ -16,11 +16,14 @@ services:
     labels:
       logging: "promtail"
       logging_jobname: "app"
+      traefik.enable: true
+      traefik.http.routers.app.rule: Host(`localhost`)
+      traefik.http.middlewares.ratelimiter.rateLimit.average: 100
+      traefik.http.middlewares.ratelimiter.rateLimit.burst: 200
+      traefik.http.routers.app.middlewares: ratelimiter
     logging: *logging
     env_file:
       - .env
-    ports:
-      - "${APP_PORT}:${APP_PORT}"
     networks:
       - core
     depends_on:
@@ -41,8 +44,6 @@ services:
     logging: *logging
     env_file:
       - .env
-    ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - core
     volumes:
@@ -57,8 +58,6 @@ services:
     logging: *logging
     env_file:
       - .env
-    ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
       - core
     volumes:
@@ -69,8 +68,6 @@ services:
       context: .
       dockerfile: docker/prometheus/Dockerfile
     logging: *logging
-    ports:
-      - "9090:9090"
     networks:
       - core
     volumes:
@@ -83,8 +80,6 @@ services:
         context: .
         dockerfile: docker/promtail/Dockerfile
     logging: *logging
-    ports:
-      - "9080:9080"
     networks:
       - core
     volumes:
@@ -96,8 +91,6 @@ services:
         context: .
         dockerfile: docker/loki/Dockerfile
     logging: *logging
-    ports:
-      - "3100:3100"
     networks:
       - core
 
@@ -105,17 +98,33 @@ services:
     build:
         context: .
         dockerfile: docker/grafana/Dockerfile
+    labels:
+      traefik.enable: true
+      traefik.http.routers.grafana.rule: Host(`grafana.localhost`)
+      traefik.http.services.grafana.loadbalancer.server.port: 3000
     logging: *logging
     env_file:
       - .env
-    ports:
-      - "3000:3000"
     networks:
       - core
     volumes:
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
+
+  traefik:
+    build:
+      context: .
+      dockerfile: docker/traefik/Dockerfile
+    logging: *logging
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+    networks:
+      - core
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 
 networks:
   core:
