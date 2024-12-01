@@ -70,17 +70,13 @@
   - [X] Extract constants into variables
   - [X] Extract common functionality into helper functions
   - [X] Add comments where necessary
-- [ ] Add tests
+- [X] Add tests
   - [X] Add domain layer unit tests
   - [X] Add application layer unit tests
-  - [ ] Add infrastructure layer integration tests
 - [X] Add a reverse proxy
   - [X] Add Traefik to the Docker Compose setup
   - [X] Add rate limiting and other security features
-  - [ ] Make metrics a private endpoint
-  - [ ] Introduce login rate limiting and jailing
   - [X] Expose Grafana
-  - [ ] Add a caching layer
   - [X] Revise API security best practices
   - [ ] Add a simple way to manage HTTPS and domains
 - [ ] Improve the Terraform setup
@@ -97,6 +93,12 @@
   - [ ] Add a README.md file
   - [ ] Add a SECURITY.md file
   - [ ] Add a LICENSE
+
+FUTURE
+- [ ] Add infrastructure integration tests
+- [ ] Add max retry and jailing features to login endpoints
+- [ ] Make metrics a private endpoint
+- [ ] Setup logging and metrics for all services
 
 ## API
 
