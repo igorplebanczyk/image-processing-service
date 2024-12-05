@@ -9,8 +9,8 @@ x-logging:
 services:
   app:
     build:
-      context: .
-      dockerfile: docker/app/Dockerfile
+      context: ..
+      dockerfile: app/Dockerfile
       args:
         - PORT=${APP_PORT}
     labels:
@@ -24,7 +24,7 @@ services:
       traefik.http.routers.app.middlewares: ratelimiter, payloadLimiter
     logging: *logging
     env_file:
-      - .env
+      - ../.env
     networks:
       - core
     depends_on:
@@ -34,92 +34,99 @@ services:
         condition: service_healthy
 
   postgres:
-    build:
-      context: .
-      dockerfile: docker/postgres/Dockerfile
-      args:
-        - PORT=${POSTGRES_PORT}
-        - USER=${POSTGRES_USER}
-        - PASSWORD=${POSTGRES_PASSWORD}
-        - DB=${POSTGRES_DB}
+    image: postgres:latest
     logging: *logging
     env_file:
-      - .env
+      - ../.env
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     networks:
       - core
     volumes:
+      - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./sql/schema:/docker-entrypoint-initdb.d/
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   redis:
-    build:
-      context: .
-      dockerfile: docker/redis/Dockerfile
-      args:
-        - PORT=${REDIS_PORT}
+    image: redis:latest
     logging: *logging
-    env_file:
-      - .env
     networks:
       - core
     volumes:
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
       - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
 
   prometheus:
-    build:
-      context: .
-      dockerfile: docker/prometheus/Dockerfile
+    image: prom/prometheus:latest
     logging: *logging
     networks:
       - core
     volumes:
+      - ./config/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yaml
       - prometheus_data:/prometheus
     depends_on:
       - app
 
   promtail:
-    build:
-        context: .
-        dockerfile: docker/promtail/Dockerfile
+    image: grafana/promtail:latest
     logging: *logging
+    command:
+      - -config.file=/etc/promtail/promtail.yaml
     networks:
       - core
     volumes:
+      - ./config/promtail/promtail.yaml:/etc/promtail/promtail.yaml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
 
   loki:
-    build:
-        context: .
-        dockerfile: docker/loki/Dockerfile
+    image: grafana/loki:latest
     logging: *logging
+    command:
+      - config.file=/etc/loki/loki.yaml
     networks:
       - core
+    volumes:
+      - ./config/loki/loki.yaml:/etc/loki/loki.yaml
 
   grafana:
-    build:
-        context: .
-        dockerfile: docker/grafana/Dockerfile
+    image: grafana/grafana:latest
     labels:
       traefik.enable: true
       traefik.http.routers.grafana.rule: Host(`grafana.localhost`)
       traefik.http.services.grafana.loadbalancer.server.port: 3000
     logging: *logging
     env_file:
-      - .env
+      - ../.env
     networks:
       - core
     volumes:
+      - ./config/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - grafana_data:/var/lib/grafana
     depends_on:
       - loki
 
   traefik:
-    build:
-      context: .
-      dockerfile: docker/traefik/Dockerfile
+    image: traefik:latest
     logging: *logging
     env_file:
-      - .env
+      - ../.env
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --accesslog=true
     ports:
       - "80:80"
     networks:

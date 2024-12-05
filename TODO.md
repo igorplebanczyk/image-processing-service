@@ -1,4 +1,4 @@
-- [ ] Switch to using Docker Compose for all configuration of external images
+- [X] Switch to using Docker Compose for all configuration of external images
 - [ ] Add max retry and jailing features to login endpoints
 - [ ] Make metrics a private endpoint
 - [ ] Setup logging and metrics for all services
