@@ -1,6 +1,6 @@
 module image-processing-service/src
 
-go 1.23.3
+go 1.24.3
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.5.0
