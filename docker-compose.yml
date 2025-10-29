@@ -9,8 +9,8 @@ x-logging:
 services:
   app:
     build:
-      context: ..
-      dockerfile: app/Dockerfile
+      context: .
+      dockerfile: docker/app/Dockerfile
       args:
         - PORT=${APP_PORT}
     labels:
@@ -24,7 +24,7 @@ services:
       traefik.http.routers.app.middlewares: ratelimiter, payloadLimiter
     logging: *logging
     env_file:
-      - ../.env
+      - .env
     networks:
       - core
     depends_on:
@@ -37,7 +37,7 @@ services:
     image: postgres:latest
     logging: *logging
     env_file:
-      - ../.env
+      - .env
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     networks:
       - core
@@ -108,7 +108,7 @@ services:
       traefik.http.services.grafana.loadbalancer.server.port: 3000
     logging: *logging
     env_file:
-      - ../.env
+      - .env
     networks:
       - core
     volumes:
@@ -121,7 +121,7 @@ services:
     image: traefik:latest
     logging: *logging
     env_file:
-      - ../.env
+      - .env
     command:
       - --api.insecure=true
       - --providers.docker=true
