@@ -1,0 +1,31 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: INFO
+  format: common
+
+accessLog:
+  bufferingSize: 100
+  filePath: /var/log/traefik/access.log
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: core           
+
+metrics:
+  prometheus:
+    entryPoint: web
+    addServicesLabels: true
+    addEntryPointsLabels: true
