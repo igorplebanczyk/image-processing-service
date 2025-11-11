@@ -94,11 +94,11 @@ services:
     image: grafana/loki:latest
     logging: *logging
     command:
-      - config.file=/etc/loki/loki.yaml
+      - -config.file=/etc/loki/loki.yaml
     networks:
       - core
     volumes:
-      - ./config/loki/loki.yaml:/etc/loki/loki.yaml
+      - ./config/loki/loki.yaml:/etc/loki/loki.yaml:ro
 
   grafana:
     image: grafana/grafana:latest

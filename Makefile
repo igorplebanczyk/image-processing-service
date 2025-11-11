@@ -8,34 +8,24 @@ help:
 
 # Docker Compose commands
 
-.ONESHELL:
 .PHONY: build
 build: ## Build the Docker containers
-	cd $(DOCKER_DIR);
 	docker-compose build
 
-.ONESHELL:
 .PHONY: up
 up: ## Start the Docker containers
-	cd $(DOCKER_DIR);
 	docker-compose up -d
 
-.ONESHELL:
 .PHONY: down
 down: ## Stop the Docker containers
-	cd $(DOCKER_DIR);
 	docker-compose down
 
-.ONESHELL:
 .PHONY: restart
 restart: ## Restart the Docker containers
-	cd $(DOCKER_DIR);
 	docker-compose restart
 
-.ONESHELL:
 .PHONY: logs
 logs: ## Show the logs of the Docker containers
-	cd $(DOCKER_DIR);
 	docker-compose logs -f
 
 # Go commands
