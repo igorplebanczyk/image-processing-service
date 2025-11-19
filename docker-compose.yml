@@ -104,10 +104,10 @@ services:
   grafana:
     image: grafana/grafana:latest
     labels:
-      traefik.enable: "true"
+      traefik.enable: true
       traefik.http.routers.grafana.rule: Host(`grafana.localhost`)
       traefik.http.services.grafana.loadbalancer.server.port: 3000
-      traefik.http.middlewares.grafana-retry.retry.attempts: "5"
+      traefik.http.middlewares.grafana-retry.retry.attempts: 5
       traefik.http.routers.grafana.middlewares: grafana-retry
     logging: *logging
     env_file:
